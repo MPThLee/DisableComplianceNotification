@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "package": "ee.mpthl.mc.disable_compliance_notification.mixin.forge",
+  "compatibilityLevel": "JAVA_17",
+  "client": [
+  ],
+  "mixins": [
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
