@@ -54,6 +54,8 @@ shadowJar {
 
     configurations = [project.configurations.shadowCommon]
     classifier "dev-shadow"
+
+    archiveVersion = project.version + "-" + project.minecraft_version + "-quilt"
 }
 
 remapJar {
@@ -61,16 +63,22 @@ remapJar {
     input.set shadowJar.archiveFile
     dependsOn shadowJar
     classifier null
+
+    archiveVersion = project.version + "-" + project.minecraft_version + "-quilt"
 }
 
 jar {
     classifier "dev"
+
+    archiveVersion = project.version + "-" + project.minecraft_version + "-quilt"
 }
 
 sourcesJar {
     def commonSources = project(":common").sourcesJar
     dependsOn commonSources
     from commonSources.archiveFile.map { zipTree(it) }
+
+    archiveVersion = project.version + "-" + project.minecraft_version + "-qulit"
 }
 
 components.java {
