@@ -14,15 +14,15 @@ jobs:
         with:
           java-version: 17
 
-      - name: Cache Gradle packages
-        uses: actions/cache@v2
+      - name: Set up swap space
+        if: runner.os == 'Linux'
+        uses: pierotofy/set-swap-space@v1.0
         with:
-          path: ~/.gradle/caches
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
-          restore-keys: ${{ runner.os }}-gradle
+          swap-size-gb: 10
 
-      - name: Build with Gradle
-        run: chmod +x ./gradlew && ./gradlew build
+      - uses: gradle/gradle-build-action@v2
+        with:
+          arguments: build
 
       - name: Upload forge build artifact
         uses: actions/upload-artifact@v2
@@ -44,11 +44,11 @@ jobs:
       
       - name: Prepare Release
         if: startsWith(github.ref, 'refs/tags/v')
-        run: chmod +x ./tools/make-release.sh $$ ./tools/make-release.sh
+        run: ./tools/make-release.sh
 
       - name: Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/v')
         with:
           files: |
-            release/*/*.jar
+            release/*.jar
