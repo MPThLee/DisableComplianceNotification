@@ -14,6 +14,26 @@ Image and quote reference: https://minecraft.fandom.com/wiki/Java_Edition_1.18.2
 ## Download
 [CurseForge](https://www.curseforge.com/minecraft/mc-mods/disable-compliance-notification) / [Modrinth](https://modrinth.com/mod/disable-compliance-notification) / [GitHub Release](https://github.com/MPThLee/DisableComplianceNotification/releases/)
 
+### 1.19
+[GitHub Release](https://github.com/MPThLee/DisableComplianceNotification/releases/tag/v1.1.0-1.19) or CurseForge/Modrinth.
+
+[Nightly.link for 1.19](https://nightly.link/MPThLee/DisableComplianceNotification/workflows/build/mc1.19)
+#### Forge
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.1.0-1.19/disable_compliance_notification-1.1.0-1.19-forge.jar)
+
+Requires [Architectury API (for Forge)](https://www.curseforge.com/minecraft/mc-mods/architectury-api)
+
+#### Fabric
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.1.0-1.19/disable_compliance_notification-1.1.0-1.19-fabric.jar)
+
+Requires [Architectury API (for Fabric)](https://www.curseforge.com/minecraft/mc-mods/architectury-api) and [Fabric API](https://www.curseforge.com/minecraft/mc-mods/fabric-api)
+
+#### Quilt
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.1.0-1.19/disable_compliance_notification-1.1.0-1.19-fabric.jar)
+
+Requires [Architectury API (for Fabric)](https://modrinth.com/mod/architectury-api) and [Quilt Standard Libraries](https://modrinth.com/mod/qsl)
+
+
 ### 1.18.2
 [GitHub Release](https://github.com/MPThLee/DisableComplianceNotification/releases/tag/v1.0.0-1.18.2) or CurseForge/Modrinth.
 

@@ -1,5 +1,5 @@
 modLoader = "javafml"
-loaderVersion = "[40,)"
+loaderVersion = "[41,)"
 issueTrackerURL = "https://github.com/MPThLee/DisableComplianceNotification/issues"
 license = "MIT"
 
@@ -16,20 +16,20 @@ Disable Compliance Notification for South Korean users.
 [[dependencies.disable_compliance_notification]]
 modId = "forge"
 mandatory = true
-versionRange = "[40,)"
+versionRange = "[41,)"
 ordering = "NONE"
 side = "BOTH"
 
 [[dependencies.disable_compliance_notification]]
 modId = "minecraft"
 mandatory = true
-versionRange = "[1.18.2,)"
+versionRange = "[1.19,)"
 ordering = "NONE"
 side = "BOTH"
 
 [[dependencies.disable_compliance_notification]]
 modId = "architectury"
 mandatory = true
-versionRange = "[4.5.76,)"
+versionRange = "[5.7.28,)"
 ordering = "AFTER"
 side = "BOTH"
