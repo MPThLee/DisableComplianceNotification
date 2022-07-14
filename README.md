@@ -19,16 +19,16 @@ Image and quote reference: https://minecraft.fandom.com/wiki/Java_Edition_1.18.2
 
 [Nightly.link for 1.18.2](https://nightly.link/MPThLee/DisableComplianceNotification/workflows/build/mc1.18)
 #### Forge
-[Download Directly via GitHub](https://github.com/MPThLee/NaraeChat/releases/download/v1.0.0-1.18.2/disable_compliance_notification-1.0.0-1.18.2-forge.jar)
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.0.0-1.18.2/disable_compliance_notification-1.0.0-1.18.2-forge.jar)
 
 Requires [Architectury API (for Forge)](https://www.curseforge.com/minecraft/mc-mods/architectury-api)
 
 #### Fabric
-[Download Directly via GitHub](https://github.com/MPThLee/NaraeChat/releases/download/v1.0.0-1.18.2/disable_compliance_notification-1.0.0-1.18.2-fabric.jar)
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.0.0-1.18.2/disable_compliance_notification-1.0.0-1.18.2-fabric.jar)
 
 Requires [Architectury API (for Fabric)](https://www.curseforge.com/minecraft/mc-mods/architectury-api) and [Fabric API](https://www.curseforge.com/minecraft/mc-mods/fabric-api)
 
 #### Quilt
-[Download Directly via GitHub](https://github.com/MPThLee/NaraeChat/releases/download/v1.0.0-1.18.2/disable_compliance_notification-1.0.0-1.18.2-fabric.jar)
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.0.0-1.18.2/disable_compliance_notification-1.0.0-1.18.2-fabric.jar)
 
 Requires [Architectury API (for Fabric)](https://modrinth.com/mod/architectury-api) and [Quilt Standard Libraries](https://modrinth.com/mod/qsl)
