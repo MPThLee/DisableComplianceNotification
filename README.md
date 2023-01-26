@@ -38,6 +38,22 @@ Image and quote reference: https://minecraft.fandom.com/wiki/Java_Edition_1.18.2
 
 [CurseForge](https://www.curseforge.com/minecraft/mc-mods/disable-compliance-notification) / [Modrinth](https://modrinth.com/mod/disable-compliance-notification) / [GitHub Release](https://github.com/MPThLee/DisableComplianceNotification/releases/)
 
+### 1.19.3
+
+[GitHub Release](https://github.com/MPThLee/DisableComplianceNotification/releases/tag/v1.2.1-1.19.3) or CurseForge/Modrinth.
+
+[Nightly.link for 1.19.3](https://nightly.link/MPThLee/DisableComplianceNotification/workflows/build/mc1.19.3)
+
+#### Forge
+
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.2.1-1.19.3/disable_compliance_notification-forge-v1.2.1-1.19.3.jar)
+
+#### Fabric
+
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.2.1-1.19.3/disable_compliance_notification-fabric-v1.2.1-1.19.3.jar)
+
+Requires [Fabric API](https://www.curseforge.com/minecraft/mc-mods/fabric-api)
+
 ### 1.19.2
 
 [GitHub Release](https://github.com/MPThLee/DisableComplianceNotification/releases/tag/v1.2.0-1.19.2) or CurseForge/Modrinth.
@@ -46,11 +62,11 @@ Image and quote reference: https://minecraft.fandom.com/wiki/Java_Edition_1.18.2
 
 #### Forge
 
-[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.2.0-1.19.2/disable_compliance_notification-forge-1.2.0-1.19.2.jar)
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.2.0-1.19.2/disable_compliance_notification-forge-v1.2.0-1.19.2.jar)
 
 #### Fabric
 
-[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.2.0-1.19.2/disable_compliance_notification-fabric-1.2.0-1.19.2.jar)
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.2.0-1.19.2/disable_compliance_notification-fabric-v1.2.0-1.19.2.jar)
 
 Requires [Fabric API](https://www.curseforge.com/minecraft/mc-mods/fabric-api)
 
