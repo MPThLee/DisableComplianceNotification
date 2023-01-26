@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "package": "ee.mpthl.mc.disable_compliance_notification.mixin",
+  "compatibilityLevel": "JAVA_${java_version}",
+  "client": [
+    "ModifyPeriodicNotificationManager"
+  ],
+  "mixins": [
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

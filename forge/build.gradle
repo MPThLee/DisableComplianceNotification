@@ -1,96 +1,114 @@
-plugins {
-    id "com.github.johnrengelman.shadow" version "7.1.2"
-}
-
-architectury {
-    platformSetupLoomIde()
-    forge()
-}
-
-loom {
-    accessWidenerPath = project(":common").loom.accessWidenerPath
-
-    forge {
-        convertAccessWideners = true
-        extraAccessWideners.add loom.accessWidenerPath.get().asFile.name
+buildscript {
+    repositories {
+        maven {
+            name 'MinecraftForge'
+            url 'https://maven.minecraftforge.net/'
+        }
+        maven {
+            name 'SpongePowered'
+            url 'https://repo.spongepowered.org/maven'
+        }
+        mavenCentral()
+        gradlePluginPortal()
+    }
+    dependencies {
+        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '5.1.+', changing: true
+        classpath 'org.spongepowered:mixingradle:0.7-SNAPSHOT'
     }
 }
 
-configurations {
-    common
-    shadowCommon // Don't use shadow from the shadow plugin because we don't want IDEA to index this.
-    compileClasspath.extendsFrom common
-    runtimeClasspath.extendsFrom common
-    developmentForge.extendsFrom common
+apply plugin: 'eclipse'
+apply plugin: 'maven-publish'
+apply plugin: 'net.minecraftforge.gradle'
+apply plugin: 'org.spongepowered.mixin'
+
+// Load version configs
+def vProps = new Properties()
+file("../config.properties").withInputStream { vProps.load(it) }
+
+archivesBaseName = vProps.archives_base_name + '-forge'
+version = "v${vProps.mod_version}-${vProps.minecraft_version}"
+group = vProps.maven_group
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(vProps.java_version as Integer)
+
+println "Java: ${System.getProperty 'java.version'}, JVM: ${System.getProperty 'java.vm.version'} (${System.getProperty 'java.vendor'}), Arch: ${System.getProperty 'os.arch'}"
+minecraft {
+    mappings channel: 'official', version: vProps.minecraft_version
+
+    runs {
+        client {
+            sourceSets.main.java.srcDirs += ['../src/forge/java']
+            sourceSets.main.java.srcDirs += ['../src/main/java']
+            sourceSets.main.resources.srcDirs += ['../src/forge/resources']
+            sourceSets.main.resources.srcDirs += ['../src/main/resources']
+        }
+    }
+}
+
+mixin {
+    add sourceSets.main, 'disable_compliance_notification.refmap.json'
 }
 
 dependencies {
-    forge "net.minecraftforge:forge:${rootProject.forge_version}"
-    // Remove the next line if you don't want to depend on the API
-    modApi "dev.architectury:architectury-forge:${rootProject.architectury_version}"
+    minecraft "net.minecraftforge:forge:${vProps.minecraft_version}-${vProps.forge_version}"
 
-    common(project(path: ":common", configuration: "namedElements")) { transitive false }
-    shadowCommon(project(path: ":common", configuration: "transformProductionForge")) { transitive = false }
+    annotationProcessor "org.spongepowered:mixin:${vProps.mixin_processor_version}:processor"
+}
+
+repositories {
+    maven { url = 'https://files.minecraftforge.net/maven' }
+    jcenter()
+    mavenCentral()
+    maven { url='https://repo.spongepowered.org/maven' }
 }
 
 processResources {
     inputs.property "version", project.version
-    inputs.property "minecraft_version", project.minecraft_version
+    inputs.property "minecraft_version", vProps.minecraft_version
 
     filesMatching("META-INF/mods.toml") {
         expand "version": project.version,
-                "minecraft_version": project.minecraft_version
+                "minecraft_version": vProps.minecraft_version,
+                "forge_major_version": vProps.forge_version.split('\\.')[0]
     }
-}
 
-shadowJar {
-    exclude "fabric.mod.json"
-    exclude "architectury.common.json"
-
-    configurations = [project.configurations.shadowCommon]
-    classifier "dev-shadow"
-
-    archiveVersion = project.version + "-" + project.minecraft_version + "-forge"
-}
-
-remapJar {
-    input.set shadowJar.archiveFile
-    dependsOn shadowJar
-    classifier null
-
-    archiveVersion = project.version + "-" + project.minecraft_version + "-forge"
+    filesMatching("disable_compliance_notification.mixins.json") {
+        expand "java_version": vProps.java_version
+    }
 }
 
 jar {
-    classifier "dev"
-
-    archiveVersion = project.version + "-" + project.minecraft_version + "-forge"
-}
-
-sourcesJar {
-    def commonSources = project(":common").sourcesJar
-    dependsOn commonSources
-    from commonSources.archiveFile.map { zipTree(it) }
-
-    archiveVersion = project.version + "-" + project.minecraft_version + "-forge"
-}
-
-components.java {
-    withVariantsFromConfiguration(project.configurations.shadowRuntimeElements) {
-        skip()
+    manifest {
+        attributes([
+                "Specification-Title"     : "DisableComplianceNotification",
+                "Specification-Vendor"    : "MPThLee",
+                "Specification-Version"   : "1", // We are version 1 of ourselves
+                "Implementation-Title"    : "Disable Compliance Notification",
+                "Implementation-Version"  : "${version}",
+                "Implementation-Vendor"   : "MPThLee",
+                "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
+                "MixinConfigs":"disable_compliance_notification.mixins.json"
+        ])
     }
 }
+
+jar.finalizedBy('reobfJar')
 
 publishing {
     publications {
-        mavenForge(MavenPublication) {
-            artifactId = rootProject.archives_base_name + "-" + project.name
-            from components.java
+        mavenJava(MavenPublication) {
+            artifact jar
         }
     }
-
-    // See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
     repositories {
-        // Add repositories to publish to here.
+        maven {
+            url "file://${project.projectDir}/mcmodsrepo"
+        }
     }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
+    options.release = vProps.java_version as Integer
 }

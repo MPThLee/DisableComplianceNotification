@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "id": "disable_compliance_notification",
+  "version": "${version}",
+
+  "name": "Disable Compliance Notification",
+  "description": "Disable Compliance Notification for South Korean users.",
+  "authors": [
+    "MPThLee"
+  ],
+  "contact": {
+    "homepage": "https://github.com/MPThLee/DisableComplianceNotification",
+    "sources": "https://github.com/MPThLee/DisableComplianceNotification"
+  },
+
+  "license": "MIT",
+  "icon": "assets/disable_compliance_notification/icon.png",
+
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "ee.mpthl.mc.disable_compliance_notification.fabric.DisableComplianceNotificationFabric"
+    ]
+  },
+  "mixins": [
+    "disable_compliance_notification.mixins.json"
+  ],
+
+  "depends": {
+    "fabricloader": ">=${fabric_loader_version}",
+    "fabric-api": "*",
+    "minecraft": "~${minecraft_version}",
+    "java": ">=${java_version}"
+  }
+}

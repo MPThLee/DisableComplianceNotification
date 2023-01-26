@@ -1,13 +1,19 @@
 #!/bin/bash
 
 name="disable_compliance_notification"
-version=$(./gradlew properties | grep ^version: | cut -d ':' -f2 | xargs)
-mc_version=$(./gradlew properties | grep ^minecraft_version: | cut -d ':' -f2 | xargs)
 
+cd forge
+version=$(./gradlew properties | grep ^version: | cut -d ':' -f2 | xargs)
+
+chmod +x ./gradlew
 ./gradlew build
 
-mkdir release/
-cp forge/build/libs/$name-$version-$mc_version-forge.jar release/
-cp fabric/build/libs/$name-$version-$mc_version-fabric.jar release/
-cp quilt/build/libs/$name-$version-$mc_version-quilt.jar release/
+cd ../fabric
 
+chmod +x ./gradlew
+./gradlew build
+
+cd ../
+mkdir release/
+cp forge/build/libs/$name-forge-$version.jar release/
+cp fabric/build/libs/$name-fabric-$version-fabric.jar release/

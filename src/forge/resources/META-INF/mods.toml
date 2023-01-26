@@ -1,0 +1,28 @@
+modLoader = "javafml"
+loaderVersion = "[${forge_major_version},)"
+issueTrackerURL = "https://github.com/MPThLee/DisableComplianceNotification/issues"
+license = "MIT"
+
+[[mods]]
+modId = "disable_compliance_notification"
+version = "${version}"
+displayName = "Disable Compliance Notification"
+authors = "MPThLee"
+description = '''
+Disable Compliance Notification for South Korean users.
+'''
+#logoFile = ""
+
+[[dependencies.disable_compliance_notification]]
+modId = "forge"
+mandatory = true
+versionRange = "[${forge_major_version},)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.disable_compliance_notification]]
+modId = "minecraft"
+mandatory = true
+versionRange = "[${minecraft_version},)"
+ordering = "NONE"
+side = "BOTH"

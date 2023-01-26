@@ -20,9 +20,8 @@ jobs:
         with:
           swap-size-gb: 10
 
-      - uses: gradle/gradle-build-action@v2
-        with:
-          arguments: build
+      - name: Build
+        run: ./tools/make-release.sh
 
       - name: Upload forge build artifact
         uses: actions/upload-artifact@v2
@@ -35,16 +34,6 @@ jobs:
         with:
           name: fabric-artifact
           path: fabric/build/libs
-
-      - name: Upload quilt build artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: quilt-artifact
-          path: quilt/build/libs
-      
-      - name: Prepare Release
-        if: startsWith(github.ref, 'refs/tags/v')
-        run: ./tools/make-release.sh
 
       - name: Release
         uses: softprops/action-gh-release@v1

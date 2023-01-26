@@ -1,92 +1,79 @@
 plugins {
-    id "com.github.johnrengelman.shadow" version "7.1.2"
+    id 'fabric-loom' version '1.0-SNAPSHOT'
+    id 'maven-publish'
 }
 
-architectury {
-    platformSetupLoomIde()
-    fabric()
-}
+// Load version configs
+def vProps = new Properties()
+file("../config.properties").withInputStream { vProps.load(it) }
 
-loom {
-    accessWidenerPath = project(":common").loom.accessWidenerPath
-}
+sourceCompatibility = vProps.java_version as Integer
+targetCompatibility = vProps.java_version as Integer
 
-configurations {
-    common
-    shadowCommon // Don't use shadow from the shadow plugin because we don't want IDEA to index this.
-    compileClasspath.extendsFrom common
-    runtimeClasspath.extendsFrom common
-    developmentFabric.extendsFrom common
+archivesBaseName = vProps.archives_base_name + '-fabric'
+version = "v${vProps.mod_version}-${vProps.minecraft_version}"
+group = vProps.maven_group // http://maven.apache.org/guides/mini/guide-naming-conventions.html
+
+repositories {
+
 }
 
 dependencies {
-    modImplementation "net.fabricmc:fabric-loader:${rootProject.fabric_loader_version}"
-    modApi "net.fabricmc.fabric-api:fabric-api:${rootProject.fabric_api_version}"
-    // Remove the next line if you don't want to depend on the API
-    modApi "dev.architectury:architectury-fabric:${rootProject.architectury_version}"
+    minecraft "com.mojang:minecraft:${vProps.minecraft_version}"
+    mappings loom.officialMojangMappings()
 
-    common(project(path: ":common", configuration: "namedElements")) { transitive false }
-    shadowCommon(project(path: ":common", configuration: "transformProductionFabric")) { transitive false }
+    modImplementation "net.fabricmc:fabric-loader:${vProps.fabric_loader_version}"
+
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${vProps.fabric_api_version}+${vProps.minecraft_version}"
 }
 
 processResources {
     inputs.property "version", project.version
-    inputs.property "minecraft_version", project.minecraft_version
+    inputs.property "minecraft_version", vProps.minecraft_version
 
     filesMatching("fabric.mod.json") {
         expand "version": project.version,
-                "minecraft_version": project.minecraft_version
+                "minecraft_version": vProps.minecraft_version,
+                "fabric_loader_version": vProps.fabric_loader_version,
+                "java_version": vProps.java_version
+    }
+
+    filesMatching("disable_compliance_notification.mixins.json") {
+        expand "java_version": vProps.java_version
     }
 }
 
-shadowJar {
-    exclude "architectury.common.json"
-
-    configurations = [project.configurations.shadowCommon]
-    classifier "dev-shadow"
-
-    archiveVersion = project.version + "-" + project.minecraft_version + "-fabric"
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
+    options.release = vProps.java_version as Integer
 }
 
-remapJar {
-    injectAccessWidener = true
-    input.set shadowJar.archiveFile
-    dependsOn shadowJar
-    classifier null
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(vProps.java_version as Integer)
+    }
 
-    archiveVersion = project.version + "-" + project.minecraft_version + "-fabric"
+    sourceSets.main.java.srcDirs+=['../src/main']
+    sourceSets.main.java.srcDirs+=['../src/fabric']
+
+    sourceSets.main.resources.srcDirs+=['../src/main/resources']
+    sourceSets.main.resources.srcDirs+=['../src/fabric/resources']
+    withSourcesJar()
 }
 
 jar {
-    classifier "dev"
-
-    archiveVersion = project.version + "-" + project.minecraft_version + "-fabric"
-}
-
-sourcesJar {
-    def commonSources = project(":common").sourcesJar
-    dependsOn commonSources
-    from commonSources.archiveFile.map { zipTree(it) }
-
-    archiveVersion = project.version + "-" + project.minecraft_version + "-fabric"
-}
-
-components.java {
-    withVariantsFromConfiguration(project.configurations.shadowRuntimeElements) {
-        skip()
+    from("LICENSE") {
+        rename { "${it}_${project.archivesBaseName}"}
     }
 }
 
 publishing {
     publications {
-        mavenFabric(MavenPublication) {
-            artifactId = rootProject.archives_base_name + "-" + project.name
+        mavenJava(MavenPublication) {
             from components.java
         }
     }
 
-    // See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
     repositories {
-        // Add repositories to publish to here.
     }
 }
