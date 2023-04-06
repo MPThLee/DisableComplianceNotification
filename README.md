@@ -16,6 +16,14 @@ Image and quote reference: https://minecraft.fandom.com/wiki/Java_Edition_1.18.2
 
 ## Changelog
 
+### v1.2.2
+
+- 1.19.4 support
+
+### v1.2.1
+
+- 1.19.3 support
+
 ### v1.2.0
 
 - 1.19.2 support
@@ -37,6 +45,13 @@ Image and quote reference: https://minecraft.fandom.com/wiki/Java_Edition_1.18.2
 ## Download
 
 [CurseForge](https://www.curseforge.com/minecraft/mc-mods/disable-compliance-notification) / [Modrinth](https://modrinth.com/mod/disable-compliance-notification) / [GitHub Release](https://github.com/MPThLee/DisableComplianceNotification/releases/)
+
+### 1.19.4
+
+[GitHub Release](https://github.com/MPThLee/DisableComplianceNotification/releases/tag/v1.2.2-1.19.4) or CurseForge/Modrinth.
+
+[Nightly.link for 1.19.3](https://nightly.link/MPThLee/DisableComplianceNotification/workflows/build/mc1.19.4)
+
 
 ### 1.19.3
 
