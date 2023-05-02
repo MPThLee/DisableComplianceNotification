@@ -10,7 +10,7 @@ import me.shedaniel.autoconfig.annotation.ConfigEntry.Gui.Tooltip;
 public class DCNConfig implements ConfigData, DCNConfigInterface {
     @Tooltip
     @EnumHandler(option = EnumHandler.EnumDisplayOption.BUTTON)
-    public NotificationFilterMode notificationFilterMode = NotificationFilterMode.ALL;
+    public NotificationFilterMode notificationFilterMode = new DCNConfigDefault().getNotificationFilterMode();
 
     @Override
     public NotificationFilterMode getNotificationFilterMode() {
