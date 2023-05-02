@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 // TODO: Nested Class `NotificationTask` doesn't exposed in 1.18.2 mojmap.
 @Mixin(targets = "net.minecraft.client.PeriodicNotificationManager$NotificationTask")
-public class ModifyPeriodicNotificationManager {
+public class ModifyPeriodicNotificationTask {
     private static final Logger LOGGER = LogManager.getLogger("ModifyPeriodicNotificationManager");
     @Shadow
     @Final
@@ -37,9 +37,10 @@ public class ModifyPeriodicNotificationManager {
 
     private static boolean checkSkip(String title, String message) {
         NotificationFilterMode notificationMode = DisableComplianceNotification.getConfig().getNotificationFilterMode();
-        LOGGER.info("Detected Period Notification: {}, {}. [DCN-MODE: {}]", title, message, notificationMode);
+        boolean isFiltered = notificationMode.isFiltered(title, message);
 
-        return notificationMode.isSkip(title, message);
+        LOGGER.info("Detected Period Notification: {}, {}. [DCN-MODE: {}, Filtered: {}]", title, message, notificationMode.toEnumString(), isFiltered);
+        return isFiltered;
     }
 
     // This follows original implementation of NotificationTask.run() method.

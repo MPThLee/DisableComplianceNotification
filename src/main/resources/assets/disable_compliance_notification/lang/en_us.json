@@ -1,9 +1,9 @@
 {
-  "text.autoconfig.disable_compliance_notification.option.notificationFilterMode": "Period Notification Filter Mode",
-  "text.autoconfig.disable_compliance_notification.option.notificationFilterMode.@Tooltip": "Decide how to filter the period notification filters.",
-  "text.autoconfig.disable_compliance_notification.option.notificationFilterMode.ALL": "Filter All",
-  "text.autoconfig.disable_compliance_notification.option.notificationFilterMode.DISABLE": "Disable filter",
-  "text.autoconfig.disable_compliance_notification.option.notificationFilterMode.ONLY_COMPLIANCE": "Filter Compliance notification only",
-  "text.autoconfig.disable_compliance_notification.option.notificationFilterMode.ONLY_NON_COMPLIANCE": "Filter Non-Compliance notification only",
+  "config.disable_compliance_notification.filter_mode.ALL": "Filter All",
+  "config.disable_compliance_notification.filter_mode.DISABLE": "Disable filter",
+  "config.disable_compliance_notification.filter_mode.ONLY_COMPLIANCE": "Compliance only",
+  "config.disable_compliance_notification.filter_mode.ONLY_NON_COMPLIANCE": "Non-Compliance only",
+  "text.autoconfig.disable_compliance_notification.option.notificationFilterMode": "Periodic Notification Filter Mode",
+  "text.autoconfig.disable_compliance_notification.option.notificationFilterMode.@Tooltip": "Decide how to filter the periodic notification messages.",
   "text.autoconfig.disable_compliance_notification.title": "Disable Compliance Notification"
 }
