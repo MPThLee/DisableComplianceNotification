@@ -1,7 +1,7 @@
 package ee.mpthl.mc.disable_compliance_notification.mixin;
 
 import ee.mpthl.mc.disable_compliance_notification.DisableComplianceNotification;
-import ee.mpthl.mc.disable_compliance_notification.config.NotificationMode;
+import ee.mpthl.mc.disable_compliance_notification.config.NotificationFilterMode;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.PeriodicNotificationManager.Notification;
 import net.minecraft.client.gui.components.toasts.SystemToast;
@@ -36,14 +36,10 @@ public class ModifyPeriodicNotificationManager {
     private Minecraft minecraft;
 
     private static boolean checkSkip(String title, String message) {
-        NotificationMode notificationMode = DisableComplianceNotification.getConfig().getNotificationMode();
-        boolean isComplianceMessage = title.startsWith("compliance") && message.startsWith("compliance.");
-
+        NotificationFilterMode notificationMode = DisableComplianceNotification.getConfig().getNotificationFilterMode();
         LOGGER.info("Detected Period Notification: {}, {}. [DCN-MODE: {}]", title, message, notificationMode);
 
-        return (notificationMode == NotificationMode.DISABLE_COMPLETELY) // Disabled completely
-                || (notificationMode.isCompliance() && isComplianceMessage) // Compliance messages
-                || (notificationMode.isNonCompliance() && !isComplianceMessage); // Non-compliance messages
+        return notificationMode.isSkip(title, message);
     }
 
     // This follows original implementation of NotificationTask.run() method.

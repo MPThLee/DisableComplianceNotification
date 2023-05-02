@@ -9,11 +9,11 @@ import me.shedaniel.autoconfig.annotation.ConfigEntry.Gui.Tooltip;
 @Config(name = DisableComplianceNotification.MOD_ID)
 public class DCNConfig implements ConfigData, DCNConfigInterface {
     @Tooltip
-    @EnumHandler
-    public NotificationMode notificationMode = NotificationMode.ALL;
+    @EnumHandler(option = EnumHandler.EnumDisplayOption.BUTTON)
+    public NotificationFilterMode notificationFilterMode = NotificationFilterMode.ALL;
 
     @Override
-    public NotificationMode getNotificationMode() {
-        return this.notificationMode;
+    public NotificationFilterMode getNotificationFilterMode() {
+        return this.notificationFilterMode;
     }
 }
