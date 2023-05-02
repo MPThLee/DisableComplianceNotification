@@ -11,7 +11,7 @@ import net.fabricmc.api.Environment;
 @Environment(EnvType.CLIENT)
 public class ModMenu implements ModMenuApi {
     @Override
-    public ConfigScreenFactory<?> getModConfigScreen() {
+    public ConfigScreenFactory<?> getModConfigScreenFactory() {
         return AutoConfig.getConfigScreen(DCNConfig.class, ConfigScreenFactory.class).get();
     }
 }
