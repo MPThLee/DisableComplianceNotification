@@ -22,6 +22,10 @@ Older changelog is available on [CHANGELOG.md](./CHANGELOG.md).
 
 ### v1.3.0 (WIP)
 
+- Handle periodic notification correctly.
+    - As of previous version, It will reject **ALL** notifications whatever it is.
+        - It's fixed by following Mojang's implementation with some additional if expression.
+        - Note: Some of mod uses Minecraft's Periodic Notification. This will mitigate the issues.
 - Add support for filter message selection.
     - Filter all notification
     - Filter Compliance notification only
@@ -31,7 +35,7 @@ Older changelog is available on [CHANGELOG.md](./CHANGELOG.md).
     - Requires [Cloth Config](https://modrinth.com/mod/cloth-config). But it's optional.
         - Additionally, Fabric build also has optional dependency for [Mod Menu](https://modrinth.com/mod/modmenu)
     - Default (and without Cloth Config) is "Filter only compliance notification".
-- Fabric API is not mandatory as of this version.
+- For Fabric: Fabric API is not mandatory as of this version.
 
 ## Download
 

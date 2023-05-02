@@ -2,6 +2,10 @@
 
 ## v1.3.0 (WIP)
 
+- Handle periodic notification correctly.
+  - As of previous version, It will reject **ALL** notifications whatever it is. 
+    - It's fixed by following Mojang's implementation with some additional if expression.
+    - Note: Some of mod uses Minecraft's Periodic Notification. This will mitigate the issues.
 - Add support for filter message selection.
     - Filter all notification
     - Filter Compliance notification only
