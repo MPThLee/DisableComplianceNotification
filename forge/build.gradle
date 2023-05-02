@@ -8,6 +8,7 @@ buildscript {
             name 'SpongePowered'
             url 'https://repo.spongepowered.org/maven'
         }
+
         mavenCentral()
         gradlePluginPortal()
     }
@@ -17,6 +18,7 @@ buildscript {
     }
 }
 
+apply plugin: 'java-library'
 apply plugin: 'eclipse'
 apply plugin: 'maven-publish'
 apply plugin: 'net.minecraftforge.gradle'
@@ -54,6 +56,8 @@ dependencies {
     minecraft "net.minecraftforge:forge:${vProps.minecraft_version}-${vProps.forge_version}"
 
     annotationProcessor "org.spongepowered:mixin:${vProps.mixin_processor_version}:processor"
+
+    api fg.deobf("me.shedaniel.cloth:cloth-config-forge:${vProps.cloth_config_version}")
 }
 
 repositories {
@@ -61,6 +65,7 @@ repositories {
     jcenter()
     mavenCentral()
     maven { url='https://repo.spongepowered.org/maven' }
+    maven { url = 'https://maven.shedaniel.me/' }
 }
 
 processResources {
