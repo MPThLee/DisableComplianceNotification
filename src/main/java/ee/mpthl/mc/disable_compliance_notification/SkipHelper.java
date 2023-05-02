@@ -4,7 +4,8 @@ import ee.mpthl.mc.disable_compliance_notification.config.NotificationMode;
 import org.apache.logging.log4j.Logger;
 
 public class SkipHelper {
-    private SkipHelper() {}
+    private SkipHelper() {
+    }
 
     public static boolean checkSkip(Logger logger, String title, String message) {
         NotificationMode notificationMode = DisableComplianceNotification.CONFIG.getNotificationMode();

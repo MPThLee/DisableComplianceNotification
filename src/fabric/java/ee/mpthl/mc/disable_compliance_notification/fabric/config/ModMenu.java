@@ -2,9 +2,8 @@ package ee.mpthl.mc.disable_compliance_notification.fabric.config;
 
 import com.terraformersmc.modmenu.api.ConfigScreenFactory;
 import com.terraformersmc.modmenu.api.ModMenuApi;
-import me.shedaniel.autoconfig.AutoConfig;
 import ee.mpthl.mc.disable_compliance_notification.config.DCNConfig;
-import me.shedaniel.clothconfig2.api.ConfigScreen;
+import me.shedaniel.autoconfig.AutoConfig;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 
@@ -12,6 +11,6 @@ import net.fabricmc.api.Environment;
 public class ModMenu implements ModMenuApi {
     @Override
     public ConfigScreenFactory<?> getModConfigScreenFactory() {
-        return AutoConfig.getConfigScreen(DCNConfig.class, ConfigScreenFactory.class).get();
+        return parent -> AutoConfig.getConfigScreen(DCNConfig.class, parent).get();
     }
 }
