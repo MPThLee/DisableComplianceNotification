@@ -15,9 +15,15 @@ version = "v${vProps.mod_version}-${vProps.minecraft_version}"
 group = vProps.maven_group // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 
 repositories {
+    // Cloth config
     maven {
         name "shedaniel"
         url "https://maven.shedaniel.me/"
+    }
+    // Mod Menu
+    maven {
+        name "TerraformersMC"
+        url "https://maven.terraformersmc.com/"
     }
 }
 
@@ -27,9 +33,13 @@ dependencies {
 
     modImplementation "net.fabricmc:fabric-loader:${vProps.fabric_loader_version}"
 
-    modImplementation "net.fabricmc.fabric-api:fabric-api:${vProps.fabric_api_version}+${vProps.minecraft_version}"
+    modApi "net.fabricmc.fabric-api:fabric-api:${vProps.fabric_api_version}+${vProps.minecraft_version}"
 
     modApi("me.shedaniel.cloth:cloth-config-fabric:${vProps.cloth_config_version}") {
+        exclude(group: "net.fabricmc.fabric-api")
+    }
+
+    modApi("com.terraformersmc:modmenu:${vProps.modmenu_version}") {
         exclude(group: "net.fabricmc.fabric-api")
     }
 }

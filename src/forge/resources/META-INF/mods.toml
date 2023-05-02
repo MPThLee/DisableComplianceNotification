@@ -18,11 +18,18 @@ modId = "forge"
 mandatory = true
 versionRange = "[${forge_major_version},)"
 ordering = "NONE"
-side = "BOTH"
+side = "CLIENT"
 
 [[dependencies.disable_compliance_notification]]
 modId = "minecraft"
 mandatory = true
 versionRange = "[${minecraft_version},)"
 ordering = "NONE"
-side = "BOTH"
+side = "CLIENT"
+
+[[dependencies.disable_compliance_notification]]
+modId = "cloth_config"
+mandatory = false
+versionRange = "[10.0.0,)"
+ordering = "NONE"
+side = "CLIENT"

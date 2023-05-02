@@ -16,20 +16,25 @@
   "license": "MIT",
   "icon": "assets/disable_compliance_notification/icon.png",
 
-  "environment": "*",
+  "environment": "client",
   "entrypoints": {
-    "main": [
+    "client": [
       "ee.mpthl.mc.disable_compliance_notification.fabric.DisableComplianceNotificationFabric"
+    ],
+    "modmenu": [
+      "ee.mpthl.mc.disable_compliance_notification.fabric.config.ModMenu"
     ]
   },
   "mixins": [
     "disable_compliance_notification.mixins.json"
   ],
-
   "depends": {
     "fabricloader": ">=${fabric_loader_version}",
-    "fabric-api": "*",
     "minecraft": "~${minecraft_version}",
     "java": ">=${java_version}"
+  },
+  "recommends": {
+    "modmenu": ">=6.2.2",
+    "cloth-config": ">=10.0.0"
   }
 }
