@@ -70,17 +70,17 @@ java {
         languageVersion = JavaLanguageVersion.of(vProps.java_version as Integer)
     }
 
-    sourceSets.main.java.srcDirs+=['../src/main']
-    sourceSets.main.java.srcDirs+=['../src/fabric']
+    sourceSets.main.java.srcDirs += ['../src/main']
+    sourceSets.main.java.srcDirs += ['../src/fabric']
 
-    sourceSets.main.resources.srcDirs+=['../src/main/resources']
-    sourceSets.main.resources.srcDirs+=['../src/fabric/resources']
+    sourceSets.main.resources.srcDirs += ['../src/main/resources']
+    sourceSets.main.resources.srcDirs += ['../src/fabric/resources']
     withSourcesJar()
 }
 
 jar {
     from("LICENSE") {
-        rename { "${it}_${project.archivesBaseName}"}
+        rename { "${it}_${project.archivesBaseName}" }
     }
 }
 

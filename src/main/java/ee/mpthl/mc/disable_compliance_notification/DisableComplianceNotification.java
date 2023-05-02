@@ -8,11 +8,20 @@ import org.apache.logging.log4j.Logger;
 public class DisableComplianceNotification {
     public static final String MOD_ID = "disable_compliance_notification";
     private static final Logger LOGGER = LogManager.getLogger("");
-    public static DCNConfigInterface CONFIG = new DCNConfigDefault();
+    private static DCNConfigInterface config = new DCNConfigDefault();
+
     private DisableComplianceNotification() {
     }
 
     public static void init() {
         LOGGER.info("Initializing Disable Compliance Notification");
+    }
+
+    public static DCNConfigInterface getConfig() {
+        return config;
+    }
+
+    public static void setConfig(DCNConfigInterface config) {
+        DisableComplianceNotification.config = config;
     }
 }

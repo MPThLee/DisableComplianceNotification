@@ -2,7 +2,6 @@
   "schemaVersion": 1,
   "id": "disable_compliance_notification",
   "version": "${version}",
-
   "name": "Disable Compliance Notification",
   "description": "Disable Compliance Notification for South Korean users.",
   "authors": [
@@ -12,10 +11,8 @@
     "homepage": "https://github.com/MPThLee/DisableComplianceNotification",
     "sources": "https://github.com/MPThLee/DisableComplianceNotification"
   },
-
   "license": "MIT",
   "icon": "assets/disable_compliance_notification/icon.png",
-
   "environment": "client",
   "entrypoints": {
     "client": [

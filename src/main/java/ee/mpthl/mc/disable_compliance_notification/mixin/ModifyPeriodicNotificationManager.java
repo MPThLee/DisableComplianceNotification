@@ -1,6 +1,7 @@
 package ee.mpthl.mc.disable_compliance_notification.mixin;
 
-import ee.mpthl.mc.disable_compliance_notification.SkipHelper;
+import ee.mpthl.mc.disable_compliance_notification.DisableComplianceNotification;
+import ee.mpthl.mc.disable_compliance_notification.config.NotificationMode;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.PeriodicNotificationManager.Notification;
 import net.minecraft.client.gui.components.toasts.SystemToast;
@@ -34,9 +35,20 @@ public class ModifyPeriodicNotificationManager {
     @Final
     private Minecraft minecraft;
 
+    private static boolean checkSkip(String title, String message) {
+        NotificationMode notificationMode = DisableComplianceNotification.getConfig().getNotificationMode();
+        boolean isComplianceMessage = title.startsWith("compliance") && message.startsWith("compliance.");
+
+        LOGGER.info("Detected Period Notification: {}, {}. [DCN-MODE: {}]", title, message, notificationMode);
+
+        return (notificationMode == NotificationMode.DISABLE_COMPLETELY) // Disabled completely
+                || (notificationMode.isCompliance() && isComplianceMessage) // Compliance messages
+                || (notificationMode.isNonCompliance() && !isComplianceMessage); // Non-compliance messages
+    }
+
     // This follows original implementation of NotificationTask.run() method.
     // As this need to block specific "notification", it should inject the code.
-    // So, I override the original implementation. with just one more if expression.
+    // So, I'm using original implementation with some custom expression..
     // Note: PeriodicNotificationManager only used for regional compliance notification as of 1.18.2.
     @Inject(
             method = "run()V",
@@ -59,7 +71,7 @@ public class ModifyPeriodicNotificationManager {
 
                 if (elapsedPeriod != currentPeriod) {
                     // Check if the notification is disabled.
-                    if (SkipHelper.checkSkip(LOGGER, title, message)) {
+                    if (checkSkip(title, message)) {
                         ci.cancel();
                         return;
                     }
