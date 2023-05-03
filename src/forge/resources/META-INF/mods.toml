@@ -30,6 +30,6 @@ side = "CLIENT"
 [[dependencies.disable_compliance_notification]]
 modId = "cloth_config"
 mandatory = false
-versionRange = "[10.0.0,)"
+versionRange = "[${cloth_config_major_version,)"
 ordering = "NONE"
 side = "CLIENT"

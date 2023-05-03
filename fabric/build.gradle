@@ -52,7 +52,9 @@ processResources {
         expand "version": project.version,
                 "minecraft_version": vProps.minecraft_version,
                 "fabric_loader_version": vProps.fabric_loader_version,
-                "java_version": vProps.java_version
+                "java_version": vProps.java_version,
+                "cloth_config_major_version": vProps.cloth_config_version.split('\\.')[0],
+                "modmenu_major_version": vProps.modmenu_version.split('\\.')[0]
     }
 
     filesMatching("disable_compliance_notification.mixins.json") {
@@ -62,7 +64,7 @@ processResources {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
-    options.release = vProps.java_version as Integer
+    options.release = vProps.java_version as Property<Integer>
 }
 
 java {
@@ -80,7 +82,7 @@ java {
 
 jar {
     from("LICENSE") {
-        rename { "${it}_${project.archivesBaseName}" }
+        rename { "${it}_${archivesBaseName}" }
     }
 }
 
