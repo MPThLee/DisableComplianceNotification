@@ -35,7 +35,7 @@ public class ModifyPeriodicNotificationTask {
     @Final
     private Minecraft minecraft;
 
-    private static boolean checkSkip(String title, String message) {
+    private static boolean checkFiltered(String title, String message) {
         NotificationFilterMode notificationMode = DisableComplianceNotification.getConfig().getNotificationFilterMode();
         boolean isFiltered = notificationMode.isFiltered(title, message);
 
@@ -68,7 +68,7 @@ public class ModifyPeriodicNotificationTask {
 
                 if (elapsedPeriod != currentPeriod) {
                     // Check if the notification is disabled.
-                    if (checkSkip(title, message)) {
+                    if (checkFiltered(title, message)) {
                         ci.cancel();
                         return;
                     }

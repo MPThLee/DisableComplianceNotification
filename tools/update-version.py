@@ -1,14 +1,16 @@
 #!/usr/bin/python3
 
+import asyncio
 import argparse
 import json
 import re
+
 
 from urllib.request import urlopen
 import xml.etree.ElementTree as ET
 
 
-def main():
+async def main():
     parser = argparse.ArgumentParser(
         prog='UpdateVersion',
         description='Update dependency to correct version of minecraft version')
@@ -16,14 +18,15 @@ def main():
     args = parser.parse_args()
     to = args.to
 
-    fabapi, fabloader = fabric(to)
-    frg = forge(to)
+    (fabapi, fabloader), frg, modmenu, cloth = await load_versions(to)
 
     reg = [
         ("minecraft_version", to),
         ("forge_version", frg),
         ("fabric_loader_version", fabloader),
-        ("fabric_api_version", fabapi.split("+")[0])
+        ("fabric_api_version", fabapi.split("+")[0]),
+        ("cloth_config_version", cloth.split("+")[0]),
+        ("modmenu_version", modmenu)
     ]
 
     with open('config.properties', 'r+', encoding='utf-8') as f:
@@ -37,7 +40,12 @@ def main():
         f.truncate()
 
 
-def fabric(mcv):
+async def load_versions(mcv):
+    futures = [fabric(mcv), forge(mcv), modrinth(mcv, 'modmenu'), modrinth(mcv, 'cloth-config')]
+    return await asyncio.gather(*futures)
+
+
+async def fabric(mcv):
     loaderResp = urlJson('https://meta.fabricmc.net/v2/versions/loader')
     mavenResp = urlXML(
         'https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/maven-metadata.xml')
@@ -50,7 +58,7 @@ def fabric(mcv):
 
     return (apiVersion, loaderVersion)
 
-def forge(mcv):
+async def forge(mcv):
     #Using multimc meta for now.
     versions = urlJson("https://raw.githubusercontent.com/MultiMC/meta-multimc/master/net.minecraftforge/index.json")['versions']
     
@@ -76,6 +84,25 @@ def forge_find(l, mcv):
     return None
 
 
+def modrinth_def_findver(l):
+    ver = None
+    for i in l:
+        # return latest release version
+        if i['version_type'] == 'release':
+            return i['version_number']
+
+        # set latest if no release
+        if ver is None:
+            ver = i['version_number']
+
+    # return latest beta if no release
+    return ver
+
+
+async def modrinth(mcv, modid, findFunc = modrinth_def_findver):
+    resp = urlJson(f'https://api.modrinth.com/v2/project/{modid}/version?game_versions=%5B%22{mcv}%22%5D')
+    return findFunc(resp)
+
 
 def urlXML(url):
     response = urlopen(url)
@@ -88,4 +115,4 @@ def urlJson(url):
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
