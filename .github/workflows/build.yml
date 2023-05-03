@@ -87,7 +87,7 @@ jobs:
                           .filter(s => s !== '')
                           .reduce((a, c) => { let [k, v] = c.split("=").map(s => s.trim()); return { ...a, [k]: v }; }, {});
 
-            core.setOutput('capital_loader', loader.chatAt(0).toUpperCase() + loader.slice(1)); 
+            core.setOutput('capital_loader', loader.charAt(0).toUpperCase() + loader.slice(1)); 
             core.setOutput('full_version', `${prop.mod_version}+${loader}-${prop.minecraft_version}`);
             for (const [key, value] of Object.entries(prop)) {
               core.setOutput(`prop_${key}`, value);
