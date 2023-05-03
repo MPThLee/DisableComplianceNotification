@@ -1,11 +1,13 @@
 # Download Links
+
 - [Modrinth](https://modrinth.com/mod/disable-compliance-notification)
 - [GitHub Release](https://github.com/MPThLee/DisableComplianceNotification/releases/)
 
 - [CurseForge](https://www.curseforge.com/minecraft/mc-mods/disable-compliance-notification)
-  - Page exist but some of versions are not approved by moderator. Download this from Modrinth or GitHub Release.
+    - Page exist but some of versions are not approved by moderator. Download this from Modrinth or GitHub Release.
 
 ## 1.19.x
+
 ### 1.19.4 (Mod v1.2.2)
 
 [GitHub Release](https://github.com/MPThLee/DisableComplianceNotification/releases/tag/v1.2.2-1.19.4) or Modrinth.
@@ -21,7 +23,6 @@ Nightly link is now available as of v1.3.0
 [Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.2.2-1.19.4/disable_compliance_notification-fabric-v1.2.2-1.19.4.jar)
 
 Requires [Fabric API](https://www.curseforge.com/minecraft/mc-mods/fabric-api)
-
 
 ### 1.19.3
 

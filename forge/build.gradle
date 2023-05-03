@@ -73,7 +73,7 @@ processResources {
     inputs.property "minecraft_version", vProps.minecraft_version
 
     filesMatching("META-INF/mods.toml") {
-        expand "version": project.version,
+        expand "version": vProps.mod_version,
                 "minecraft_version": vProps.minecraft_version,
                 "forge_major_version": vProps.forge_version.split('\\.')[0],
                 "cloth_config_major_version": vProps.cloth_config_version.split('\\.')[0]

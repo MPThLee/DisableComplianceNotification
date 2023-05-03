@@ -20,7 +20,7 @@ Image and quote reference: https://minecraft.fandom.com/wiki/Java_Edition_1.18.2
 
 Older changelog is available on [CHANGELOG.md](./CHANGELOG.md).
 
-### v1.3.0
+### v1.3.0 (Latest)
 
 - Handle periodic notification correctly.
     - As of previous version, It will reject **ALL** notifications whatever it is.
@@ -36,7 +36,9 @@ Older changelog is available on [CHANGELOG.md](./CHANGELOG.md).
         - Additionally, Fabric build also has optional dependency for [Mod Menu](https://modrinth.com/mod/modmenu)
     - Default (and without Cloth Config) is "Filter only compliance notification".
 - For Fabric: Fabric API is not mandatory as of this version.
-- Release version rule is changed to `v[mod_version]+[loader]-[minecraft_version]`.
+- Versioning rules are changed.
+    - Release version is changed to `v[mod_version]+[loader]-[minecraft_version]`.
+    - Metadata version is changed to `[mod_version]`
 
 ## Download
 

@@ -49,7 +49,7 @@ processResources {
     inputs.property "minecraft_version", vProps.minecraft_version
 
     filesMatching("fabric.mod.json") {
-        expand "version": project.version,
+        expand "version": vProps.mod_version,
                 "minecraft_version": vProps.minecraft_version,
                 "fabric_loader_version": vProps.fabric_loader_version,
                 "java_version": vProps.java_version,

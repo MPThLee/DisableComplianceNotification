@@ -3,20 +3,22 @@
 ## v1.3.0
 
 - Handle periodic notification correctly.
-  - As of previous version, It will reject **ALL** notifications whatever it is.
-    - It's fixed by following Mojang's implementation with some additional if expression.
-    - Note: Some mod uses Minecraft's Periodic Notification. This will mitigate the issues.
+    - As of previous version, It will reject **ALL** notifications whatever it is.
+        - It's fixed by following Mojang's implementation with some additional if expression.
+        - Note: Some mod uses Minecraft's Periodic Notification. This will mitigate the issues.
 - Add support for filter message selection.
-  - Filter all notification
-  - Filter Compliance notification only
-  - Filter Non-Compliance notification only
-  - Disable filter
+    - Filter all notification
+    - Filter Compliance notification only
+    - Filter Non-Compliance notification only
+    - Disable filter
 - Configuration support (for filter message.)
-  - Requires [Cloth Config](https://modrinth.com/mod/cloth-config). But it's optional.
-    - Additionally, Fabric build also has optional dependency for [Mod Menu](https://modrinth.com/mod/modmenu)
-  - Default (and without Cloth Config) is "Filter only compliance notification".
+    - Requires [Cloth Config](https://modrinth.com/mod/cloth-config). But it's optional.
+        - Additionally, Fabric build also has optional dependency for [Mod Menu](https://modrinth.com/mod/modmenu)
+    - Default (and without Cloth Config) is "Filter only compliance notification".
 - For Fabric: Fabric API is not mandatory as of this version.
-- Release version rule is changed to `v[mod_version]+[loader]-[minecraft_version]`. 
+- Versioning rules are changed.
+    - Release version is changed to `v[mod_version]+[loader]-[minecraft_version]`.
+    - Metadata version is changed to `[mod_version]`
 
 ## v1.2.2
 
