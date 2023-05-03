@@ -28,8 +28,8 @@ apply plugin: 'org.spongepowered.mixin'
 def vProps = new Properties()
 file("../config.properties").withInputStream { vProps.load(it) }
 
-archivesBaseName = vProps.archives_base_name + '-forge'
-version = "v${vProps.mod_version}-${vProps.minecraft_version}"
+archivesBaseName = vProps.archives_base_name
+version = "v${vProps.mod_version}+forge-${vProps.minecraft_version}"
 group = vProps.maven_group
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(vProps.java_version as Integer)

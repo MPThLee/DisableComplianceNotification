@@ -10,8 +10,8 @@ file("../config.properties").withInputStream { vProps.load(it) }
 sourceCompatibility = vProps.java_version as Integer
 targetCompatibility = vProps.java_version as Integer
 
-archivesBaseName = vProps.archives_base_name + '-fabric'
-version = "v${vProps.mod_version}-${vProps.minecraft_version}"
+archivesBaseName = vProps.archives_base_name
+version = "v${vProps.mod_version}+fabric-${vProps.minecraft_version}"
 group = vProps.maven_group // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 
 repositories {
