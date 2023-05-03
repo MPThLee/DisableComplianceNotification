@@ -35,7 +35,8 @@ Older changelog is available on [CHANGELOG.md](./CHANGELOG.md).
     - Requires [Cloth Config](https://modrinth.com/mod/cloth-config). But it's optional.
         - Additionally, Fabric build also has optional dependency for [Mod Menu](https://modrinth.com/mod/modmenu)
     - Default (and without Cloth Config) is "Filter only compliance notification".
-- For Fabric: Fabric API is not mandatory as of this version.
+- Set to Client-only mod in manifest too. (It was only for client however)
+- For Fabric: Fabric API is not mandatory anymore as of this version.
 - Versioning rules are changed.
     - Release version is changed to `v[mod_version]+[loader]-[minecraft_version]`.
     - Metadata version is changed to `[mod_version]`
