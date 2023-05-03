@@ -29,7 +29,7 @@ async def main():
         ("modmenu_version", modmenu)
     ]
 
-    with open('config.properties', 'r+', encoding='utf-8') as f:
+    with open('config.properties', 'r+', encoding='utf-8', newline='\n') as f:
         content = f.read()
 
         for key, value in reg:
