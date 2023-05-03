@@ -9,7 +9,7 @@ import net.minecraftforge.fml.ModLoadingContext;
 
 public class Config {
     public static boolean isClothConfigInstalled() {
-        return ModList.get().isLoaded("cloth-config");
+        return ModList.get().isLoaded("cloth_config");
     }
 
     public static void registerConfigGui() {
