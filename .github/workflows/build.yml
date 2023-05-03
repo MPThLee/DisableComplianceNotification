@@ -79,7 +79,7 @@ jobs:
         with:
           script: |
             const fs = require("fs");
-            const loader = context.matrix.loader;
+            const loader = '${{ matrix.loader }}';
             const propFile = fs.readFileSync("repo/config.properties", { encoding: "UTF-8", flag: "r" });
             const prop = propFile
                           .split("\n")
