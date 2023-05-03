@@ -120,5 +120,5 @@ publishing {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
-    options.release = vProps.java_version as Property<Integer>
+    options.release = vProps.java_version as Integer
 }
