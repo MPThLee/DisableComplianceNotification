@@ -8,6 +8,25 @@
 
 ## 1.19.x
 
+### 1.19.4
+
+[GitHub Release](https://github.com/MPThLee/DisableComplianceNotification/releases/tag/v1.3.0) or Modrinth.
+
+[Nightly.link for 1.19.4](https://nightly.link/MPThLee/DisableComplianceNotification/workflows/build/mc1.19.4)
+
+#### Forge
+
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.3.0/disable_compliance_notification-v1.3.0+forge-1.19.4.jar)
+
+Recommended with [Cloth Config](https://modrinth.com/mod/cloth-config).
+
+#### Fabric
+
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.3.0/disable_compliance_notification-v1.3.0+fabric-1.19.4.jar)
+
+Recommended with [Cloth Config](https://modrinth.com/mod/cloth-config) and [Mod Menu](https://modrinth.com/mod/modmenu).
+
+
 ### 1.19.4 (Mod v1.2.2)
 
 [GitHub Release](https://github.com/MPThLee/DisableComplianceNotification/releases/tag/v1.2.2-1.19.4) or Modrinth.
