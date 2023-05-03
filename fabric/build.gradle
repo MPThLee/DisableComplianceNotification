@@ -10,12 +10,21 @@ file("../config.properties").withInputStream { vProps.load(it) }
 sourceCompatibility = vProps.java_version as Integer
 targetCompatibility = vProps.java_version as Integer
 
-archivesBaseName = vProps.archives_base_name + '-fabric'
-version = "v${vProps.mod_version}-${vProps.minecraft_version}"
+archivesBaseName = vProps.archives_base_name
+version = "v${vProps.mod_version}+fabric-${vProps.minecraft_version}"
 group = vProps.maven_group // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 
 repositories {
-
+    // Cloth config
+    maven {
+        name "shedaniel"
+        url "https://maven.shedaniel.me/"
+    }
+    // Mod Menu
+    maven {
+        name "TerraformersMC"
+        url "https://maven.terraformersmc.com/"
+    }
 }
 
 dependencies {
@@ -24,7 +33,15 @@ dependencies {
 
     modImplementation "net.fabricmc:fabric-loader:${vProps.fabric_loader_version}"
 
-    modImplementation "net.fabricmc.fabric-api:fabric-api:${vProps.fabric_api_version}+${vProps.minecraft_version}"
+    modApi "net.fabricmc.fabric-api:fabric-api:${vProps.fabric_api_version}+${vProps.minecraft_version}"
+
+    modApi("me.shedaniel.cloth:cloth-config-fabric:${vProps.cloth_config_version}") {
+        exclude(group: "net.fabricmc.fabric-api")
+    }
+
+    modApi("com.terraformersmc:modmenu:${vProps.modmenu_version}") {
+        exclude(group: "net.fabricmc.fabric-api")
+    }
 }
 
 processResources {
@@ -32,10 +49,12 @@ processResources {
     inputs.property "minecraft_version", vProps.minecraft_version
 
     filesMatching("fabric.mod.json") {
-        expand "version": project.version,
+        expand "version": vProps.mod_version,
                 "minecraft_version": vProps.minecraft_version,
                 "fabric_loader_version": vProps.fabric_loader_version,
-                "java_version": vProps.java_version
+                "java_version": vProps.java_version,
+                "cloth_config_major_version": vProps.cloth_config_version.split('\\.')[0],
+                "modmenu_major_version": vProps.modmenu_version.split('\\.')[0]
     }
 
     filesMatching("disable_compliance_notification.mixins.json") {
@@ -53,17 +72,17 @@ java {
         languageVersion = JavaLanguageVersion.of(vProps.java_version as Integer)
     }
 
-    sourceSets.main.java.srcDirs+=['../src/main']
-    sourceSets.main.java.srcDirs+=['../src/fabric']
+    sourceSets.main.java.srcDirs += ['../src/main']
+    sourceSets.main.java.srcDirs += ['../src/fabric']
 
-    sourceSets.main.resources.srcDirs+=['../src/main/resources']
-    sourceSets.main.resources.srcDirs+=['../src/fabric/resources']
+    sourceSets.main.resources.srcDirs += ['../src/main/resources']
+    sourceSets.main.resources.srcDirs += ['../src/fabric/resources']
     withSourcesJar()
 }
 
 jar {
     from("LICENSE") {
-        rename { "${it}_${project.archivesBaseName}"}
+        rename { "${it}_${archivesBaseName}" }
     }
 }
 

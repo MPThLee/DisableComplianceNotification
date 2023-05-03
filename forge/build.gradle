@@ -8,6 +8,7 @@ buildscript {
             name 'SpongePowered'
             url 'https://repo.spongepowered.org/maven'
         }
+
         mavenCentral()
         gradlePluginPortal()
     }
@@ -17,6 +18,7 @@ buildscript {
     }
 }
 
+apply plugin: 'java-library'
 apply plugin: 'eclipse'
 apply plugin: 'maven-publish'
 apply plugin: 'net.minecraftforge.gradle'
@@ -26,8 +28,8 @@ apply plugin: 'org.spongepowered.mixin'
 def vProps = new Properties()
 file("../config.properties").withInputStream { vProps.load(it) }
 
-archivesBaseName = vProps.archives_base_name + '-forge'
-version = "v${vProps.mod_version}-${vProps.minecraft_version}"
+archivesBaseName = vProps.archives_base_name
+version = "v${vProps.mod_version}+forge-${vProps.minecraft_version}"
 group = vProps.maven_group
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(vProps.java_version as Integer)
@@ -54,13 +56,16 @@ dependencies {
     minecraft "net.minecraftforge:forge:${vProps.minecraft_version}-${vProps.forge_version}"
 
     annotationProcessor "org.spongepowered:mixin:${vProps.mixin_processor_version}:processor"
+
+    api fg.deobf("me.shedaniel.cloth:cloth-config-forge:${vProps.cloth_config_version}")
 }
 
 repositories {
     maven { url = 'https://files.minecraftforge.net/maven' }
     jcenter()
     mavenCentral()
-    maven { url='https://repo.spongepowered.org/maven' }
+    maven { url = 'https://repo.spongepowered.org/maven' }
+    maven { url = 'https://maven.shedaniel.me/' }
 }
 
 processResources {
@@ -68,13 +73,18 @@ processResources {
     inputs.property "minecraft_version", vProps.minecraft_version
 
     filesMatching("META-INF/mods.toml") {
-        expand "version": project.version,
+        expand "version": vProps.mod_version,
                 "minecraft_version": vProps.minecraft_version,
-                "forge_major_version": vProps.forge_version.split('\\.')[0]
+                "forge_major_version": vProps.forge_version.split('\\.')[0],
+                "cloth_config_major_version": vProps.cloth_config_version.split('\\.')[0]
     }
 
     filesMatching("disable_compliance_notification.mixins.json") {
         expand "java_version": vProps.java_version
+    }
+
+    filesMatching("pack.mcmeta") {
+        expand "pack_format": vProps.pack_format
     }
 }
 
@@ -88,7 +98,7 @@ jar {
                 "Implementation-Version"  : "${version}",
                 "Implementation-Vendor"   : "MPThLee",
                 "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
-                "MixinConfigs":"disable_compliance_notification.mixins.json"
+                "MixinConfigs"            : "disable_compliance_notification.mixins.json"
         ])
     }
 }
