@@ -20,7 +20,7 @@ Image and quote reference: https://minecraft.fandom.com/wiki/Java_Edition_1.18.2
 
 Older changelog is available on [CHANGELOG.md](./CHANGELOG.md).
 
-### v1.3.0 (WIP)
+### v1.3.0
 
 - Handle periodic notification correctly.
     - As of previous version, It will reject **ALL** notifications whatever it is.
@@ -36,6 +36,7 @@ Older changelog is available on [CHANGELOG.md](./CHANGELOG.md).
         - Additionally, Fabric build also has optional dependency for [Mod Menu](https://modrinth.com/mod/modmenu)
     - Default (and without Cloth Config) is "Filter only compliance notification".
 - For Fabric: Fabric API is not mandatory as of this version.
+- Release version rule is changed to `v[mod_version]+[loader]-[minecraft_version]`.
 
 ## Download
 
@@ -47,20 +48,20 @@ Older changelog is available on [CHANGELOG.md](./CHANGELOG.md).
 
 Older releases links are on [DOWNLOAD.md](./DOWNLOAD.md).
 
-### Latest (v1.3.0-1.19.4)
+### Latest (v1.3.0 for Minecraft 1.19.4)
 
-[GitHub Release](https://github.com/MPThLee/DisableComplianceNotification/releases/tag/v1.3.0-1.19.4) or Modrinth.
+[GitHub Release](https://github.com/MPThLee/DisableComplianceNotification/releases/tag/v1.3.0) or Modrinth.
 
 [Nightly.link for 1.19.4](https://nightly.link/MPThLee/DisableComplianceNotification/workflows/build/mc1.19.4)
 
 #### Forge
 
-[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.3.0-1.19.4/disable_compliance_notification-forge-v1.3.0-1.19.4.jar)
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.3.0/disable_compliance_notification-v1.3.0+forge-1.19.4.jar)
 
 Recommended with [Cloth Config](https://modrinth.com/mod/cloth-config).
 
 #### Fabric
 
-[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.3.0-1.19.4/disable_compliance_notification-fabric-v1.3.0-1.19.4.jar)
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.3.0/disable_compliance_notification-v1.3.0+fabric-1.19.4.jar)
 
 Recommended with [Cloth Config](https://modrinth.com/mod/cloth-config) and [Mod Menu](https://modrinth.com/mod/modmenu).
