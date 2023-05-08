@@ -18,12 +18,13 @@ async def main():
     args = parser.parse_args()
     to = args.to
 
-    (fabapi, fabloader), frg, pack, modmenu, cloth = await load_versions(to)
+    (fabapi, fabloader), frg, (pack, java), modmenu, cloth = await load_versions(to)
 
     reg = [
         ("minecraft_version", to),
         ("forge_version", frg),
         ("pack_format", pack),
+        ("java_version", java),
         ("fabric_loader_version", fabloader),
         ("fabric_api_version", fabapi.split("+")[0]),
         ("cloth_config_version", cloth.split("+")[0]),
@@ -42,7 +43,7 @@ async def main():
 
 
 async def load_versions(mcv):
-    futures = [fabric(mcv), forge(mcv), pack_version(mcv), modrinth(mcv, 'modmenu'), modrinth(mcv, 'cloth-config')]
+    futures = [fabric(mcv), forge(mcv), mc_version(mcv), modrinth(mcv, 'modmenu'), modrinth(mcv, 'cloth-config')]
     return await asyncio.gather(*futures)
 
 
@@ -105,12 +106,23 @@ async def modrinth(mcv, modid, findFunc = modrinth_def_findver):
     return findFunc(resp)
 
 
-async def pack_version(mcv):
-    resp = urlJson(f'https://raw.githubusercontent.com/MPThLee/minecraft-version-json/gh-pages/{mcv}/version.json')
+async def mc_version(mcv):
+    resp = urlJson(f'https://mpthlee.github.io/minecraft-version-json/{mcv}/version.json')
+
     pack_ver = resp['pack_version']
     if (isinstance(pack_ver, str) or isinstance(pack_ver, int)):
-        return str(pack_ver)
-    return max(pack_ver['resource'], pack_ver['data'])
+        pack_ver = str(pack_ver)
+    else:
+        pack_ver = str(max(pack_ver['resource'], pack_ver['data']))
+
+    java_ver = 8 # old version = 8
+    try:
+        java_ver = int(resp['java_version'])
+    except:
+        pass
+
+    return (pack_ver, java_ver)
+
 
 def urlXML(url):
     response = urlopen(url)
