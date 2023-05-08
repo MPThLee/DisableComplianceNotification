@@ -18,11 +18,12 @@ async def main():
     args = parser.parse_args()
     to = args.to
 
-    (fabapi, fabloader), frg, modmenu, cloth = await load_versions(to)
+    (fabapi, fabloader), frg, pack, modmenu, cloth = await load_versions(to)
 
     reg = [
         ("minecraft_version", to),
         ("forge_version", frg),
+        ("pack_format", pack),
         ("fabric_loader_version", fabloader),
         ("fabric_api_version", fabapi.split("+")[0]),
         ("cloth_config_version", cloth.split("+")[0]),
@@ -41,7 +42,7 @@ async def main():
 
 
 async def load_versions(mcv):
-    futures = [fabric(mcv), forge(mcv), modrinth(mcv, 'modmenu'), modrinth(mcv, 'cloth-config')]
+    futures = [fabric(mcv), forge(mcv), pack_version(mcv), modrinth(mcv, 'modmenu'), modrinth(mcv, 'cloth-config')]
     return await asyncio.gather(*futures)
 
 
@@ -103,6 +104,13 @@ async def modrinth(mcv, modid, findFunc = modrinth_def_findver):
     resp = urlJson(f'https://api.modrinth.com/v2/project/{modid}/version?game_versions=%5B%22{mcv}%22%5D')
     return findFunc(resp)
 
+
+async def pack_version(mcv):
+    resp = urlJson(f'https://raw.githubusercontent.com/MPThLee/minecraft-version-json/gh-pages/{mcv}/version.json')
+    pack_ver = resp['pack_version']
+    if (isinstance(pack_ver, str) or isinstance(pack_ver, int)):
+        return str(pack_ver)
+    return max(pack_ver['resource'], pack_ver['data'])
 
 def urlXML(url):
     response = urlopen(url)
