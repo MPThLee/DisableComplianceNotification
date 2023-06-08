@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## v1.4.0
+
+- Minecraft 1.20 support
+
 ## v1.3.0
 
 - Handle periodic notification correctly.
