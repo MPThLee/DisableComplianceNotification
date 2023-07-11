@@ -16,10 +16,10 @@
   "environment": "client",
   "entrypoints": {
     "client": [
-      "ee.mpthl.mc.disable_compliance_notification.fabric.DisableComplianceNotificationFabric"
+      "dev.mpthlee.minecraft.disable_compliance_notification.fabric.DisableComplianceNotificationFabric"
     ],
     "modmenu": [
-      "ee.mpthl.mc.disable_compliance_notification.fabric.config.ModMenu"
+      "dev.mpthlee.minecraft.disable_compliance_notification.fabric.config.ModMenu"
     ]
   },
   "mixins": [

@@ -1,7 +1,7 @@
-package ee.mpthl.mc.disable_compliance_notification.forge.config;
+package dev.mpthlee.minecraft.disable_compliance_notification.forge.config;
 
-import ee.mpthl.mc.disable_compliance_notification.config.ConfigHelper;
-import ee.mpthl.mc.disable_compliance_notification.config.DCNConfig;
+import dev.mpthlee.minecraft.disable_compliance_notification.config.ConfigHelper;
+import dev.mpthlee.minecraft.disable_compliance_notification.config.DCNConfig;
 import me.shedaniel.autoconfig.AutoConfig;
 import net.minecraftforge.client.ConfigScreenHandler.ConfigScreenFactory;
 import net.minecraftforge.fml.ModList;

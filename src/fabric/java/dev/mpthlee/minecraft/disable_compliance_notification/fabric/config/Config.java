@@ -1,6 +1,6 @@
-package ee.mpthl.mc.disable_compliance_notification.fabric.config;
+package java.dev.mpthlee.minecraft.disable_compliance_notification.fabric.config;
 
-import ee.mpthl.mc.disable_compliance_notification.config.ConfigHelper;
+import dev.mpthlee.minecraft.disable_compliance_notification.config.ConfigHelper;
 import net.fabricmc.loader.api.FabricLoader;
 
 public class Config {

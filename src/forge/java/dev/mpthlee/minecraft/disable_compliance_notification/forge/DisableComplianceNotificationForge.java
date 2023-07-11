@@ -1,7 +1,7 @@
-package ee.mpthl.mc.disable_compliance_notification.forge;
+package dev.mpthlee.minecraft.disable_compliance_notification.forge;
 
-import ee.mpthl.mc.disable_compliance_notification.DisableComplianceNotification;
-import ee.mpthl.mc.disable_compliance_notification.forge.config.Config;
+import dev.mpthlee.minecraft.disable_compliance_notification.forge.config.Config;
+import dev.mpthlee.minecraft.disable_compliance_notification.DisableComplianceNotification;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.MinecraftForge;

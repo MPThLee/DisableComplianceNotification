@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## In development
+
+- Package name is changed; From `ee.mpthl.mc.disable_compliance_notification` to `dev.mpthlee.minecraft.disable_compliance_notification`
+
 ## v1.4.1
 
 - Minecraft 1.20.1 support

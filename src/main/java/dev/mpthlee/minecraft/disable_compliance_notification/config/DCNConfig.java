@@ -1,6 +1,6 @@
-package ee.mpthl.mc.disable_compliance_notification.config;
+package dev.mpthlee.minecraft.disable_compliance_notification.config;
 
-import ee.mpthl.mc.disable_compliance_notification.DisableComplianceNotification;
+import dev.mpthlee.minecraft.disable_compliance_notification.DisableComplianceNotification;
 import me.shedaniel.autoconfig.ConfigData;
 import me.shedaniel.autoconfig.annotation.Config;
 import me.shedaniel.autoconfig.annotation.ConfigEntry.Gui.EnumHandler;

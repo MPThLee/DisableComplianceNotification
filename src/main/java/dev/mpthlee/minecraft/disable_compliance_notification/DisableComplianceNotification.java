@@ -1,7 +1,7 @@
-package ee.mpthl.mc.disable_compliance_notification;
+package dev.mpthlee.minecraft.disable_compliance_notification;
 
-import ee.mpthl.mc.disable_compliance_notification.config.DCNConfigDefault;
-import ee.mpthl.mc.disable_compliance_notification.config.DCNConfigInterface;
+import dev.mpthlee.minecraft.disable_compliance_notification.config.DCNConfigDefault;
+import dev.mpthlee.minecraft.disable_compliance_notification.config.DCNConfigInterface;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

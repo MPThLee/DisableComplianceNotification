@@ -1,7 +1,7 @@
-package ee.mpthl.mc.disable_compliance_notification.mixin;
+package dev.mpthlee.minecraft.disable_compliance_notification.mixin;
 
-import ee.mpthl.mc.disable_compliance_notification.DisableComplianceNotification;
-import ee.mpthl.mc.disable_compliance_notification.config.NotificationFilterMode;
+import dev.mpthlee.minecraft.disable_compliance_notification.DisableComplianceNotification;
+import dev.mpthlee.minecraft.disable_compliance_notification.config.NotificationFilterMode;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.PeriodicNotificationManager.Notification;
 import net.minecraft.client.gui.components.toasts.SystemToast;

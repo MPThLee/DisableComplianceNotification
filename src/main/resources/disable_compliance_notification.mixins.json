@@ -1,6 +1,6 @@
 {
   "required": true,
-  "package": "ee.mpthl.mc.disable_compliance_notification.mixin",
+  "package": "dev.mpthlee.minecraft.disable_compliance_notification.mixin",
   "compatibilityLevel": "JAVA_${java_version}",
   "client": [
     "ModifyPeriodicNotificationTask"

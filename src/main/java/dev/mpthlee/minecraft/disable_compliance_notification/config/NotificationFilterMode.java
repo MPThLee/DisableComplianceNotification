@@ -1,4 +1,4 @@
-package ee.mpthl.mc.disable_compliance_notification.config;
+package dev.mpthlee.minecraft.disable_compliance_notification.config;
 
 import net.minecraft.network.chat.Component;
 
