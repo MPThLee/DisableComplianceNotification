@@ -62,20 +62,14 @@ async def fabric(mcv):
     return (apiVersion, loaderVersion)
 
 async def forge(mcv):
-    #Using multimc meta for now.
-    versions = urlJson("https://raw.githubusercontent.com/MultiMC/meta-multimc/master/net.minecraftforge/index.json")['versions']
-    
-    # using for expression for fast find
-    version = forge_find(versions, mcv)
+    mavenResp = urlXML(
+        'https://maven.minecraftforge.net/net/minecraftforge/forge/maven-metadata.xml')
 
-    if version is None:
-        return None
-    
-    vs = version.split('.')
-    if int(vs[1]) > 0:
-        # return stable
-        return f'{vs[0]}.{vs[1]}.0'
-    return version
+    fgVersionList = list(map(lambda x: x.text, mavenResp.findall("versioning/versions/version")))
+    fgTargetMCList = list(filter(lambda x: f'{mcv}-' in x, fgVersionList))
+    fgVersion = fgTargetMCList[0].split("-", 1)[1]
+
+    return fgVersion
 
 async def neoforge(mcv):
     # TODO: fix urls and mcv(mcv[2:])
@@ -87,14 +81,6 @@ async def neoforge(mcv):
     nfVersion = nfTargetMCList[-1].split("-", 1)[1]
 
     return nfVersion
-
-def forge_find(l, mcv):
-    for i in l:
-        # maybe there's other deps are...
-        for j in i['requires']:
-            if j['uid'] == 'net.minecraft' and j['equals'] == mcv:
-                return i['version']
-    return None
 
 
 def modrinth_def_findver(l):
