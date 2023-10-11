@@ -55,6 +55,11 @@ jobs:
         with:
           name: fabric-artifact
 
+      - name: Download neoforge artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: neoforge-artifact
+
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
