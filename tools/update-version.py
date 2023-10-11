@@ -6,7 +6,7 @@ import json
 import re
 
 
-from urllib.request import urlopen
+from urllib.request import urlopen, Request
 import xml.etree.ElementTree as ET
 
 
@@ -18,11 +18,12 @@ async def main():
     args = parser.parse_args()
     to = args.to
 
-    (fabapi, fabloader), frg, (pack, java), modmenu, cloth = await load_versions(to)
+    (fabapi, fabloader), frg, nfg, (pack, java), modmenu, cloth = await load_versions(to)
 
     reg = [
         ("minecraft_version", to),
         ("forge_version", frg),
+        ("neoforge_version", nfg),
         ("pack_format", pack),
         ("java_version", java),
         ("fabric_loader_version", fabloader),
@@ -43,7 +44,7 @@ async def main():
 
 
 async def load_versions(mcv):
-    futures = [fabric(mcv), forge(mcv), mc_version(mcv), modrinth(mcv, 'modmenu'), modrinth(mcv, 'cloth-config')]
+    futures = [fabric(mcv), forge(mcv), neoforge(mcv), mc_version(mcv), modrinth(mcv, 'modmenu'), modrinth(mcv, 'cloth-config')]
     return await asyncio.gather(*futures)
 
 
@@ -75,7 +76,17 @@ async def forge(mcv):
         # return stable
         return f'{vs[0]}.{vs[1]}.0'
     return version
-        
+
+async def neoforge(mcv):
+    # TODO: fix urls and mcv(mcv[2:])
+    mavenResp = urlXML(
+        'https://maven.neoforged.net/releases/net/neoforged/forge/maven-metadata.xml')
+
+    nfVersionList = list(map(lambda x: x.text, mavenResp.findall("versioning/versions/version")))
+    nfTargetMCList = list(filter(lambda x: f'{mcv}-' in x, nfVersionList))
+    nfVersion = nfTargetMCList[-1].split("-", 1)[1]
+
+    return nfVersion
 
 def forge_find(l, mcv):
     for i in l:
@@ -125,7 +136,9 @@ async def mc_version(mcv):
 
 
 def urlXML(url):
-    response = urlopen(url)
+    # NeoForge Maven is using cloudflare that blocks urlopen user-agent
+    req = Request(url, headers={'User-Agent': 'Gradle/8.1.1 (Windows 11;10.0;amd64) (Microsoft;17.0.7;17.0.7+7-LTS)'})
+    response = urlopen(req)
     return ET.fromstring(response.read())
 
 

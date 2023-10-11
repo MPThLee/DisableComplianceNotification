@@ -1,8 +1,10 @@
 # CHANGELOG
 
-## In development
+## v1.4.2
 
 - Package name is changed; From `ee.mpthl.mc.disable_compliance_notification` to `dev.mpthlee.minecraft.disable_compliance_notification`
+- NeoForge support and version is 47.1.79
+- Forge version is 47.1.3
 
 ## v1.4.1
 
