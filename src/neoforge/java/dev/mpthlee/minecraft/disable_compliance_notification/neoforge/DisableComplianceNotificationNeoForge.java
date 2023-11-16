@@ -2,26 +2,25 @@ package dev.mpthlee.minecraft.disable_compliance_notification.neoforge;
 
 import dev.mpthlee.minecraft.disable_compliance_notification.neoforge.config.Config;
 import dev.mpthlee.minecraft.disable_compliance_notification.DisableComplianceNotification;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 
 @Mod(DisableComplianceNotification.MOD_ID)
 @OnlyIn(Dist.CLIENT)
 public class DisableComplianceNotificationNeoForge {
-    public DisableComplianceNotificationNeoForge() {
+    public DisableComplianceNotificationNeoForge(IEventBus modEventBus) {
         DisableComplianceNotification.init();
-        MinecraftForge.EVENT_BUS.register(this);
 
         // Config GUI
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(DisableComplianceNotificationNeoForge::configSetup);
+        modEventBus.addListener(this::configSetup);
         Config.registerConfigGui();
     }
 
-    public static void configSetup(FMLCommonSetupEvent event) {
-        event.enqueueWork(Config::loadConfig);
-    }
+    public void configSetup(FMLCommonSetupEvent event) {
+            event.enqueueWork(Config::loadConfig);
+        }
 }

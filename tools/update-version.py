@@ -78,13 +78,12 @@ async def forge(mcv):
     return version
 
 async def neoforge(mcv):
-    # TODO: fix urls and mcv(mcv[2:])
     mavenResp = urlXML(
-        'https://maven.neoforged.net/releases/net/neoforged/forge/maven-metadata.xml')
+        'https://maven.neoforged.net/releases/net/neoforged/neoforge/maven-metadata.xml')
 
     nfVersionList = list(map(lambda x: x.text, mavenResp.findall("versioning/versions/version")))
-    nfTargetMCList = list(filter(lambda x: f'{mcv}-' in x, nfVersionList))
-    nfVersion = nfTargetMCList[-1].split("-", 1)[1]
+    nfTargetMCList = list(filter(lambda x: f'{mcv[2:]}.' in x, nfVersionList))
+    nfVersion = nfTargetMCList[-1]
 
     return nfVersion
 

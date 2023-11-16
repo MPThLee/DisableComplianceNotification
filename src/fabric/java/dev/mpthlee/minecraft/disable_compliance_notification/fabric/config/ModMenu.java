@@ -1,4 +1,4 @@
-package java.dev.mpthlee.minecraft.disable_compliance_notification.fabric.config;
+package dev.mpthlee.minecraft.disable_compliance_notification.fabric.config;
 
 import com.terraformersmc.modmenu.api.ConfigScreenFactory;
 import com.terraformersmc.modmenu.api.ModMenuApi;

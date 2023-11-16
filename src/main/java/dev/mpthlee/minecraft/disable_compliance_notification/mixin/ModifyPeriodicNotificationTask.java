@@ -14,6 +14,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+//import net.minecraft.client.PeriodicNotificationManager.NotificationTask;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
@@ -50,7 +51,8 @@ public class ModifyPeriodicNotificationTask {
     @Inject(
             method = "run()V",
             at = @At("HEAD"),
-            cancellable = true
+            cancellable = true,
+            remap = false
     )
     public void run(CallbackInfo ci) {
         long previousElapsedTime = this.elapsed.getAndAdd(this.period);
