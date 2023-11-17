@@ -6,7 +6,7 @@ jobs:
   build:
     strategy:
       matrix:
-        loader: [ 'forge', 'neoforge' 'fabric' ]
+        loader: [ 'forge', 'neoforge', 'fabric' ]
         java: [ 17 ]
 
     runs-on: ubuntu-latest
