@@ -30,17 +30,17 @@ def make_download(game_ver, ver):
 
 Recommended with [Cloth Config](https://modrinth.com/mod/cloth-config).
 
-#### Forge
-
-[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/{ver}/disable_compliance_notification-{ver}+forge-{game_ver}.jar)
-
-Recommended with [Cloth Config](https://modrinth.com/mod/cloth-config).
-
 #### Fabric
 
 [Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/{ver}/disable_compliance_notification-{ver}+fabric-{game_ver}.jar)
 
-Recommended with [Cloth Config](https://modrinth.com/mod/cloth-config) and [Mod Menu](https://modrinth.com/mod/modmenu)."""
+Recommended with [Cloth Config](https://modrinth.com/mod/cloth-config) and [Mod Menu](https://modrinth.com/mod/modmenu).
+
+#### Forge
+
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/{ver}/disable_compliance_notification-{ver}+forge-{game_ver}.jar)
+
+Recommended with [Cloth Config](https://modrinth.com/mod/cloth-config)."""
 
 
 if __name__ == "__main__":

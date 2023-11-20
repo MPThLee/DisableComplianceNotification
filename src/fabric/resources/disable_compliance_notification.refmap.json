@@ -1,0 +1,16 @@
+{
+  "mappings": {
+    "dev/mpthlee/minecraft/disable_compliance_notification/mixin/ModifyPeriodicNotificationTask": {
+      "net.minecraft.client.PeriodicNotificationManager$NotificationTask": "net/minecraft/class_6877$class_6879",
+      "run()V": "Lnet/minecraft/class_6877$class_6879;run()V"
+    }
+  },
+  "data": {
+    "named:intermediary": {
+      "dev/mpthlee/minecraft/disable_compliance_notification/mixin/ModifyPeriodicNotificationTask": {
+        "net.minecraft.client.PeriodicNotificationManager$NotificationTask": "net/minecraft/class_6877$class_6879",
+        "run()V": "Lnet/minecraft/class_6877$class_6879;run()V"
+      }
+    }
+  }
+}

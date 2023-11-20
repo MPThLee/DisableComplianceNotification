@@ -1,4 +1,4 @@
-public class test {
+public class useragent {
     public static void main(String[] args) {
         String osName = System.getProperty("os.name");
         String osVersion = System.getProperty("os.version");

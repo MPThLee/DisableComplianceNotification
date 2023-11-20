@@ -1,7 +1,7 @@
-package java.dev.mpthlee.minecraft.disable_compliance_notification.fabric;
+package dev.mpthlee.minecraft.disable_compliance_notification.fabric;
 
 import dev.mpthlee.minecraft.disable_compliance_notification.DisableComplianceNotification;
-import java.dev.mpthlee.minecraft.disable_compliance_notification.fabric.config.Config;
+import dev.mpthlee.minecraft.disable_compliance_notification.fabric.config.Config;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;

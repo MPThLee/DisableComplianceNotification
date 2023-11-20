@@ -1,5 +1,6 @@
 modLoader = "javafml"
-loaderVersion = "[${neoforge_major_version},)"
+#loaderVersion = "[${neoforge_major_version},)"
+loaderVersion = "[1,)"
 issueTrackerURL = "https://github.com/MPThLee/DisableComplianceNotification/issues"
 license = "MIT"
 
@@ -14,7 +15,7 @@ Disable Compliance Notification for South Korean users.
 #logoFile = ""
 
 [[dependencies.disable_compliance_notification]]
-modId = "forge"
+modId = "neoforge"
 mandatory = true
 versionRange = "[${neoforge_major_version},)"
 ordering = "NONE"

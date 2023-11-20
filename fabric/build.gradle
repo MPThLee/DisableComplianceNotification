@@ -1,5 +1,5 @@
 plugins {
-    id 'fabric-loom' version '1.0-SNAPSHOT'
+    id 'fabric-loom' version '1.3-SNAPSHOT'
     id 'maven-publish'
 }
 
@@ -44,6 +44,18 @@ dependencies {
     }
 }
 
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(vProps.java_version as Integer)
+    }
+
+    sourceSets.main.java.srcDirs += ['../src/fabric']
+    sourceSets.main.java.srcDirs += ['../src/main']
+
+    sourceSets.main.resources.srcDirs += ['../src/fabric/resources']
+    sourceSets.main.resources.srcDirs += ['../src/main/resources']
+}
+
 processResources {
     inputs.property "version", project.version
     inputs.property "minecraft_version", vProps.minecraft_version
@@ -65,19 +77,6 @@ processResources {
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
     options.release = vProps.java_version as Integer
-}
-
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(vProps.java_version as Integer)
-    }
-
-    sourceSets.main.java.srcDirs += ['../src/main']
-    sourceSets.main.java.srcDirs += ['../src/fabric']
-
-    sourceSets.main.resources.srcDirs += ['../src/main/resources']
-    sourceSets.main.resources.srcDirs += ['../src/fabric/resources']
-    withSourcesJar()
 }
 
 jar {

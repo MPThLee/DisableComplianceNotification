@@ -1,64 +1,10 @@
-buildscript {
-    repositories {
-        maven {
-            name 'NeoForge Maven'
-            url 'https://maven.neoforged.net/releases'
-        }
-        maven {
-            name 'SpongePowered'
-            url 'https://repo.spongepowered.org/maven'
-        }
-
-        mavenCentral()
-        gradlePluginPortal()
-    }
-    dependencies {
-        classpath group: 'net.neoforged.gradle', name: 'net.neoforged.gradle.gradle.plugin', version: '[6.0.18,6.2)', changing: true
-        classpath 'org.spongepowered:mixingradle:0.7-SNAPSHOT'
-    }
-}
-
-apply plugin: 'java-library'
-apply plugin: 'eclipse'
-apply plugin: 'maven-publish'
-apply plugin: 'net.neoforged.gradle'
-apply plugin: 'org.spongepowered.mixin'
-
-// Load version configs
-def vProps = new Properties()
-file("../config.properties").withInputStream { vProps.load(it) }
-
-archivesBaseName = vProps.archives_base_name
-version = "v${vProps.mod_version}+neoforge-${vProps.minecraft_version}"
-group = vProps.maven_group
-
-java.toolchain.languageVersion = JavaLanguageVersion.of(vProps.java_version as Integer)
-
-println "Java: ${System.getProperty 'java.version'}, JVM: ${System.getProperty 'java.vm.version'} (${System.getProperty 'java.vendor'}), Arch: ${System.getProperty 'os.arch'}"
-minecraft {
-    mappings channel: 'official', version: vProps.minecraft_version
-
-    runs {
-        client {
-            sourceSets.main.java.srcDirs += ['../src/neoforge/java']
-            sourceSets.main.java.srcDirs += ['../src/main/java']
-            sourceSets.main.resources.srcDirs += ['../src/neoforge/resources']
-            sourceSets.main.resources.srcDirs += ['../src/main/resources']
-        }
-    }
-}
-
-mixin {
-    add sourceSets.main, 'disable_compliance_notification.refmap.json'
-}
-
-dependencies {
-    // NOTE: `vProps.minecraft_version.substring(2)` when 20.2 is released
-    minecraft "net.neoforged:forge:${vProps.minecraft_version}-${vProps.neoforge_version}"
-
-    annotationProcessor "org.spongepowered:mixin:${vProps.mixin_processor_version}:processor"
-
-    api fg.deobf("me.shedaniel.cloth:cloth-config-forge:${vProps.cloth_config_version}")
+plugins {
+    id 'java-library'
+    id 'eclipse'
+    id 'idea'
+    id 'maven-publish'
+    id 'net.neoforged.gradle.userdev' version '7.0.26'
+    id 'net.neoforged.gradle.mixin' version '7.0.+'
 }
 
 repositories {
@@ -69,6 +15,50 @@ repositories {
     maven { url = 'https://maven.shedaniel.me/' }
 }
 
+
+// Load version configs
+def vProps = new Properties()
+file("../config.properties").withInputStream { vProps.load(it) }
+
+archivesBaseName = vProps.archives_base_name
+version = "v${vProps.mod_version}+neoforge-${vProps.minecraft_version}"
+group = vProps.maven_group
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(vProps.java_version as Integer)
+    }
+
+    sourceSets.main.java.srcDirs += ['../src/main']
+    sourceSets.main.java.srcDirs += ['../src/neoforge']
+
+    sourceSets.main.resources.srcDirs += ['../src/main/resources']
+    sourceSets.main.resources.srcDirs += ['../src/neoforge/resources']
+}
+
+mixin {
+    config 'disable_compliance_notification.mixins.json'
+}
+
+runs {
+    configureEach {
+        workingDirectory project.file('run')
+        systemProperty 'forge.logging.console.level', 'debug'
+
+        modSource project.sourceSets.main
+    }
+    client
+    server
+}
+
+dependencies {
+    implementation "net.neoforged:neoforge:${vProps.neoforge_version}"
+
+    annotationProcessor "net.fabricmc:sponge-mixin:${vProps.fabric_mixin_processor_version}+mixin.${vProps.mixin_processor_version}"
+
+    api "me.shedaniel.cloth:cloth-config-forge:${vProps.cloth_config_version}"
+}
+
 processResources {
     inputs.property "version", project.version
     inputs.property "minecraft_version", vProps.minecraft_version
@@ -76,7 +66,7 @@ processResources {
     filesMatching("META-INF/mods.toml") {
         expand "version": vProps.mod_version,
                 "minecraft_version": vProps.minecraft_version,
-                "neoforge_major_version": vProps.neoforge_version.split('\\.')[0],
+                "neoforge_major_version": vProps.neoforge_version.split('\\.')[0] + '.' + vProps.neoforge_version.split('\\.')[1],
                 "cloth_config_major_version": vProps.cloth_config_version.split('\\.')[0]
     }
 
@@ -104,12 +94,10 @@ jar {
     }
 }
 
-jar.finalizedBy('reobfJar')
-
 publishing {
     publications {
         mavenJava(MavenPublication) {
-            artifact jar
+            from components.java
         }
     }
     repositories {

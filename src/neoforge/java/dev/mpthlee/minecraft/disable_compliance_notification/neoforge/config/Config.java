@@ -3,9 +3,9 @@ package dev.mpthlee.minecraft.disable_compliance_notification.neoforge.config;
 import dev.mpthlee.minecraft.disable_compliance_notification.config.ConfigHelper;
 import dev.mpthlee.minecraft.disable_compliance_notification.config.DCNConfig;
 import me.shedaniel.autoconfig.AutoConfig;
-import net.minecraftforge.client.ConfigScreenHandler.ConfigScreenFactory;
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.fml.ModLoadingContext;
+import net.neoforged.neoforge.client.ConfigScreenHandler.ConfigScreenFactory;
+import net.neoforged.fml.ModList;
+import net.neoforged.fml.ModLoadingContext;
 
 public class Config {
     public static boolean isClothConfigInstalled() {
