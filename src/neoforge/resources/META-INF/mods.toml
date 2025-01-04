@@ -34,3 +34,6 @@ mandatory = false
 versionRange = "[${cloth_config_major_version},)"
 ordering = "NONE"
 side = "CLIENT"
+
+[[mixins]]
+config="disable_compliance_notification.mixins.json"

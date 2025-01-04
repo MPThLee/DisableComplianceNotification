@@ -1,10 +1,8 @@
 plugins {
     id 'java-library'
-    id 'eclipse'
     id 'idea'
     id 'maven-publish'
-    id 'net.neoforged.gradle.userdev' version '7.0.26'
-    id 'net.neoforged.gradle.mixin' version '7.0.+'
+    id 'net.neoforged.gradle.userdev' version '7.0.+'
 }
 
 repositories {
@@ -34,10 +32,6 @@ java {
 
     sourceSets.main.resources.srcDirs += ['../src/main/resources']
     sourceSets.main.resources.srcDirs += ['../src/neoforge/resources']
-}
-
-mixin {
-    config 'disable_compliance_notification.mixins.json'
 }
 
 runs {
