@@ -115,8 +115,7 @@ jobs:
           curseforge-id: 644324
           curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
 
-          files-primary: ${{ matrix.loader }}/!(*-@(dev|sources|javadoc)).jar
-          files-secondary: ${{ matrix.loader }}/*-@(dev|sources|javadoc).jar
+          files: ${{ matrix.loader }}/!(*-@(dev|sources|javadoc)).jar
 
           name: '[${{ steps.variables.outputs.capital_loader }} ${{ steps.variables.outputs.prop_minecraft_version }}] ${{ steps.variables.outputs.prop_mod_version }}'
           version: ${{ steps.variables.outputs.full_version }}
