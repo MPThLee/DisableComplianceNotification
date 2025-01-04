@@ -5,7 +5,7 @@
 
 ## 1.20.x
 
-### 1.20.3
+### 1.20.3 / 1.20.4
 
 [GitHub Release](https://github.com/MPThLee/DisableComplianceNotification/releases/tag/v1.4.4) or Modrinth.
 
