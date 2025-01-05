@@ -33,3 +33,7 @@ mandatory = false
 versionRange = "[${cloth_config_major_version},)"
 ordering = "NONE"
 side = "CLIENT"
+[dependencies.disable_compliance_notification.mc-publish]
+ignore=false
+modrinth="cloth-config"
+curseforge="cloth-config"
