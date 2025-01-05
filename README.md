@@ -36,7 +36,7 @@ Older changelog is available on [CHANGELOG.md](./CHANGELOG.md).
 
 Older releases links are on [DOWNLOAD.md](./DOWNLOAD.md).
 
-### Latest (v1.4.7 for Minecraft 1.21/1.21.1)
+### Latest (v1.4.7 for Minecraft 1.21.1)
 
 [GitHub Release](https://github.com/MPThLee/DisableComplianceNotification/releases/tag/v1.4.7) or Modrinth.
 
