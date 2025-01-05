@@ -46,7 +46,7 @@ public class ModifyPeriodicNotificationTask {
         NotificationFilterMode notificationMode = DisableComplianceNotification.getConfig().getNotificationFilterMode();
         boolean isFiltered = notificationMode.isFiltered(title, message);
 
-        LOGGER.info("Detected Period Notification: {}, {}. [DCN-MODE: {}, Filtered: {}]", title, message, notificationMode.toEnumString(), isFiltered);
+        LOGGER.info("Detected Period Notification: (title='{}', message='{}') [DCN-MODE: {}, Filtered: {}]", title, message, notificationMode.toEnumString(), isFiltered);
         return isFiltered;
     }
 
