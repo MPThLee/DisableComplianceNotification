@@ -11,7 +11,7 @@ authors = "MPThLee"
 description = '''
 Disable Compliance Notification for South Korean users.
 '''
-#logoFile = ""
+logoFile="assets/disable_compliance_notification/icon.png"
 
 [[dependencies.disable_compliance_notification]]
 modId = "forge"

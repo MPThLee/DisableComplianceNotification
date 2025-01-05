@@ -11,6 +11,7 @@ import org.apache.logging.log4j.Logger;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -23,20 +24,25 @@ import java.util.concurrent.atomic.AtomicLong;
 @Mixin(targets = "net.minecraft.client.PeriodicNotificationManager$NotificationTask")
 public class ModifyPeriodicNotificationTask {
     private static final Logger LOGGER = LogManager.getLogger("ModifyPeriodicNotificationManager");
+
     @Shadow
     @Final
     private AtomicLong elapsed;
+
     @Shadow
     @Final
     private long period;
+
     @Shadow
     @Final
     private List<Notification> notifications;
+
     @Shadow
     @Final
     private Minecraft minecraft;
 
-    private static boolean checkFiltered(String title, String message) {
+    @Unique
+    private static boolean check_filtered(String title, String message) {
         NotificationFilterMode notificationMode = DisableComplianceNotification.getConfig().getNotificationFilterMode();
         boolean isFiltered = notificationMode.isFiltered(title, message);
 
@@ -70,7 +76,7 @@ public class ModifyPeriodicNotificationTask {
 
                 if (elapsedPeriod != currentPeriod) {
                     // Check if the notification is disabled.
-                    if (checkFiltered(title, message)) {
+                    if (check_filtered(title, message)) {
                         ci.cancel();
                         return;
                     }

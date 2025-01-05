@@ -7,161 +7,152 @@ A script that:
   2) Generates a Markdown snippet (download links, etc.).
   3) Reads an existing DOWNLOAD.md file (or another specified file).
   4) Inserts/updates the new snippet at the top of the matching major section (## 1.20.x).
+  5) Also updates the new snippet in README.md
 
 Note: This version of script is made by ChatGPT due to i was too lazy
 
 USAGE EXAMPLES:
   python make-template.py --game 1.20.2 --version 2.0.0
-  python make-template.py -g 1.19.4 -v v1.3.2 --file MyOtherFile.md
+  python make-template.py -g 1.19.4 -v v1.3.2 --download-file MyDownloads.md --readme-file MyReadme.md
 """
 
 import argparse
 import asyncio
 import re
+import os
 
+# --------------------------------------------------------------
+# 1) Common Helpers
+# --------------------------------------------------------------
 
-def get_major_minor(game_ver: str) -> (str, str):
+def read_file_or_default(path: str, default_text: str) -> str:
     """
-    Parse the given game version string into:
-      - major_heading: used in the '## {major_heading}' line, e.g. "1.20.x"
-      - sub_heading:   used in the '### {sub_heading}' line, e.g. "1.20.2"
+    Reads 'path' if it exists, otherwise returns 'default_text'.
+    """
+    if not os.path.exists(path):
+        return default_text
+    with open(path, 'r', encoding='utf-8') as f:
+        return f.read()
 
-    Examples:
-      "1.20.2" -> major="1.20.x", sub="1.20.2"
-      "1.20"   -> major="1.20.x", sub="1.20.0"  (treat missing patch as ".0")
-      "1.19.4" -> major="1.19.x", sub="1.19.4"
+def write_file(path: str, content: str):
+    """
+    Overwrites 'path' with 'content'.
+    """
+    with open(path, 'w', encoding='utf-8') as f:
+        f.write(content)
 
-    This ensures consistent headings in your Markdown.
+def ensure_leading_v(mod_ver: str) -> str:
+    """
+    Ensures the mod version has a leading 'v'.
+    If it's already 'v1.4.6', we keep it.
+    If it's '1.4.6', we change it to 'v1.4.6'.
+    """
+    return mod_ver if mod_ver.startswith('v') else f'v{mod_ver}'
+
+# --------------------------------------------------------------
+# 2) Updating DOWNLOAD.md
+# --------------------------------------------------------------
+
+def parse_major_minor(game_ver: str) -> (str, str):
+    """
+    Determines:
+      - major_heading: e.g. '1.20.x' from '1.20.4'
+      - sub_heading:   e.g. '1.20.4'
+    If someone gives '1.20', treat as '1.20.0'.
     """
     parts = game_ver.split(".")
-    if len(parts) == 2:
-        # e.g. "1.20" => treat as "1.20.0"
-        major_str = f"{parts[0]}.{parts[1]}.x"  # -> "1.20.x"
-        sub_str   = f"{parts[0]}.{parts[1]}.0"  # -> "1.20.0"
-    elif len(parts) >= 3:
-        # e.g. "1.20.1", "1.20.2"
-        major_str = f"{parts[0]}.{parts[1]}.x"
-        sub_str   = game_ver
+    if len(parts) == 2:  # e.g. '1.20'
+        major = f"{parts[0]}.{parts[1]}.x"  # -> '1.20.x'
+        sub   = f"{parts[0]}.{parts[1]}.0"  # -> '1.20.0'
+    elif len(parts) >= 3:  # e.g. '1.20.4'
+        major = f"{parts[0]}.{parts[1]}.x"
+        sub   = game_ver
     else:
-        # Fallback if only "1" or something unusual
-        major_str = f"{game_ver}.x"
-        sub_str   = game_ver
-    return major_str, sub_str
+        # fallback if user typed '1'
+        major = f"{game_ver}.x"
+        sub   = game_ver
+    return major, sub
 
-
-def make_download(game_ver: str, ver: str) -> str:
+def build_download_block(game_ver: str, mod_ver: str) -> str:
     """
-    Generates the sub-version Markdown content for a given game version
-    (e.g. "1.20.2") and mod version (e.g. "v2.0.0").
-
-    This is just an example of what you might generate. Adjust as needed.
+    Returns a Markdown snippet for DOWNLOAD.md, starting with '### {game_ver}'.
     """
-    # Ensure that the mod version has a leading "v"
-    ver = f"v{ver}" if not ver.startswith("v") else ver
+    mod_ver = ensure_leading_v(mod_ver)
+    branch  = f"mc{game_ver}"
 
-    # The GitHub build workflow name might be "mc1.20.2" for game_ver=1.20.2
-    branch = f"mc{game_ver}"
-
-    # The generated text.  Adjust as necessary for your project:
     return f"""### {game_ver}
 
-[GitHub Release](https://github.com/MPThLee/DisableComplianceNotification/releases/tag/{ver}) or Modrinth.
+[GitHub Release](https://github.com/MPThLee/DisableComplianceNotification/releases/tag/{mod_ver}) or Modrinth.
 
 [Nightly.link for {game_ver}](https://nightly.link/MPThLee/DisableComplianceNotification/workflows/build/{branch})
 
 #### NeoForge
 
-[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/{ver}/disable_compliance_notification-{ver}+neoforge-{game_ver}.jar)
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/{mod_ver}/disable_compliance_notification-{mod_ver}+neoforge-{game_ver}.jar)
 
 Recommended with [Cloth Config](https://modrinth.com/mod/cloth-config).
 
 #### Fabric
 
-[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/{ver}/disable_compliance_notification-{ver}+fabric-{game_ver}.jar)
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/{mod_ver}/disable_compliance_notification-{mod_ver}+fabric-{game_ver}.jar)
 
 Recommended with [Cloth Config](https://modrinth.com/mod/cloth-config) and [Mod Menu](https://modrinth.com/mod/modmenu).
 
 #### Forge
 
-[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/{ver}/disable_compliance_notification-{ver}+forge-{game_ver}.jar)
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/{mod_ver}/disable_compliance_notification-{mod_ver}+forge-{game_ver}.jar)
 
 Recommended with [Cloth Config](https://modrinth.com/mod/cloth-config)."""
 
-
-def insert_subversion_block(
-        original_md: str,
-        major_heading: str,
-        sub_heading: str,
-        new_block: str
-) -> str:
+def insert_version_in_download(original_md: str, major_h: str, sub_h: str, new_block: str) -> str:
     """
-    Insert or update the sub_heading (e.g. "### 1.20.2") under the major_heading
-    (e.g. "## 1.20.x") in original_md. The difference from simpler examples is:
-    we insert new sub-versions at the TOP of the block, so the newest versions
-    appear first.
+    Insert/replace '### sub_h' under '## major_h' at the TOP of that block.
 
     Steps:
-      1) Locate the "## 1.20.x" heading (the major section).
-         - If not found, create it at the end of the file and insert new_block there.
-      2) Identify that section's text range.
-      3) Check if "### 1.20.2" (for example) already exists.
-         - If yes, replace it in place.
-         - If no, insert it at the TOP, right after the "## 1.20.x" line.
-      4) Reassemble the updated Markdown and return it.
+      1) Look for '## major_h'. If not found, create it at end of file.
+      2) Inside that block, see if '### sub_h' exists -> if yes, replace.
+      3) If no, prepend new_block right after '## major_h'.
     """
-    # 1) Regex to find the EXACT line "## 1.20.x"
-    major_heading_regex = re.compile(
-        rf"^(##\s+{re.escape(major_heading)}\s*)$",
+
+    # Regex to find exactly "## 1.20.x" line
+    pattern_major = re.compile(
+        rf"^(##\s+{re.escape(major_h)}\s*)$",
         re.MULTILINE
     )
-    match_major = major_heading_regex.search(original_md)
+    match_major = pattern_major.search(original_md)
 
     if not match_major:
-        # If the major heading (e.g. "## 1.20.x") doesn't exist at all,
-        # we append it to the end of the file, plus the new sub-block.
-        insertion = f"\n\n## {major_heading}\n\n{new_block}\n"
-        return original_md.rstrip() + insertion
+        # No major heading => append at end
+        return original_md.rstrip() + f"\n\n## {major_h}\n\n{new_block}\n"
 
-    # 2) Identify the block from "## 1.20.x" until the next "## " (or end of file)
-    major_start_index = match_major.start()
-    next_major_heading_regex = re.compile(r"^##\s+", re.MULTILINE)
-    match_next_major = next_major_heading_regex.search(
-        original_md, pos=match_major.end()
-    )
-    if match_next_major:
-        major_end_index = match_next_major.start()
-    else:
-        major_end_index = len(original_md)
+    major_start = match_major.start()
+    # find next '## ' or end of file
+    pattern_next_major = re.compile(r"^##\s+", re.MULTILINE)
+    match_next = pattern_next_major.search(original_md, pos=match_major.end())
+    major_end  = match_next.start() if match_next else len(original_md)
 
-    major_block = original_md[major_start_index:major_end_index]
+    major_block = original_md[major_start:major_end]
 
-    # 3) Regex to find if the sub-heading already exists
-    #    e.g., "### 1.20.2"
-    sub_heading_regex = re.compile(
-        rf"(^###\s+{re.escape(sub_heading)}\s*([\s\S]*?))(?=^###\s+|^##\s+|$)",
+    # Check if sub_h block exists
+    pattern_sub = re.compile(
+        rf"(^###\s+{re.escape(sub_h)}\s*([\s\S]*?))(?=^###\s+|^##\s+|$)",
         re.MULTILINE
     )
-    existing_sub = sub_heading_regex.search(major_block)
+    m_sub = pattern_sub.search(major_block)
 
-    if existing_sub:
-        # If this sub-version block is found, replace it entirely with new_block
-        start_sub = existing_sub.start()
-        end_sub = existing_sub.end()
-        new_major_block = (
-                major_block[:start_sub] + new_block + "\n" + major_block[end_sub:]
-        )
+    if m_sub:
+        # Replace existing sub-block
+        start_sub, end_sub = m_sub.span()
+        new_major_block = major_block[:start_sub] + new_block + "\n" + major_block[end_sub:]
     else:
-        # Insert new_block at the TOP of the major section:
-        # right after the heading line "## 1.20.x"
+        # Insert at top (just after "## 1.20.x" line)
         lines = major_block.splitlines()
         if len(lines) <= 1:
-            # If the major block has no content beyond "## 1.20.x"
+            # There's nothing but the heading line
             new_major_block = major_block.rstrip() + "\n\n" + new_block + "\n"
         else:
-            # lines[0] should be "## 1.20.x"
             heading_line = lines[0]
-            rest_lines   = lines[1:]  # Everything after heading
-            # Rebuild so new_block is inserted right under the heading
+            rest_lines   = lines[1:]
             new_major_block = (
                     heading_line
                     + "\n\n"
@@ -171,68 +162,106 @@ def insert_subversion_block(
                     + "\n"
             )
 
-    # Reconstruct the entire file around the modified major section
-    updated_md = (
-            original_md[:major_start_index]
-            + new_major_block
-            + original_md[major_end_index:]
-    )
+    updated_md = original_md[:major_start] + new_major_block + original_md[major_end:]
     return updated_md
 
+# --------------------------------------------------------------
+# 3) Updating README.md
+# --------------------------------------------------------------
+
+def build_latest_block(game_ver: str, mod_ver: str) -> str:
+    """
+    Builds a snippet for the README's '### Latest (...)' block.
+    Typically simpler or slightly different from DOWNLOAD.md.
+    """
+    mod_ver = ensure_leading_v(mod_ver)
+    return f"""### Latest ({mod_ver} for Minecraft {game_ver})
+
+[GitHub Release](https://github.com/MPThLee/DisableComplianceNotification/releases/tag/{mod_ver}) or Modrinth.
+
+[Nightly.link for {game_ver}](https://nightly.link/MPThLee/DisableComplianceNotification/workflows/build/mc{game_ver})
+
+#### NeoForge
+
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/{mod_ver}/disable_compliance_notification-{mod_ver}+neoforge-{game_ver}.jar)
+
+Recommended with [Cloth Config](https://modrinth.com/mod/cloth-config).
+
+#### Fabric
+
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/{mod_ver}/disable_compliance_notification-{mod_ver}+fabric-{game_ver}.jar)
+
+Recommended with [Cloth Config](https://modrinth.com/mod/cloth-config) and [Mod Menu](https://modrinth.com/mod/modmenu).
+
+#### Forge
+
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/{mod_ver}/disable_compliance_notification-{mod_ver}+forge-{game_ver}.jar)
+
+Recommended with [Cloth Config](https://modrinth.com/mod/cloth-config).
+"""
+
+def replace_latest_in_readme(original_md: str, new_block: str) -> str:
+    """
+    Replaces everything from:
+      ### Latest (v... for Minecraft ...)
+    up to the next heading or EOF, with new_block.
+    If not found, appends at the end.
+    """
+    pattern = re.compile(
+        r"(?P<block>"
+        r"^###\s+Latest\s*\(.*?\)"     # line begins with '### Latest ('
+        r"(?:[\r\n]+.*?)"              # consume lines
+        r"(?=^#{1,6}\s+|\Z)"           # until next heading or end
+        r")",
+        re.MULTILINE | re.DOTALL
+    )
+
+    m = pattern.search(original_md)
+    if not m:
+        return original_md.rstrip() + "\n\n" + new_block + "\n"
+
+    start, end = m.span('block')
+    return original_md[:start] + new_block + "\n" + original_md[end:]
+
+# --------------------------------------------------------------
+# 4) Main
+# --------------------------------------------------------------
 
 async def main():
-    """
-    Main entry point. Parses command-line arguments, reads an existing markdown
-    file, generates a sub-version block, and then inserts/updates that block
-    in the correct place.
-    """
     parser = argparse.ArgumentParser(
-        prog='MakeVersionOutput',
-        description='Make version output and insert it into a Markdown file.'
+        description="Updates DOWNLOAD.md and README.md for a new release."
     )
-    parser.add_argument(
-        '-g', '--game',
-        required=True,
-        help="Minecraft version like 1.20 or 1.20.2 or 1.19.4"
-    )
-    parser.add_argument(
-        '-v', '--version',
-        required=True,
-        help="Your mod version, e.g. 2.0.0 or v2.0.0"
-    )
-    parser.add_argument(
-        '-f', '--file',
-        default='DOWNLOAD.md',
-        help="The Markdown file to update (default: DOWNLOAD.md)"
-    )
+    parser.add_argument('-g', '--game', required=True,
+                        help="Minecraft version (e.g. 1.20.4)")
+    parser.add_argument('-v', '--version', required=True,
+                        help="Mod version (e.g. 1.4.6 or v1.4.6)")
+    parser.add_argument('--download-file', default='DOWNLOAD.md',
+                        help="Path to DOWNLOAD.md (default: DOWNLOAD.md)")
+    parser.add_argument('--readme-file', default='README.md',
+                        help="Path to README.md (default: README.md)")
     args = parser.parse_args()
 
-    # 1) Generate the sub-version block text (like ### 1.20.2 plus download URLs).
-    new_content = make_download(args.game, args.version)
+    # 1) Build the block for DOWNLOAD.md
+    major_h, sub_h = parse_major_minor(args.game)
+    download_block = build_download_block(args.game, args.version)
 
-    # 2) Compute major heading ("1.20.x") and sub-heading ("1.20.2").
-    major_heading, sub_heading = get_major_minor(args.game)
-
-    # 3) Read the existing markdown file (or create minimal content if missing).
-    try:
-        with open(args.file, 'r', encoding='utf-8') as f:
-            original_md = f.read()
-    except FileNotFoundError:
-        # If the file doesn't exist, start with a minimal heading
-        original_md = "# Download Links\n\n"
-
-    # 4) Insert (or update) the new sub-version in the correct major section.
-    updated_md = insert_subversion_block(
-        original_md,
-        major_heading,
-        sub_heading,
-        new_content
+    # 2) Read or init DOWNLOAD.md, update, write back
+    original_download = read_file_or_default(args.download_file, "# Download Links\n\n")
+    updated_download  = insert_version_in_download(
+        original_md = original_download,
+        major_h     = major_h,
+        sub_h       = sub_h,
+        new_block   = download_block
     )
+    write_file(args.download_file, updated_download)
 
-    # 5) Write the updated markdown back to disk.
-    with open(args.file, 'w', encoding='utf-8') as f:
-        f.write(updated_md)
+    # 3) Build the "Latest" snippet for README
+    latest_block = build_latest_block(args.game, args.version)
 
+    # 4) Read or init README.md, update, write back
+    original_readme = read_file_or_default(args.readme_file, "# README\n\n")
+    updated_readme  = replace_latest_in_readme(original_readme, latest_block)
+    write_file(args.readme_file, updated_readme)
 
 if __name__ == "__main__":
     asyncio.run(main())

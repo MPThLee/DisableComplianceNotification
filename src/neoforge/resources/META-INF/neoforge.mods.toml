@@ -12,25 +12,25 @@ authors = "MPThLee"
 description = '''
 Disable Compliance Notification for South Korean users.
 '''
-#logoFile = ""
+logoFile="assets/disable_compliance_notification/icon.png"
 
 [[dependencies.disable_compliance_notification]]
 modId = "neoforge"
-mandatory = true
+type = "required"
 versionRange = "[${neoforge_major_version},)"
 ordering = "NONE"
 side = "CLIENT"
 
 [[dependencies.disable_compliance_notification]]
 modId = "minecraft"
-mandatory = true
+type = "required"
 versionRange = "[${minecraft_version},)"
 ordering = "NONE"
 side = "CLIENT"
 
 [[dependencies.disable_compliance_notification]]
 modId = "cloth_config"
-mandatory = false
+type = "optional"
 versionRange = "[${cloth_config_major_version},)"
 ordering = "NONE"
 side = "CLIENT"
