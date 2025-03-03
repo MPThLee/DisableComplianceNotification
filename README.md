@@ -14,7 +14,7 @@ As of 1.18.2, Mojang decided to implemented this on Java Edition with own implem
 > - Added gameplay timers and notices in compliance with gaming laws of South Korea to South Korean users, in order to
     remind these players to take occasional breaks from gameplay.
 
-Image and quote reference: https://minecraft.fandom.com/wiki/Java_Edition_1.18.2#General
+Image and quote reference: https://minecraft.wiki/w/Java_Edition_1.18.2#General
 
 ## Changelog
 
