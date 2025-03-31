@@ -61,7 +61,7 @@ jobs:
           name: neoforge-artifact
 
       - name: Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: |
             *.jar
@@ -69,6 +69,8 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     needs: release
+    permissions:
+      contents: write
     strategy:
       matrix:
         loader: [ 'forge', 'neoforge', 'fabric' ]
@@ -105,7 +107,7 @@ jobs:
           name: ${{ matrix.loader }}-artifact
 
       - name: Upload ${{ matrix.loader }} version to CurseForge and Modrinth
-        uses: Kir-Antipov/mc-publish@v3.3.0
+        uses: Kir-Antipov/mc-publish@995edadc13559a8b28d0b7e6571229f067ec7659
         with:
           modrinth-id: vAYtksKy
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
@@ -113,8 +115,7 @@ jobs:
           curseforge-id: 644324
           curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
 
-          files-primary: ${{ matrix.loader }}/!(*-@(dev|sources|javadoc)).jar
-          files-secondary: ${{ matrix.loader }}/*-@(dev|sources|javadoc).jar
+          files: ${{ matrix.loader }}/!(*-@(dev|sources|javadoc)).jar
 
           name: '[${{ steps.variables.outputs.capital_loader }} ${{ steps.variables.outputs.prop_minecraft_version }}] ${{ steps.variables.outputs.prop_mod_version }}'
           version: ${{ steps.variables.outputs.full_version }}
