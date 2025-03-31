@@ -36,80 +36,26 @@ Older changelog is available on [CHANGELOG.md](./CHANGELOG.md).
 
 Older releases links are on [DOWNLOAD.md](./DOWNLOAD.md).
 
-### Latest (v1.4.9 for Minecraft 1.21.4)
+### Latest (v1.4.10-beta for Minecraft 1.21.5)
 
-[GitHub Release](https://github.com/MPThLee/DisableComplianceNotification/releases/tag/v1.4.9) or Modrinth.
+[GitHub Release](https://github.com/MPThLee/DisableComplianceNotification/releases/tag/v1.4.10-beta) or Modrinth.
 
-[Nightly.link for 1.21.4](https://nightly.link/MPThLee/DisableComplianceNotification/workflows/build/mc1.21.4)
+[Nightly.link for 1.21.5](https://nightly.link/MPThLee/DisableComplianceNotification/workflows/build/mc1.21.5)
 
 #### NeoForge
 
-[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.4.9/disable_compliance_notification-v1.4.9+neoforge-1.21.4.jar)
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.4.10-beta/disable_compliance_notification-v1.4.10-beta+neoforge-1.21.5.jar)
 
 Recommended with [Cloth Config](https://modrinth.com/mod/cloth-config).
 
 #### Fabric
 
-[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.4.9/disable_compliance_notification-v1.4.9+fabric-1.21.4.jar)
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.4.10-beta/disable_compliance_notification-v1.4.10-beta+fabric-1.21.5.jar)
 
 Recommended with [Cloth Config](https://modrinth.com/mod/cloth-config) and [Mod Menu](https://modrinth.com/mod/modmenu).
 
 #### Forge
 
-[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.4.9/disable_compliance_notification-v1.4.9+forge-1.21.4.jar)
-
-Recommended with [Cloth Config](https://modrinth.com/mod/cloth-config).
-
-#### NeoForge
-
-[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.4.8/disable_compliance_notification-v1.4.8+neoforge-1.21.3.jar)
-
-Recommended with [Cloth Config](https://modrinth.com/mod/cloth-config).
-
-#### Fabric
-
-[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.4.8/disable_compliance_notification-v1.4.8+fabric-1.21.3.jar)
-
-Recommended with [Cloth Config](https://modrinth.com/mod/cloth-config) and [Mod Menu](https://modrinth.com/mod/modmenu).
-
-#### Forge
-
-[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.4.8/disable_compliance_notification-v1.4.8+forge-1.21.3.jar)
-
-Recommended with [Cloth Config](https://modrinth.com/mod/cloth-config).
-
-#### NeoForge
-
-[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.4.7/disable_compliance_notification-v1.4.7+neoforge-1.21.1.jar)
-
-Recommended with [Cloth Config](https://modrinth.com/mod/cloth-config).
-
-#### Fabric
-
-[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.4.7/disable_compliance_notification-v1.4.7+fabric-1.21.1.jar)
-
-Recommended with [Cloth Config](https://modrinth.com/mod/cloth-config) and [Mod Menu](https://modrinth.com/mod/modmenu).
-
-#### Forge
-
-[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.4.7/disable_compliance_notification-v1.4.7+forge-1.21.1.jar)
-
-Recommended with [Cloth Config](https://modrinth.com/mod/cloth-config).
-
-#### NeoForge
-
-[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.4.6/disable_compliance_notification-v1.4.6+neoforge-1.20.6.jar)
-
-Recommended with [Cloth Config](https://modrinth.com/mod/cloth-config).
-
-#### Fabric
-
-[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.4.6/disable_compliance_notification-v1.4.6+fabric-1.20.6.jar)
-
-Recommended with [Cloth Config](https://modrinth.com/mod/cloth-config) and [Mod Menu](https://modrinth.com/mod/modmenu).
-
-#### Forge
-
-[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.4.6/disable_compliance_notification-v1.4.6+forge-1.20.6.jar)
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.4.10-beta/disable_compliance_notification-v1.4.10-beta+forge-1.21.5.jar)
 
 Recommended with [Cloth Config](https://modrinth.com/mod/cloth-config).

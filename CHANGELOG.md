@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## v1.4.x
+- Updated to match corresponding versions.
+- If `-beta` appears in the version, it indicates that dependencies are in beta.
+
 ## v1.4.2
 
 - Package name is changed; From `ee.mpthl.mc.disable_compliance_notification` to `dev.mpthlee.minecraft.disable_compliance_notification`
@@ -13,6 +17,10 @@
 ## v1.4.0
 
 - Minecraft 1.20 support
+
+## v1.3.1 Variants
+
+- Backported to 1.19.x versions due to incorrect build.
 
 ## v1.3.0
 

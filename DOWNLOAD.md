@@ -5,6 +5,30 @@
 
 ## 1.21.x
 
+### 1.21.5
+
+[GitHub Release](https://github.com/MPThLee/DisableComplianceNotification/releases/tag/v1.4.10-beta) or Modrinth.
+
+[Nightly.link for 1.21.5](https://nightly.link/MPThLee/DisableComplianceNotification/workflows/build/mc1.21.5)
+
+#### NeoForge
+
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.4.10-beta/disable_compliance_notification-v1.4.10-beta+neoforge-1.21.5.jar)
+
+Recommended with [Cloth Config](https://modrinth.com/mod/cloth-config).
+
+#### Fabric
+
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.4.10-beta/disable_compliance_notification-v1.4.10-beta+fabric-1.21.5.jar)
+
+Recommended with [Cloth Config](https://modrinth.com/mod/cloth-config) and [Mod Menu](https://modrinth.com/mod/modmenu).
+
+#### Forge
+
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.4.10-beta/disable_compliance_notification-v1.4.10-beta+forge-1.21.5.jar)
+
+Recommended with [Cloth Config](https://modrinth.com/mod/cloth-config).
+
 ### 1.21.4
 
 [GitHub Release](https://github.com/MPThLee/DisableComplianceNotification/releases/tag/v1.4.9) or Modrinth.
@@ -217,53 +241,70 @@ Recommended with [Cloth Config](https://modrinth.com/mod/cloth-config).
 Recommended with [Cloth Config](https://modrinth.com/mod/cloth-config) and [Mod Menu](https://modrinth.com/mod/modmenu).
 
 
-### 1.19.4 (Mod v1.2.2)
+### 1.19.3 (Mod v1.3.1+for1.19.3)
 
-[GitHub Release](https://github.com/MPThLee/DisableComplianceNotification/releases/tag/v1.2.2-1.19.4) or Modrinth.
-
-#### Forge
-
-[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.2.2-1.19.4/disable_compliance_notification-forge-v1.2.2-1.19.4.jar)
-
-Nightly link is now available as of v1.3.0
-
-#### Fabric
-
-[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.2.2-1.19.4/disable_compliance_notification-fabric-v1.2.2-1.19.4.jar)
-
-Requires [Fabric API](https://www.curseforge.com/minecraft/mc-mods/fabric-api)
-
-### 1.19.3
-
-[GitHub Release](https://github.com/MPThLee/DisableComplianceNotification/releases/tag/v1.2.1-1.19.3) or Modrinth.
+[GitHub Release](https://github.com/MPThLee/DisableComplianceNotification/releases/tag/v1.3.1+for1.19.3) or Modrinth.
 
 [Nightly.link for 1.19.3](https://nightly.link/MPThLee/DisableComplianceNotification/workflows/build/mc1.19.3)
 
 #### Forge
 
-[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.2.1-1.19.3/disable_compliance_notification-forge-v1.2.1-1.19.3.jar)
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.3.1+for1.19.4/disable_compliance_notification-forge-v1.3.1+for1.19.3.jar)
 
 #### Fabric
 
-[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.2.1-1.19.3/disable_compliance_notification-fabric-v1.2.1-1.19.3.jar)
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.3.1+for1.19.4/disable_compliance_notification-fabric-v1.3.1+for1.19.3.jar)
 
 Requires [Fabric API](https://www.curseforge.com/minecraft/mc-mods/fabric-api)
 
 ### 1.19.2
 
-[GitHub Release](https://github.com/MPThLee/DisableComplianceNotification/releases/tag/v1.2.0-1.19.2) or Modrinth.
+[GitHub Release](https://github.com/MPThLee/DisableComplianceNotification/releases/tag/v1.3.1+for1.19.2) or Modrinth.
 
 [Nightly.link for 1.19.2](https://nightly.link/MPThLee/DisableComplianceNotification/workflows/build/mc1.19.2)
 
 #### Forge
 
-[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.2.0-1.19.2/disable_compliance_notification-forge-v1.2.0-1.19.2.jar)
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.3.1+for1.19.2/disable_compliance_notification-forge-v1.3.1+for1.19.2.jar)
 
 #### Fabric
 
-[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.2.0-1.19.2/disable_compliance_notification-fabric-v1.2.0-1.19.2.jar)
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.3.1+for1.19.2/disable_compliance_notification-fabric-v1.3.1+for1.19.2.jar)
 
 Requires [Fabric API](https://www.curseforge.com/minecraft/mc-mods/fabric-api)
+
+### 1.19.1 (Mod v1.3.1+for1.19.1)
+
+[GitHub Release](https://github.com/MPThLee/DisableComplianceNotification/releases/tag/v1.3.1+for1.19.1) or Modrinth.
+
+[Nightly.link for 1.19.1](https://nightly.link/MPThLee/DisableComplianceNotification/workflows/build/mc1.19.1)
+
+#### Forge
+
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.3.1+for1.19.1/disable_compliance_notification-forge-v1.3.1+for1.19.1.jar)
+
+#### Fabric
+
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.3.1+for1.19.1/disable_compliance_notification-fabric-v1.3.1+for1.19.1.jar)
+
+Requires [Fabric API](https://www.curseforge.com/minecraft/mc-mods/fabric-api)
+
+### 1.19 (Mod v1.3.1+for1.19)
+
+[GitHub Release](https://github.com/MPThLee/DisableComplianceNotification/releases/tag/v1.3.1+for1.19) or Modrinth.
+
+[Nightly.link for 1.19](https://nightly.link/MPThLee/DisableComplianceNotification/workflows/build/m+for1.19)
+
+#### Forge
+
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.3.1+for1.19/disable_compliance_notification-forge-v1.3.1+for1.19.jar)
+
+#### Fabric
+
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.3.1+for1.19/disable_compliance_notification-fabric-v1.3.1+for1.19.jar)
+
+Requires [Fabric API](https://www.curseforge.com/minecraft/mc-mods/fabric-api)
+
 
 ### 1.19.1
 
