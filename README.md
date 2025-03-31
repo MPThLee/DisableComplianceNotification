@@ -54,8 +54,8 @@ Recommended with [Cloth Config](https://modrinth.com/mod/cloth-config).
 
 Recommended with [Cloth Config](https://modrinth.com/mod/cloth-config) and [Mod Menu](https://modrinth.com/mod/modmenu).
 
-#### Forge
+#### ~~Forge~~
 
-[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.4.10-beta/disable_compliance_notification-v1.4.10-beta+forge-1.21.5.jar)
+~~[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.4.10-beta/disable_compliance_notification-v1.4.10-beta+forge-1.21.5.jar)~~
 
-Recommended with [Cloth Config](https://modrinth.com/mod/cloth-config).
+~~Recommended with [Cloth Config](https://modrinth.com/mod/cloth-config).~~
