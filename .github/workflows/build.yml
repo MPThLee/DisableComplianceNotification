@@ -23,6 +23,11 @@ jobs:
         with:
           distribution: "microsoft"
           java-version: ${{ matrix.java }}
+          cache: gradle
+          cache-dependency-path: |
+            config.properties
+            ${{ matrix.loader }}/*.gradle*
+            ${{ matrix.loader }}/gradle.properties
 
       - name: Set up swap space
         if: runner.os == 'Linux'
