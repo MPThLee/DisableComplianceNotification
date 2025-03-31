@@ -50,7 +50,7 @@ dependencies {
 
     annotationProcessor "net.fabricmc:sponge-mixin:${vProps.fabric_mixin_processor_version}+mixin.${vProps.mixin_processor_version}"
 
-    api "me.shedaniel.cloth:cloth-config-forge:${vProps.cloth_config_version}"
+    api "me.shedaniel.cloth:cloth-config-neoforge:${vProps.cloth_config_version}"
 }
 
 processResources {
