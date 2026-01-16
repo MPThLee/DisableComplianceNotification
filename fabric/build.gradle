@@ -41,6 +41,16 @@ dependencies {
     }
 }
 
+fabricApi {
+    configureTests {
+        createSourceSet = true
+        modId = "disable_compliance_notification_test"
+        enableGameTests = true
+        enableClientGameTests = true
+        eula = true
+    }
+}
+
 tasks.withType(JavaCompile).configureEach {
     it.options.release = vProps.java_version as Integer
 }
@@ -50,14 +60,22 @@ java {
         languageVersion = JavaLanguageVersion.of(vProps.java_version as Integer)
     }
 
-    sourceSets.main.java.srcDirs += ['../src/fabric']
-    sourceSets.main.java.srcDirs += ['../src/main']
+    sourceSets.main.java {
+        srcDirs += ['../src/fabric']
+        srcDirs += ['../src/main']
+        exclude '**/gametest/**'
+    }
 
     sourceSets.main.resources.srcDirs += ['../src/fabric/resources']
     sourceSets.main.resources.srcDirs += ['../src/main/resources']
 
     sourceCompatibility = JavaLanguageVersion.of(vProps.java_version as Integer)
     targetCompatibility = JavaLanguageVersion.of(vProps.java_version as Integer)
+}
+
+sourceSets.gametest {
+    java.srcDirs = [file('../src/fabric/gametest/java')]
+    resources.srcDirs = [file('../src/fabric/gametest/resources')]
 }
 
 processResources {
@@ -87,6 +105,25 @@ jar {
     from("LICENSE") {
         rename { "${it}_${archivesBaseName}" }
     }
+}
+
+tasks.register('gametestJar', Jar) {
+    from sourceSets.gametest.output
+    archiveClassifier = 'gametest'
+    destinationDirectory = file("$buildDir/libs")
+}
+
+tasks.named('build') {
+    dependsOn 'gametestJar'
+}
+
+tasks.register('copyComplianceResourcepack', Copy) {
+    from '../misc/compliance.zip'
+    into "$buildDir/run/clientGameTest/resourcepacks"
+}
+
+tasks.named('runClientGameTest') {
+    dependsOn 'copyComplianceResourcepack'
 }
 
 publishing {

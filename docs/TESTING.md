@@ -27,17 +27,32 @@ With the test resource pack, you should see **two different notifications**:
 
 ## Local Testing
 
-### Quick Test
+### GUI Test (Recommended for Compliance Testing)
 
 ```bash
-# Build and prepare test environment for Fabric
 ./tools/test-local.sh fabric --build
+```
 
-# For NeoForge
-./tools/test-local.sh neoforge --build
+Then manually:
+1. Enable compliance.zip resourcepack
+2. Create/join a world
+3. Wait 2.5-3 minutes
+4. Exit and verify: `./tools/test-local.sh fabric --verify-only`
 
-# For Forge
-./tools/test-local.sh forge --build
+### Headless Test (Experimental)
+
+Uses [HeadlessMC](https://github.com/headlesshq/headlessmc) with [hmc-specifics](https://github.com/headlesshq/hmc-specifics):
+
+```bash
+./tools/test-headless.sh fabric --build --timeout 200
+```
+
+**Note**: Requires manual interaction via HeadlessMC console to join a world:
+```
+gui              # Show current screen buttons
+click 1          # Click Singleplayer
+click 1          # Click first world / Create New
+click 1          # Enter world
 ```
 
 ### Manual Test Steps
@@ -93,21 +108,37 @@ If you've already run the client manually:
 
 ## CI Testing
 
-The GitHub Actions workflow (`.github/workflows/test.yml`) automatically:
+The GitHub Actions workflow (`.github/workflows/test.yml`) uses [mc-runtime-test](https://github.com/headlesshq/mc-runtime-test) with Fabric's GameTest framework.
 
-1. Builds the mod for each loader (Fabric, NeoForge)
-2. Sets up the test environment with the compliance resource pack
-3. Runs the Minecraft client via [mc-runtime-test](https://github.com/headlesshq/mc-runtime-test)
-4. Verifies log output for notification filtering
+### What CI Tests
 
-### Limitations
+| Test | Fabric CI | NeoForge CI | Local |
+|------|:---------:|:-----------:|:-----:|
+| Mod compiles | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| Mod loads without crash | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| Mixins apply correctly | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| GameTest waits 3 min | :white_check_mark: | :x: | :white_check_mark: |
 
-The CI test has limited runtime, which may not be enough for compliance notifications to trigger naturally. The CI primarily verifies:
-- Mod loads without errors
-- Mixin is registered correctly
-- No crashes occur
+### How Fabric CI Works
 
-For full notification filtering verification, use local testing.
+1. Builds mod with `./gradlew build` (runs server-side GameTest)
+2. mc-runtime-test runs client with `-DMcRuntimeGameTest=true`
+3. GameTest keeps game running for 3 minutes
+4. Compliance notifications trigger during this time
+5. Logs verified for filtering
+
+### How NeoForge CI Works
+
+mc-runtime-test runs for basic mod loading verification (no long wait).
+
+### GameTest Source Location
+
+GameTest sources are in `src/gametest/`:
+```
+src/gametest/
+├── java/dev/mpthlee/.../test/ComplianceGameTest.java
+└── resources/fabric.mod.json
+```
 
 ## Troubleshooting
 

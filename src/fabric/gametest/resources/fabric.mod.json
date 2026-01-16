@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "disable_compliance_notification_test",
+  "version": "1.0.0",
+  "name": "Disable Compliance Notification Test",
+  "environment": "*",
+  "license": "MIT",
+  "entrypoints": {
+    "fabric-gametest": [
+      "dev.mpthlee.minecraft.disable_compliance_notification.test.ComplianceGameTest"
+    ],
+    "fabric-client-gametest": [
+      "dev.mpthlee.minecraft.disable_compliance_notification.test.ComplianceClientGameTest"
+    ]
+  }
+}
