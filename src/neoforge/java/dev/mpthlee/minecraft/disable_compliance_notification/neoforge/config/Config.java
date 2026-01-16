@@ -1,27 +1,26 @@
 package dev.mpthlee.minecraft.disable_compliance_notification.neoforge.config;
 
-import dev.mpthlee.minecraft.disable_compliance_notification.config.ConfigHelper;
-import dev.mpthlee.minecraft.disable_compliance_notification.config.DCNConfig;
-import me.shedaniel.autoconfig.AutoConfig;
+import dev.mpthlee.minecraft.disable_compliance_notification.DisableComplianceNotification;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import net.neoforged.fml.ModList;
 import net.neoforged.fml.ModLoadingContext;
 
 public class Config {
-    public static boolean isClothConfigInstalled() {
-        return ModList.get().isLoaded("cloth_config");
+    public static boolean isYACLInstalled() {
+        return ModList.get().isLoaded("yet_another_config_lib_v3");
     }
 
     public static void registerConfigGui() {
-        if (isClothConfigInstalled()) {
+        if (isYACLInstalled()) {
             ModLoadingContext.get().registerExtensionPoint(IConfigScreenFactory.class, () -> (
-                    (client, parent) -> AutoConfig.getConfigScreen(DCNConfig.class, parent).get()));
+                    (client, parent) -> YACLConfig.createConfigScreen(parent)));
         }
     }
 
     public static void loadConfig() {
-        if (isClothConfigInstalled()) {
-            ConfigHelper.loadConfig();
+        if (isYACLInstalled()) {
+            YACLConfig.HANDLER.load();
+            DisableComplianceNotification.setConfig(YACLConfig.HANDLER.instance());
         }
     }
 }

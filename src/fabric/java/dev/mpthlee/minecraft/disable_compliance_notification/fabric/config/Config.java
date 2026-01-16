@@ -1,16 +1,17 @@
 package dev.mpthlee.minecraft.disable_compliance_notification.fabric.config;
 
-import dev.mpthlee.minecraft.disable_compliance_notification.config.ConfigHelper;
+import dev.mpthlee.minecraft.disable_compliance_notification.DisableComplianceNotification;
 import net.fabricmc.loader.api.FabricLoader;
 
 public class Config {
-    public static boolean isClothConfigInstalled() {
-        return FabricLoader.getInstance().isModLoaded("cloth-config2");
+    public static boolean isYACLInstalled() {
+        return FabricLoader.getInstance().isModLoaded("yet_another_config_lib_v3");
     }
 
     public static void loadConfig() {
-        if (isClothConfigInstalled()) {
-            ConfigHelper.loadConfig();
+        if (isYACLInstalled()) {
+            YACLConfig.HANDLER.load();
+            DisableComplianceNotification.setConfig(YACLConfig.HANDLER.instance());
         }
     }
 }

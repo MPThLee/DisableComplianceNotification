@@ -48,6 +48,51 @@ class VersionUpdateError(RuntimeError):
     pass
 
 
+def load_settings(path: Path) -> dict:
+    if not path.is_file():
+        raise VersionUpdateError(f"settings file not found: {path}")
+    try:
+        with path.open("r", encoding="utf-8") as handle:
+            data = json.load(handle)
+    except json.JSONDecodeError as exc:
+        raise VersionUpdateError(f"invalid JSON in settings file: {path}") from exc
+    if data is None:
+        return {}
+    if not isinstance(data, dict):
+        raise VersionUpdateError("settings file must contain a JSON object")
+    return data
+
+
+def resolve_config_path(settings: dict, override: str | None) -> Path:
+    if override:
+        return Path(override)
+    value = settings.get("config_path") if settings else None
+    return Path(value) if value else Path("config.properties")
+
+
+def resolve_timeout(settings: dict, override: float | None) -> float:
+    if override is not None:
+        return override
+    value = settings.get("timeout") if settings else None
+    if value is None:
+        return DEFAULT_TIMEOUT
+    try:
+        return float(value)
+    except (TypeError, ValueError) as exc:
+        raise VersionUpdateError("settings.timeout must be a number") from exc
+
+
+def resolve_select_oldest(settings: dict, override: bool | None) -> bool:
+    if override is not None:
+        return override
+    value = settings.get("select_oldest") if settings else None
+    if value is None:
+        return False
+    if isinstance(value, bool):
+        return value
+    raise VersionUpdateError("settings.select_oldest must be a boolean")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         prog="UpdateVersion",
@@ -57,20 +102,41 @@ def main() -> int:
         "-t", "--to", required=True, help="Target Minecraft version (e.g. 1.21.6)"
     )
     parser.add_argument(
-        "--config", default="config.properties", help="Path to config.properties"
+        "--config",
+        default=None,
+        help="Path to config.properties (overrides settings file)",
     )
     parser.add_argument(
-        "--timeout", type=float, default=DEFAULT_TIMEOUT, help="HTTP timeout in seconds"
+        "--timeout",
+        type=float,
+        default=None,
+        help="HTTP timeout in seconds (overrides settings file)",
+    )
+    parser.add_argument(
+        "--oldest",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help="Select oldest Fabric API/loader and Forge versions",
+    )
+    parser.add_argument(
+        "--settings",
+        default=None,
+        help="Path to JSON settings file",
     )
     args = parser.parse_args()
 
-    config_path = Path(args.config)
+    settings = load_settings(Path(args.settings)) if args.settings else {}
+
+    config_path = resolve_config_path(settings, args.config)
     if not config_path.is_file():
         print(f"Error: config file not found: {config_path}", file=sys.stderr)
         return 1
 
+    timeout = resolve_timeout(settings, args.timeout)
+    select_oldest = resolve_select_oldest(settings, args.oldest)
+
     try:
-        versions = load_versions(args.to, timeout=args.timeout)
+        versions = load_versions(args.to, timeout=timeout, select_oldest=select_oldest)
     except VersionUpdateError as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
@@ -101,10 +167,10 @@ def main() -> int:
     return 0
 
 
-def load_versions(mcv: str, timeout: float) -> Versions:
+def load_versions(mcv: str, timeout: float, select_oldest: bool) -> Versions:
     tasks = {
-        "fabric": (fabric, (mcv, timeout)),
-        "forge": (forge, (mcv, timeout)),
+        "fabric": (fabric, (mcv, timeout, select_oldest)),
+        "forge": (forge, (mcv, timeout, select_oldest)),
         "neoforge": (neoforge, (mcv, timeout)),
         "mc_version": (mc_version, (mcv, timeout)),
         "modmenu": (modrinth, (mcv, "modmenu", timeout)),
@@ -145,7 +211,7 @@ def load_versions(mcv: str, timeout: float) -> Versions:
     )
 
 
-def fabric(mcv: str, timeout: float) -> tuple[str, str]:
+def fabric(mcv: str, timeout: float, select_oldest: bool) -> tuple[str, str]:
     loader_resp = url_json(FABRIC_LOADER_URL, timeout=timeout)
     loader_versions = [entry for entry in loader_resp if isinstance(entry, dict)]
     stable_versions = [
@@ -155,7 +221,8 @@ def fabric(mcv: str, timeout: float) -> tuple[str, str]:
     if not loader_candidates:
         raise VersionUpdateError("fabric loader versions not found")
 
-    loader_version = loader_candidates[0].get("version")
+    loader_entry = loader_candidates[-1] if select_oldest else loader_candidates[0]
+    loader_version = loader_entry.get("version")
     if not loader_version:
         raise VersionUpdateError("fabric loader version missing in response")
 
@@ -165,18 +232,19 @@ def fabric(mcv: str, timeout: float) -> tuple[str, str]:
     if not api_candidates:
         raise VersionUpdateError(f"fabric api version not found for {mcv}")
 
-    api_version = api_candidates[-1]
+    api_version = api_candidates[0] if select_oldest else api_candidates[-1]
     return api_version, loader_version
 
 
-def forge(mcv: str, timeout: float) -> str:
+def forge(mcv: str, timeout: float, select_oldest: bool) -> str:
     maven_resp = url_xml(FORGE_METADATA_URL, timeout=timeout)
     versions = parse_maven_versions(maven_resp)
     candidates = [version for version in versions if f"{mcv}-" in version]
     if not candidates:
         raise VersionUpdateError(f"forge version not found for {mcv}")
 
-    return candidates[-1].split("-", 1)[1]
+    choice = candidates[0] if select_oldest else candidates[-1]
+    return choice.split("-", 1)[1]
 
 
 def neoforge(mcv: str, timeout: float) -> str:

@@ -1,5 +1,5 @@
 plugins {
-    id 'fabric-loom' version '1.10-SNAPSHOT'
+    id 'fabric-loom' version '1.14-SNAPSHOT'
     id 'maven-publish'
 }
 
@@ -7,15 +7,19 @@ plugins {
 def vProps = new Properties()
 file("../config.properties").withInputStream { vProps.load(it) }
 
-archivesBaseName = vProps.archives_base_name
+// archivesBaseName = vProps.archives_base_name
+base {
+    archivesName = vProps.archives_base_name
+}
+
 version = "v${vProps.mod_version}+fabric-${vProps.minecraft_version}"
 group = vProps.maven_group // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 
 repositories {
-    // Cloth config
+    // YACL (Yet Another Config Lib)
     maven {
-        name "shedaniel"
-        url "https://maven.shedaniel.me/"
+        name "Xander Maven"
+        url "https://maven.isxander.dev/releases"
     }
     // Mod Menu
     maven {
@@ -32,7 +36,7 @@ dependencies {
 
     modApi "net.fabricmc.fabric-api:fabric-api:${vProps.fabric_api_version}+${vProps.minecraft_version}"
 
-    modApi("me.shedaniel.cloth:cloth-config-fabric:${vProps.cloth_config_version}") {
+    modApi("dev.isxander:yet-another-config-lib:${vProps.yacl_version}+${vProps.minecraft_version}-fabric") {
         exclude(group: "net.fabricmc.fabric-api")
     }
 
@@ -87,7 +91,7 @@ processResources {
                 "minecraft_version": vProps.minecraft_version,
                 "fabric_loader_version": vProps.fabric_loader_version,
                 "java_version": vProps.java_version,
-                "cloth_config_major_version": vProps.cloth_config_version.split('\\.')[0],
+                "yacl_major_version": vProps.yacl_version.split('\\.')[0],
                 "modmenu_major_version": vProps.modmenu_version.split('\\.')[0]
     }
 

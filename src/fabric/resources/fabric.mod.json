@@ -32,6 +32,6 @@
   },
   "recommends": {
     "modmenu": ">=${modmenu_major_version}",
-    "cloth-config": ">=${cloth_config_major_version}"
+    "yet_another_config_lib_v3": ">=${yacl_major_version}"
   }
 }

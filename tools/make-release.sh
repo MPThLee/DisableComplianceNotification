@@ -38,6 +38,8 @@ echo ""
 
 name="disable_compliance_notification"
 
+
+echo "=== Forge ==="
 cd "$PROJECT_ROOT/forge"
 
 chmod +x ./gradlew
@@ -45,11 +47,13 @@ chmod +x ./gradlew
 
 version=$(./gradlew properties | grep ^version: | cut -d ':' -f2 | xargs)
 
+echo "=== NeoForge ==="
 cd "$PROJECT_ROOT/neoforge"
 
 chmod +x ./gradlew
 ./gradlew build
 
+echo "=== Fabric ==="
 cd "$PROJECT_ROOT/fabric"
 
 chmod +x ./gradlew

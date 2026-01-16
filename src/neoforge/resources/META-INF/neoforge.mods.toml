@@ -29,15 +29,15 @@ ordering = "NONE"
 side = "CLIENT"
 
 [[dependencies.disable_compliance_notification]]
-modId = "cloth_config"
+modId = "yet_another_config_lib_v3"
 type = "optional"
-versionRange = "[${cloth_config_major_version},)"
+versionRange = "[${yacl_major_version},)"
 ordering = "NONE"
 side = "CLIENT"
 [dependencies.disable_compliance_notification.mc-publish]
 ignore=false
-modrinth="cloth-config"
-curseforge="cloth-config"
+modrinth="yacl"
+curseforge="yacl"
 
 [[mixins]]
 config="disable_compliance_notification.mixins.json"

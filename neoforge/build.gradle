@@ -2,7 +2,7 @@ plugins {
     id 'java-library'
     id 'idea'
     id 'maven-publish'
-    id 'net.neoforged.gradle.userdev' version '7.0.+'
+    id 'net.neoforged.gradle.userdev' version '7.1.+'
 }
 
 repositories {
@@ -10,7 +10,7 @@ repositories {
     jcenter()
     mavenCentral()
     maven { url = 'https://repo.spongepowered.org/maven' }
-    maven { url = 'https://maven.shedaniel.me/' }
+    maven { url = 'https://maven.isxander.dev/releases' }
 }
 
 
@@ -50,7 +50,7 @@ dependencies {
 
     annotationProcessor "net.fabricmc:sponge-mixin:${vProps.fabric_mixin_processor_version}+mixin.${vProps.mixin_processor_version}"
 
-    api "me.shedaniel.cloth:cloth-config-neoforge:${vProps.cloth_config_version}"
+    api "dev.isxander:yet-another-config-lib:${vProps.yacl_version}+${vProps.minecraft_version}-neoforge"
 }
 
 processResources {
@@ -61,7 +61,7 @@ processResources {
         expand "version": vProps.mod_version,
                 "minecraft_version": vProps.minecraft_version,
                 "neoforge_major_version": vProps.neoforge_version.split('\\.')[0] + '.' + vProps.neoforge_version.split('\\.')[1],
-                "cloth_config_major_version": vProps.cloth_config_version.split('\\.')[0]
+                "yacl_major_version": vProps.yacl_version.split('\\.')[0]
     }
 
     filesMatching("disable_compliance_notification.mixins.json") {
