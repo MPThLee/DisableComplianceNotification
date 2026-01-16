@@ -65,3 +65,71 @@ jobs:
           path: |
             fabric/build/run/*/logs/
           retention-days: 7
+
+  build-neoforge:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Read config.properties
+        id: config
+        run: |
+          echo "java_version=$(grep '^java_version=' config.properties | cut -d'=' -f2)" >> $GITHUB_OUTPUT
+
+      - name: Setup Java ${{ steps.config.outputs.java_version }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ steps.config.outputs.java_version }}
+          cache: gradle
+          cache-dependency-path: |
+            config.properties
+            neoforge/*.gradle*
+            neoforge/gradle.properties
+
+      - name: Set up swap space
+        uses: pierotofy/set-swap-space@v1.0
+        with:
+          swap-size-gb: 10
+
+      - name: Build mod
+        working-directory: neoforge
+        run: |
+          chmod +x ./gradlew
+          ./gradlew build
+
+  build-forge:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Read config.properties
+        id: config
+        run: |
+          echo "java_version=$(grep '^java_version=' config.properties | cut -d'=' -f2)" >> $GITHUB_OUTPUT
+
+      - name: Setup Java ${{ steps.config.outputs.java_version }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ steps.config.outputs.java_version }}
+          cache: gradle
+          cache-dependency-path: |
+            config.properties
+            forge/*.gradle*
+            forge/gradle.properties
+
+      - name: Set up swap space
+        uses: pierotofy/set-swap-space@v1.0
+        with:
+          swap-size-gb: 10
+
+      - name: Build mod
+        working-directory: forge
+        run: |
+          chmod +x ./gradlew
+          ./gradlew build
