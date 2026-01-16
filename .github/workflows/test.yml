@@ -1,0 +1,107 @@
+name: Compliance Notification Test
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      loader:
+        description: 'Mod loader to test'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - fabric
+          - neoforge
+          - forge
+
+env:
+  java_version: 21
+  # compliance.zip: period=1min, delay=2min
+  # Need ~3 mins to trigger both hourly and 24h notifications
+  test_duration: 180
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        loader: [fabric, neoforge]
+
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java ${{ env.java_version }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.java_version }}
+          cache: gradle
+          cache-dependency-path: |
+            config.properties
+            ${{ matrix.loader }}/*.gradle*
+            ${{ matrix.loader }}/gradle.properties
+
+      - name: Set up swap space
+        if: runner.os == 'Linux'
+        uses: pierotofy/set-swap-space@v1.0
+        with:
+          swap-size-gb: 10
+
+      - name: Build mod with ${{ matrix.loader }}
+        run: |
+          cd ${{ matrix.loader }}
+          chmod +x ./gradlew
+          ./gradlew build
+
+      - name: Prepare test environment
+        run: |
+          mkdir -p ${{ matrix.loader }}/run/mods
+          mkdir -p ${{ matrix.loader }}/run/resourcepacks
+          
+          find ${{ matrix.loader }}/build/libs -name "*.jar" \
+            ! -name "*-dev*" ! -name "*-sources*" ! -name "*-javadoc*" \
+            -exec cp {} ${{ matrix.loader }}/run/mods/ \;
+          
+          cp misc/compliance.zip ${{ matrix.loader }}/run/resourcepacks/
+          
+          echo 'resourcePacks:["file/compliance.zip"]' > ${{ matrix.loader }}/run/options.txt
+          
+          echo "=== Mods ==="
+          ls -la ${{ matrix.loader }}/run/mods/
+          echo "=== Resource Packs ==="
+          ls -la ${{ matrix.loader }}/run/resourcepacks/
+          echo "=== Options ==="
+          cat ${{ matrix.loader }}/run/options.txt
+
+      - name: Run Minecraft test client (${{ matrix.loader }})
+        uses: headlesshq/mc-runtime-test@4.1.0
+        with:
+          mc: 1.21.5
+          modloader: ${{ matrix.loader }}
+          regex: .*${{ matrix.loader }}.*
+          mc-runtime-test: ${{ matrix.loader == 'forge' && 'lexforge' || matrix.loader }}
+          java: ${{ env.java_version }}
+          headlessmc-command: --jvm "-Duser.country=KR -Duser.language=ko"
+        timeout-minutes: 10
+
+      - name: Verify compliance notification filtering
+        if: always()
+        run: |
+          chmod +x tools/verify-compliance-log.sh
+          tools/verify-compliance-log.sh "${{ matrix.loader }}/run"
+
+      - name: Upload test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-logs-${{ matrix.loader }}
+          path: |
+            ${{ matrix.loader }}/run/logs/
+            ${{ matrix.loader }}/run/*.log
+          retention-days: 7
