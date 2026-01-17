@@ -177,7 +177,7 @@ echo "  Updated mod_version=$MOD_VERSION_CLEAN"
 # Step 3: Fetch dependency versions via update-version.py
 if [ "$SKIP_UPDATE_VERSION" = false ]; then
     print_step "Step 3/8: Fetching dependency versions via update-version.py"
-    python3 "$SCRIPT_DIR/update-version.py" --to "$GAME_VERSION" --config "$CONFIG_FILE"
+    python3 "$SCRIPT_DIR/update-version.py" --to "$GAME_VERSION" --config "$CONFIG_FILE" --oldest
     echo "  Dependency versions updated!"
 else
     print_step "Step 3/8: Skipping update-version.py (--no-update-version)"
