@@ -197,15 +197,11 @@ def replace_latest_in_readme(original_md: str, new_block: str) -> str:
     """
     Replaces everything from:
       ### Latest (v... for Minecraft ...)
-    up to the next heading or EOF, with new_block.
+    up to the next ## or ### heading or EOF, with new_block.
     If not found, appends at the end.
     """
     pattern = re.compile(
-        r"(?P<block>"
-        r"^###\s+Latest\s*\(.*?\)"  # line begins with '### Latest ('
-        r"(?:[\r\n]+.*?)"  # consume lines
-        r"(?=^#{1,6}\s+|\Z)"  # until next heading or end
-        r")",
+        r"^###\s+Latest\s*\([^)]*\).*?(?=^##\s|^###\s[^#]|\Z)",
         re.MULTILINE | re.DOTALL,
     )
 
@@ -213,8 +209,8 @@ def replace_latest_in_readme(original_md: str, new_block: str) -> str:
     if not m:
         return original_md.rstrip() + "\n\n" + new_block + "\n"
 
-    start, end = m.span("block")
-    return original_md[:start] + new_block + "\n" + original_md[end:]
+    start, end = m.span()
+    return original_md[:start] + new_block + original_md[end:]
 
 
 # --------------------------------------------------------------
