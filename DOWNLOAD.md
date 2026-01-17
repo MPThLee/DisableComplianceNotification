@@ -5,6 +5,26 @@
 
 ## 1.21.x
 
+### 1.21.6
+
+At this release, Forge support has been dropped. Moved to YACL for Fabric and NeoForge.
+
+[GitHub Release](https://github.com/MPThLee/DisableComplianceNotification/releases/tag/v1.5.0) or Modrinth.
+
+[Nightly.link for 1.21.6](https://nightly.link/MPThLee/DisableComplianceNotification/workflows/build/mc1.21.6)
+
+#### Fabric
+
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.5.0/disable_compliance_notification-v1.5.0+fabric-1.21.6.jar)
+
+Recommended with [YACL](https://modrinth.com/mod/yacl) and [Mod Menu](https://modrinth.com/mod/modmenu).
+
+#### NeoForge
+
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.5.0/disable_compliance_notification-v1.5.0+neoforge-1.21.6.jar)
+
+Recommended with [YACL](https://modrinth.com/mod/yacl).
+
 ### 1.21.5 (beta)
 
 [GitHub Release](https://github.com/MPThLee/DisableComplianceNotification/releases/tag/v1.4.10-beta) or Modrinth.
@@ -199,8 +219,6 @@ Recommended with [Cloth Config](https://modrinth.com/mod/cloth-config).
 
 Recommended with [Cloth Config](https://modrinth.com/mod/cloth-config) and [Mod Menu](https://modrinth.com/mod/modmenu).
 
-
-
 ### 1.20
 
 [GitHub Release](https://github.com/MPThLee/DisableComplianceNotification/releases/tag/v1.4.0) or Modrinth.
@@ -218,7 +236,6 @@ Recommended with [Cloth Config](https://modrinth.com/mod/cloth-config).
 [Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.4.0/disable_compliance_notification-v1.4.0+fabric-1.20.jar)
 
 Recommended with [Cloth Config](https://modrinth.com/mod/cloth-config) and [Mod Menu](https://modrinth.com/mod/modmenu).
-
 
 ## 1.19.x
 
@@ -239,7 +256,6 @@ Recommended with [Cloth Config](https://modrinth.com/mod/cloth-config).
 [Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.3.0/disable_compliance_notification-v1.3.0+fabric-1.19.4.jar)
 
 Recommended with [Cloth Config](https://modrinth.com/mod/cloth-config) and [Mod Menu](https://modrinth.com/mod/modmenu).
-
 
 ### 1.19.3 (Mod v1.3.1+for1.19.3)
 
@@ -304,7 +320,6 @@ Requires [Fabric API](https://www.curseforge.com/minecraft/mc-mods/fabric-api)
 [Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.3.1+for1.19/disable_compliance_notification-fabric-v1.3.1+for1.19.jar)
 
 Requires [Fabric API](https://www.curseforge.com/minecraft/mc-mods/fabric-api)
-
 
 ### 1.19.1
 

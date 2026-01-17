@@ -12,6 +12,7 @@ As of 1.18.2, Mojang decided to implemented this on Java Edition with own implem
 ![example](https://static.wikia.nocookie.net/minecraft_gamepedia/images/a/ac/Regional_compliancies_notification_1_hour.png)
 
 > - Added gameplay timers and notices in compliance with gaming laws of South Korea to South Korean users, in order to
+
     remind these players to take occasional breaks from gameplay.
 
 Image and quote reference: https://minecraft.fandom.com/wiki/Java_Edition_1.18.2#General
@@ -38,11 +39,11 @@ Older changelog is available on [CHANGELOG.md](./CHANGELOG.md).
 
 ## Platform Support
 
-| Platform | Status | Config GUI | Notes |
-|----------|--------|------------|-------|
-| **Fabric** | :white_check_mark: Supported | :white_check_mark: YACL | Recommended with [YACL](https://modrinth.com/mod/yacl) and [Mod Menu](https://modrinth.com/mod/modmenu) |
-| **NeoForge** | :white_check_mark: Supported | :white_check_mark: YACL | Recommended with [YACL](https://modrinth.com/mod/yacl) |
-| **Forge (LexForge)** | :x: Dropped | - | Use older versions (v1.4.x) or switch to NeoForge |
+| Platform             | Status                       | Config GUI              | Notes                                                                                                   |
+| -------------------- | ---------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------- |
+| **Fabric**           | :white_check_mark: Supported | :white_check_mark: YACL | Recommended with [YACL](https://modrinth.com/mod/yacl) and [Mod Menu](https://modrinth.com/mod/modmenu) |
+| **NeoForge**         | :white_check_mark: Supported | :white_check_mark: YACL | Recommended with [YACL](https://modrinth.com/mod/yacl)                                                  |
+| **Forge (LexForge)** | :x: Dropped                  | -                       | Use older versions (v1.4.x) or switch to NeoForge                                                       |
 
 > **Note**: LexForge support has been dropped starting from v1.5.0. Cloth Config for Forge is no longer maintained, making it impractical to continue support. Please use NeoForge instead.
 
