@@ -27,16 +27,6 @@ Older changelog is available on [CHANGELOG.md](./CHANGELOG.md).
 - Migrated from Cloth Config to [YACL (Yet Another Config Lib)](https://modrinth.com/mod/yacl) for Fabric and NeoForge
 - **Dropped LexForge support** - Related library and its API are no longer maintained (unable to maintain further)
 
-### v1.4.3 - v1.4.10
-
-- Updated to latest minecraft versions
-
-### v1.4.2
-
-- Package name is changed; From `ee.mpthl.mc.disable_compliance_notification` to `dev.mpthlee.minecraft.disable_compliance_notification`
-- NeoForge support and version is 47.1.79
-- Forge version is 47.1.3
-
 ## Platform Support
 
 | Platform             | Status                       | Config GUI              | Notes                                                                                                   |
