@@ -38,6 +38,21 @@ Recommended with [YACL](https://modrinth.com/mod/yacl) and [Mod Menu](https://mo
 
 Recommended with [YACL](https://modrinth.com/mod/yacl).
 
+
+[Nightly.link for 1.21.9](https://nightly.link/MPThLee/DisableComplianceNotification/workflows/build/mc1.21.9)
+
+#### Fabric
+
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.5.3/disable_compliance_notification-v1.5.3+fabric-1.21.9.jar)
+
+Recommended with [YACL](https://modrinth.com/mod/yacl) and [Mod Menu](https://modrinth.com/mod/modmenu).
+
+#### NeoForge
+
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.5.3/disable_compliance_notification-v1.5.3+neoforge-1.21.9.jar)
+
+Recommended with [YACL](https://modrinth.com/mod/yacl).
+
 ### 1.21.8
 
 [GitHub Release](https://github.com/MPThLee/DisableComplianceNotification/releases/tag/v1.5.2) or Modrinth.

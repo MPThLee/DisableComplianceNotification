@@ -86,6 +86,18 @@ Recommended with [YACL](https://modrinth.com/mod/yacl).
 
 #### Fabric
 
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.5.3/disable_compliance_notification-v1.5.3+fabric-1.21.9.jar)
+
+Recommended with [YACL](https://modrinth.com/mod/yacl) and [Mod Menu](https://modrinth.com/mod/modmenu).
+
+#### NeoForge
+
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.5.3/disable_compliance_notification-v1.5.3+neoforge-1.21.9.jar)
+
+Recommended with [YACL](https://modrinth.com/mod/yacl).
+
+#### Fabric
+
 [Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.5.2/disable_compliance_notification-v1.5.2+fabric-1.21.8.jar)
 
 Recommended with [YACL](https://modrinth.com/mod/yacl) and [Mod Menu](https://modrinth.com/mod/modmenu).
