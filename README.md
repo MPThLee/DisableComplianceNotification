@@ -21,11 +21,11 @@ Image and quote reference: https://minecraft.fandom.com/wiki/Java_Edition_1.18.2
 
 Older changelog is available on [CHANGELOG.md](./CHANGELOG.md).
 
-### v1.5.0 (Latest)
+### v1.5.0+ (Latest)
 
-- Updated to Minecraft 1.21.6
+- Updated to Minecraft 1.21.6 (and above)
 - Migrated from Cloth Config to [YACL (Yet Another Config Lib)](https://modrinth.com/mod/yacl) for Fabric and NeoForge
-- **Dropped LexForge support** - Cloth Config for Forge is no longer maintained
+- **Dropped LexForge support** - Related library and its API are no longer maintained (unable to maintain further)
 
 ### v1.4.3 - v1.4.10
 
