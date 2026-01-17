@@ -60,7 +60,7 @@ processResources {
     filesMatching("META-INF/neoforge.mods.toml") {
         expand "version": vProps.mod_version,
                 "minecraft_version": vProps.minecraft_version,
-                "neoforge_major_version": vProps.neoforge_version.split('\\.')[0] + '.' + vProps.neoforge_version.split('\\.')[1],
+                "neoforge_major_version": vProps.neoforge_version,
                 "yacl_major_version": vProps.yacl_version.split('\\.')[0]
     }
 
