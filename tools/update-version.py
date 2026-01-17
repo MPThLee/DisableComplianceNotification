@@ -116,12 +116,12 @@ def main() -> int:
         "--oldest",
         action=argparse.BooleanOptionalAction,
         default=None,
-        help="Select oldest Fabric API/loader and Forge versions",
+        help="Select oldest Fabric API/loader and Forge versions (overrides settings)",
     )
     parser.add_argument(
         "--settings",
         default=None,
-        help="Path to JSON settings file",
+        help="Path to JSON settings file (optional)",
     )
     args = parser.parse_args()
 

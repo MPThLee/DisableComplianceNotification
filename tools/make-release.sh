@@ -38,9 +38,8 @@ echo ""
 
 name="disable_compliance_notification"
 
-
-echo "=== Forge ==="
-cd "$PROJECT_ROOT/forge"
+echo "=== Fabric ==="
+cd "$PROJECT_ROOT/fabric"
 
 chmod +x ./gradlew
 ./gradlew build
@@ -53,17 +52,10 @@ cd "$PROJECT_ROOT/neoforge"
 chmod +x ./gradlew
 ./gradlew build
 
-echo "=== Fabric ==="
-cd "$PROJECT_ROOT/fabric"
-
-chmod +x ./gradlew
-./gradlew build
-
 cd "$PROJECT_ROOT"
 mkdir -p release/
-cp forge/build/libs/$name-$version.jar release/
-cp neoforge/build/libs/$name-$version.jar release/
 cp fabric/build/libs/$name-$version.jar release/
+cp neoforge/build/libs/$name-$version.jar release/
 
 echo ""
 echo "=== Release files ==="

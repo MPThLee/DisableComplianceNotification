@@ -20,14 +20,31 @@ Image and quote reference: https://minecraft.fandom.com/wiki/Java_Edition_1.18.2
 
 Older changelog is available on [CHANGELOG.md](./CHANGELOG.md).
 
-### v1.4.3 - present
+### v1.5.0 (Latest)
+
+- Updated to Minecraft 1.21.6
+- Migrated from Cloth Config to [YACL (Yet Another Config Lib)](https://modrinth.com/mod/yacl) for Fabric and NeoForge
+- **Dropped LexForge support** - Cloth Config for Forge is no longer maintained
+
+### v1.4.3 - v1.4.10
+
 - Updated to latest minecraft versions
 
-### v1.4.2 (Latest)
+### v1.4.2
 
 - Package name is changed; From `ee.mpthl.mc.disable_compliance_notification` to `dev.mpthlee.minecraft.disable_compliance_notification`
 - NeoForge support and version is 47.1.79
 - Forge version is 47.1.3
+
+## Platform Support
+
+| Platform | Status | Config GUI | Notes |
+|----------|--------|------------|-------|
+| **Fabric** | :white_check_mark: Supported | :white_check_mark: YACL | Recommended with [YACL](https://modrinth.com/mod/yacl) and [Mod Menu](https://modrinth.com/mod/modmenu) |
+| **NeoForge** | :white_check_mark: Supported | :white_check_mark: YACL | Recommended with [YACL](https://modrinth.com/mod/yacl) |
+| **Forge (LexForge)** | :x: Dropped | - | Use older versions (v1.4.x) or switch to NeoForge |
+
+> **Note**: LexForge support has been dropped starting from v1.5.0. Cloth Config for Forge is no longer maintained, making it impractical to continue support. Please use NeoForge instead.
 
 ## Download
 
@@ -36,26 +53,20 @@ Older changelog is available on [CHANGELOG.md](./CHANGELOG.md).
 
 Older releases links are on [DOWNLOAD.md](./DOWNLOAD.md).
 
-### Latest (v1.4.10-beta for Minecraft 1.21.5)
+### Latest (v1.5.0 for Minecraft 1.21.6)
 
-[GitHub Release](https://github.com/MPThLee/DisableComplianceNotification/releases/tag/v1.4.10-beta) or Modrinth.
+[GitHub Release](https://github.com/MPThLee/DisableComplianceNotification/releases/tag/v1.5.0) or Modrinth.
 
-[Nightly.link for 1.21.5](https://nightly.link/MPThLee/DisableComplianceNotification/workflows/build/mc1.21.5)
-
-#### NeoForge
-
-[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.4.10-beta/disable_compliance_notification-v1.4.10-beta+neoforge-1.21.5.jar)
-
-Recommended with [Cloth Config](https://modrinth.com/mod/cloth-config).
+[Nightly.link for 1.21.6](https://nightly.link/MPThLee/DisableComplianceNotification/workflows/build/mc1.21.6)
 
 #### Fabric
 
-[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.4.10-beta/disable_compliance_notification-v1.4.10-beta+fabric-1.21.5.jar)
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.5.0/disable_compliance_notification-v1.5.0+fabric-1.21.6.jar)
 
-Recommended with [Cloth Config](https://modrinth.com/mod/cloth-config) and [Mod Menu](https://modrinth.com/mod/modmenu).
+Recommended with [YACL](https://modrinth.com/mod/yacl) and [Mod Menu](https://modrinth.com/mod/modmenu).
 
-#### ~~Forge~~
+#### NeoForge
 
-~~[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.4.10-beta/disable_compliance_notification-v1.4.10-beta+forge-1.21.5.jar)~~
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.5.0/disable_compliance_notification-v1.5.0+neoforge-1.21.6.jar)
 
-~~Recommended with [Cloth Config](https://modrinth.com/mod/cloth-config).~~
+Recommended with [YACL](https://modrinth.com/mod/yacl).

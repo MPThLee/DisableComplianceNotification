@@ -1,6 +1,0 @@
-{
-  "pack": {
-    "description": "Disable Compliance Notification",
-    "pack_format": ${pack_format}
-  }
-}

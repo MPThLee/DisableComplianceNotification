@@ -90,8 +90,8 @@ click 1          # Enter world
 
 When working correctly, the log should contain **both** messages:
 ```
-[ModifyPeriodicNotificationManager] Detected Period Notification: (title='compliance.playtime.hours', message='compliance.playtime.message') [DCN-MODE: COMPLIANCE_ONLY, Filtered: true]
-[ModifyPeriodicNotificationManager] Detected Period Notification: (title='compliance.playtime.greaterThan24Hours', message='compliance.playtime.message') [DCN-MODE: COMPLIANCE_ONLY, Filtered: true]
+[ModifyPeriodicNotificationManager] Detected Period Notification: (title='compliance.playtime.hours', message='compliance.playtime.message') [DCN-MODE: ONLY_COMPLIANCE, Filtered: true]
+[ModifyPeriodicNotificationManager] Detected Period Notification: (title='compliance.playtime.greaterThan24Hours', message='compliance.playtime.message') [DCN-MODE: ONLY_COMPLIANCE, Filtered: true]
 ```
 
 Key indicators:
@@ -152,8 +152,17 @@ src/gametest/
 ### "Notifications detected but none were filtered"
 
 Check the mod configuration:
-- Default mode is `COMPLIANCE_ONLY` which should filter compliance notifications
-- If set to `DISABLED`, notifications won't be filtered
+- Default mode is `ONLY_COMPLIANCE` which should filter compliance notifications
+- If set to `DISABLE`, notifications won't be filtered
+
+**Config file locations:**
+| Loader | Config Library | File Path |
+|--------|----------------|-----------|
+| Fabric | YACL | `config/disable_compliance_notification.json5` |
+| NeoForge | YACL | `config/disable_compliance_notification.json5` |
+| Forge | Native Forge Config | `config/disable_compliance_notification-client.toml` |
+
+**Note**: YACL is optional for Fabric/NeoForge. Without it, the mod uses default settings.
 
 ### Locale Issues
 
