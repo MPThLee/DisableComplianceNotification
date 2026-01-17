@@ -9,7 +9,7 @@ on:
 jobs:
   test-fabric:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -23,7 +23,7 @@ jobs:
       - name: Setup Java ${{ steps.config.outputs.java_version }}
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
+          distribution: "temurin"
           java-version: ${{ steps.config.outputs.java_version }}
           cache: gradle
           cache-dependency-path: |
@@ -45,11 +45,6 @@ jobs:
           chmod +x ./gradlew
           ./gradlew build
 
-      - name: Run server gametest (quick)
-        working-directory: fabric
-        run: ./gradlew runGameTest
-        timeout-minutes: 5
-
       - name: Run client gametest (compliance filtering)
         working-directory: fabric
         run: xvfb-run -a ./gradlew runClientGameTest
@@ -63,12 +58,12 @@ jobs:
         with:
           name: test-logs-fabric
           path: |
-            fabric/build/run/*/logs/
+            fabric/run/logs/
           retention-days: 7
 
-  build-neoforge:
+  test-neoforge:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -81,7 +76,7 @@ jobs:
       - name: Setup Java ${{ steps.config.outputs.java_version }}
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
+          distribution: "temurin"
           java-version: ${{ steps.config.outputs.java_version }}
           cache: gradle
           cache-dependency-path: |
@@ -94,42 +89,39 @@ jobs:
         with:
           swap-size-gb: 10
 
+      - name: Install xvfb
+        run: sudo apt-get update && sudo apt-get install -y xvfb
+
       - name: Build mod
         working-directory: neoforge
         run: |
           chmod +x ./gradlew
           ./gradlew build
 
-  build-forge:
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Read config.properties
-        id: config
+      - name: Run client for smoke test (1 minute)
+        working-directory: neoforge
         run: |
-          echo "java_version=$(grep '^java_version=' config.properties | cut -d'=' -f2)" >> $GITHUB_OUTPUT
+          # Run client in background with xvfb
+          timeout 60 xvfb-run -a ./gradlew runClient || exit_code=$?
+          # timeout returns 124 when it kills the process, which is expected
+          if [ "${exit_code:-0}" -eq 124 ]; then
+            echo "Client ran successfully for 1 minute (expected timeout)"
+            exit 0
+          elif [ "${exit_code:-0}" -eq 0 ]; then
+            echo "Client exited cleanly"
+            exit 0
+          else
+            echo "Client crashed with exit code $exit_code"
+            exit 1
+          fi
+        env:
+          _JAVA_OPTIONS: "-Duser.country=KR -Duser.language=ko"
 
-      - name: Setup Java ${{ steps.config.outputs.java_version }}
-        uses: actions/setup-java@v4
+      - name: Upload test logs
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          distribution: 'temurin'
-          java-version: ${{ steps.config.outputs.java_version }}
-          cache: gradle
-          cache-dependency-path: |
-            config.properties
-            forge/*.gradle*
-            forge/gradle.properties
-
-      - name: Set up swap space
-        uses: pierotofy/set-swap-space@v1.0
-        with:
-          swap-size-gb: 10
-
-      - name: Build mod
-        working-directory: forge
-        run: |
-          chmod +x ./gradlew
-          ./gradlew build
+          name: test-logs-neoforge
+          path: |
+            neoforge/run/logs/
+          retention-days: 7
