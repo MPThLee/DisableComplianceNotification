@@ -36,7 +36,7 @@ dependencies {
 
     modApi "net.fabricmc.fabric-api:fabric-api:${vProps.fabric_api_version}+${vProps.minecraft_version}"
 
-    modApi("dev.isxander:yet-another-config-lib:${vProps.yacl_version}+${vProps.minecraft_version}-fabric") {
+    modApi("dev.isxander:yet-another-config-lib:${vProps.yacl_version}-fabric") {
         exclude(group: "net.fabricmc.fabric-api")
     }
 

@@ -50,7 +50,7 @@ dependencies {
 
     annotationProcessor "net.fabricmc:sponge-mixin:${vProps.fabric_mixin_processor_version}+mixin.${vProps.mixin_processor_version}"
 
-    api "dev.isxander:yet-another-config-lib:${vProps.yacl_version}+${vProps.minecraft_version}-neoforge"
+    api "dev.isxander:yet-another-config-lib:${vProps.yacl_version}-neoforge"
 }
 
 processResources {

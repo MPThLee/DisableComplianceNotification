@@ -54,11 +54,23 @@ Older changelog is available on [CHANGELOG.md](./CHANGELOG.md).
 
 Older releases links are on [DOWNLOAD.md](./DOWNLOAD.md).
 
-### Latest (v1.5.0 for Minecraft 1.21.6)
+### Latest (v1.5.1 for Minecraft 1.21.7)
 
-[GitHub Release](https://github.com/MPThLee/DisableComplianceNotification/releases/tag/v1.5.0) or Modrinth.
+[GitHub Release](https://github.com/MPThLee/DisableComplianceNotification/releases/tag/v1.5.1) or Modrinth.
 
-[Nightly.link for 1.21.6](https://nightly.link/MPThLee/DisableComplianceNotification/workflows/build/mc1.21.6)
+[Nightly.link for 1.21.7](https://nightly.link/MPThLee/DisableComplianceNotification/workflows/build/mc1.21.7)
+
+#### Fabric
+
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.5.1/disable_compliance_notification-v1.5.1+fabric-1.21.7.jar)
+
+Recommended with [YACL](https://modrinth.com/mod/yacl) and [Mod Menu](https://modrinth.com/mod/modmenu).
+
+#### NeoForge
+
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.5.1/disable_compliance_notification-v1.5.1+neoforge-1.21.7.jar)
+
+Recommended with [YACL](https://modrinth.com/mod/yacl).
 
 #### Fabric
 

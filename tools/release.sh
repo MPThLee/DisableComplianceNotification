@@ -35,16 +35,18 @@ OPTIONS:
     -v, --version VERSION   Mod version (e.g., 1.5.0) [required]
     -p, --push              Push branch and tag to remote
     -n, --no-test           Skip build and test step
+    --no-update-version     Skip update-version.py (dependency version fetch)
     -h, --help              Show this help message
 
 WORKFLOW:
     1. Create mc<minecraft_version> branch
-    2. Update config.properties with new versions
-    3. Build and test (fabric, neoforge)
-    4. Update DOWNLOAD.md and README.md via make-template.py
-    5. Commit changes
-    6. Tag release (v<mod_version>)
-    7. Push to remote (if --push specified)
+    2. Update mod_version in config.properties
+    3. Fetch dependency versions via update-version.py (unless --no-update-version)
+    4. Build and test (fabric, neoforge)
+    5. Update DOWNLOAD.md and README.md via make-template.py
+    6. Commit changes
+    7. Tag release (v<mod_version>)
+    8. Push to remote (if --push specified)
 
 EXAMPLES:
     $(basename "$0") -g 1.21.6 -v 1.5.0
@@ -59,6 +61,7 @@ GAME_VERSION=""
 MOD_VERSION=""
 PUSH_REMOTE=false
 SKIP_TEST=false
+SKIP_UPDATE_VERSION=false
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -76,6 +79,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         -n|--no-test)
             SKIP_TEST=true
+            shift
+            ;;
+        --no-update-version)
+            SKIP_UPDATE_VERSION=true
             shift
             ;;
         -h|--help)
@@ -153,7 +160,7 @@ if [[ ! $REPLY =~ ^[Yy]$ ]]; then
 fi
 
 # Step 1: Create branch
-print_step "Step 1/6: Creating branch '$BRANCH_NAME'"
+print_step "Step 1/8: Creating branch '$BRANCH_NAME'"
 if git show-ref --verify --quiet "refs/heads/$BRANCH_NAME"; then
     print_warning "Branch '$BRANCH_NAME' already exists. Switching to it."
     git checkout "$BRANCH_NAME"
@@ -161,23 +168,28 @@ else
     git checkout -b "$BRANCH_NAME"
 fi
 
-# Step 2: Update config.properties
-print_step "Step 2/6: Updating config.properties"
-
-# Update minecraft_version
-sed -i.bak "s/^minecraft_version=.*/minecraft_version=$GAME_VERSION/" "$CONFIG_FILE"
-
-# Update mod_version
+# Step 2: Update mod_version in config.properties
+print_step "Step 2/8: Updating mod_version in config.properties"
 sed -i.bak "s/^mod_version=.*/mod_version=$MOD_VERSION_CLEAN/" "$CONFIG_FILE"
-
 rm -f "$CONFIG_FILE.bak"
-
-echo "  Updated minecraft_version=$GAME_VERSION"
 echo "  Updated mod_version=$MOD_VERSION_CLEAN"
 
-# Step 3: Build and test
+# Step 3: Fetch dependency versions via update-version.py
+if [ "$SKIP_UPDATE_VERSION" = false ]; then
+    print_step "Step 3/8: Fetching dependency versions via update-version.py"
+    python3 "$SCRIPT_DIR/update-version.py" --to "$GAME_VERSION" --config "$CONFIG_FILE"
+    echo "  Dependency versions updated!"
+else
+    print_step "Step 3/8: Skipping update-version.py (--no-update-version)"
+    # Still need to update minecraft_version manually
+    sed -i.bak "s/^minecraft_version=.*/minecraft_version=$GAME_VERSION/" "$CONFIG_FILE"
+    rm -f "$CONFIG_FILE.bak"
+    echo "  Updated minecraft_version=$GAME_VERSION (manual)"
+fi
+
+# Step 4: Build and test
 if [ "$SKIP_TEST" = false ]; then
-    print_step "Step 3/6: Building and testing"
+    print_step "Step 4/8: Building and testing"
     
     echo "  Building Fabric..."
     cd "$PROJECT_ROOT/fabric"
@@ -192,11 +204,11 @@ if [ "$SKIP_TEST" = false ]; then
     cd "$PROJECT_ROOT"
     echo "  Build successful!"
 else
-    print_step "Step 3/6: Skipping build and test (--no-test)"
+    print_step "Step 4/8: Skipping build and test (--no-test)"
 fi
 
-# Step 4: Update templates
-print_step "Step 4/6: Updating DOWNLOAD.md and README.md"
+# Step 5: Update templates
+print_step "Step 5/8: Updating DOWNLOAD.md and README.md"
 cd "$PROJECT_ROOT"
 python3 "$SCRIPT_DIR/make-template.py" \
     --game "$GAME_VERSION" \
@@ -205,13 +217,13 @@ python3 "$SCRIPT_DIR/make-template.py" \
     --readme-file "$PROJECT_ROOT/README.md"
 echo "  Templates updated!"
 
-# Step 5: Commit changes
-print_step "Step 5/6: Committing changes"
+# Step 6: Commit changes
+print_step "Step 6/8: Committing changes"
 git add -A
 git commit -m "Release $MOD_VERSION_TAG for Minecraft $GAME_VERSION" || print_warning "Nothing to commit"
 
-# Step 6: Create tag
-print_step "Step 6/6: Creating tag '$MOD_VERSION_TAG'"
+# Step 7: Create tag
+print_step "Step 7/8: Creating tag '$MOD_VERSION_TAG'"
 if git rev-parse "$MOD_VERSION_TAG" >/dev/null 2>&1; then
     print_warning "Tag '$MOD_VERSION_TAG' already exists. Skipping tag creation."
 else
@@ -219,9 +231,9 @@ else
     echo "  Tag created!"
 fi
 
-# Push if requested
+# Step 8: Push if requested
 if [ "$PUSH_REMOTE" = true ]; then
-    print_step "Pushing to remote..."
+    print_step "Step 8/8: Pushing to remote..."
     git push -u origin "$BRANCH_NAME"
     git push origin "$MOD_VERSION_TAG"
     echo "  Pushed branch and tag to remote!"

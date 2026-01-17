@@ -149,7 +149,7 @@ def main() -> int:
         "java_version": versions.java_version,
         "fabric_loader_version": versions.fabric_loader,
         "fabric_api_version": versions.fabric_api.split("+")[0],
-        "yacl_version": versions.yacl.split("+")[0],
+        "yacl_version": re.sub(r"-(fabric|neoforge)$", "", versions.yacl),
         "modmenu_version": versions.modmenu,
     }
 
@@ -171,7 +171,7 @@ def load_versions(mcv: str, timeout: float, select_oldest: bool) -> Versions:
     tasks = {
         "fabric": (fabric, (mcv, timeout, select_oldest)),
         "forge": (forge, (mcv, timeout, select_oldest)),
-        "neoforge": (neoforge, (mcv, timeout)),
+        "neoforge": (neoforge, (mcv, timeout, select_oldest)),
         "mc_version": (mc_version, (mcv, timeout)),
         "modmenu": (modrinth, (mcv, "modmenu", timeout)),
         "yacl": (modrinth, (mcv, "yacl", timeout)),
@@ -247,14 +247,14 @@ def forge(mcv: str, timeout: float, select_oldest: bool) -> str:
     return choice.split("-", 1)[1]
 
 
-def neoforge(mcv: str, timeout: float) -> str:
+def neoforge(mcv: str, timeout: float, select_oldest: bool) -> str:
     maven_resp = url_xml(NEOFORGE_METADATA_URL, timeout=timeout)
     versions = parse_maven_versions(maven_resp)
     candidates = [version for version in versions if f"{mcv[2:]}." in version]
     if not candidates:
         raise VersionUpdateError(f"neoforge version not found for {mcv}")
 
-    return candidates[-1]
+    return candidates[0] if select_oldest else candidates[-1]
 
 
 def modrinth(mcv: str, modid: str, timeout: float) -> str:
