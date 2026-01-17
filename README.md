@@ -15,7 +15,7 @@ As of 1.18.2, Mojang decided to implemented this on Java Edition with own implem
 
     remind these players to take occasional breaks from gameplay.
 
-Image and quote reference: https://minecraft.fandom.com/wiki/Java_Edition_1.18.2#General
+Image and quote reference: https://minecraft.wiki/w/Java_Edition_1.18.2#General
 
 ## Changelog
 

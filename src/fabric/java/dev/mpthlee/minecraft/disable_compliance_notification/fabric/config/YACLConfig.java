@@ -23,7 +23,7 @@ public class YACLConfig implements DCNConfigInterface {
             .build();
 
     @SerialEntry
-    public NotificationFilterMode notificationFilterMode = new DCNConfigDefault().getNotificationFilterMode();
+    public NotificationFilterMode notificationFilterMode = NotificationFilterMode.ONLY_COMPLIANCE;
 
     @Override
     public NotificationFilterMode getNotificationFilterMode() {

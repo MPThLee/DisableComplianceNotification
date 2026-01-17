@@ -1,4 +1,8 @@
 {
+  "config.disable_compliance_notification.title": "Disable Compliance Notification",
+  "config.disable_compliance_notification.category.general": "General",
+  "config.disable_compliance_notification.filter_mode": "Notification Filter Mode",
+  "config.disable_compliance_notification.filter_mode.description": "Specify how periodic notification messages should be filtered.",
   "config.disable_compliance_notification.filter_mode.ALL": "Filter Everything",
   "config.disable_compliance_notification.filter_mode.DISABLE": "Disable Filtering",
   "config.disable_compliance_notification.filter_mode.ONLY_COMPLIANCE": "Compliance Only",

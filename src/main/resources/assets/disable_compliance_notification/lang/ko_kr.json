@@ -1,0 +1,13 @@
+{
+  "config.disable_compliance_notification.title": "게임 이용 알림 비활성화",
+  "config.disable_compliance_notification.category.general": "일반",
+  "config.disable_compliance_notification.filter_mode": "알림 필터 모드",
+  "config.disable_compliance_notification.filter_mode.description": "주기적인 알림 메시지를 어떻게 필터링할지 설정합니다.",
+  "config.disable_compliance_notification.filter_mode.ALL": "모든 알림 필터링",
+  "config.disable_compliance_notification.filter_mode.DISABLE": "필터링 비활성화",
+  "config.disable_compliance_notification.filter_mode.ONLY_COMPLIANCE": "게임 이용 알림만",
+  "config.disable_compliance_notification.filter_mode.ONLY_NON_COMPLIANCE": "게임 이용 알림 외 알림만",
+  "text.autoconfig.disable_compliance_notification.option.notificationFilterMode": "주기적 알림 필터링 모드",
+  "text.autoconfig.disable_compliance_notification.option.notificationFilterMode.@Tooltip": "주기적인 알림 메시지를 어떻게 필터링할지 설정합니다.",
+  "text.autoconfig.disable_compliance_notification.title": "게임 이용 알림 비활성화"
+}
