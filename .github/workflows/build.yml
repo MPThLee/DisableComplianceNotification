@@ -69,12 +69,15 @@ jobs:
         with:
           name: neoforge-artifact
 
+      - name: Remove gametest jar
+        run: |
+          rm -f *.gametest.jar
+
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
             *.jar
-            !*-gametest.jar
 
   publish:
     runs-on: ubuntu-latest

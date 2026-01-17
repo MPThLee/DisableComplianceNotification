@@ -220,7 +220,7 @@ echo "  Templates updated!"
 # Step 6: Commit changes
 print_step "Step 6/8: Committing changes"
 git add -A
-git commit -m "Release $MOD_VERSION_TAG for Minecraft $GAME_VERSION" || print_warning "Nothing to commit"
+git commit -m "release: $MOD_VERSION_TAG for Minecraft $GAME_VERSION" || print_warning "Nothing to commit"
 
 # Step 7: Create tag
 print_step "Step 7/8: Creating tag '$MOD_VERSION_TAG'"
