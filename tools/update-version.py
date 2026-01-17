@@ -281,10 +281,18 @@ def modrinth(mcv: str, modid: str, timeout: float) -> str:
 def mc_version(mcv: str, timeout: float) -> tuple[str, str]:
     resp = url_json(MC_VERSION_URL.format(mcv=mcv), timeout=timeout)
     pack_ver = resp.get("pack_version")
+
     if isinstance(pack_ver, dict):
-        pack_ver = str(max(pack_ver.get("resource", 0), pack_ver.get("data", 0)))
+        if "resource_major" in pack_ver:
+            major = pack_ver.get("resource_major", 0)
+            minor = pack_ver.get("resource_minor", 0)
+            pack_ver = f"{major}.{minor}"
+        elif "resource" in pack_ver:
+            pack_ver = f"{pack_ver.get('resource', 0)}.0"
+        else:
+            raise VersionUpdateError("unknown pack_version format in response")
     elif pack_ver is not None:
-        pack_ver = str(pack_ver)
+        pack_ver = f"{pack_ver}.0"
     else:
         raise VersionUpdateError("pack_version missing in Minecraft version response")
 
