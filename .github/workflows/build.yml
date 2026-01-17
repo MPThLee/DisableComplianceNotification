@@ -74,6 +74,7 @@ jobs:
         with:
           files: |
             *.jar
+            !*-gametest.jar
 
   publish:
     runs-on: ubuntu-latest
@@ -128,7 +129,7 @@ jobs:
           curseforge-id: 644324
           curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
 
-          files: ${{ matrix.loader }}/!(*-@(dev|sources|javadoc)).jar
+          files: ${{ matrix.loader }}/!(*-@(dev|sources|javadoc|gametest)).jar
 
           name: "[${{ steps.variables.outputs.capital_loader }} ${{ steps.variables.outputs.prop_minecraft_version }}] ${{ steps.variables.outputs.prop_mod_version }}"
           version: ${{ steps.variables.outputs.full_version }}
