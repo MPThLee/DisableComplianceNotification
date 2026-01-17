@@ -69,7 +69,10 @@ processResources {
     }
 
     filesMatching("pack.mcmeta") {
-        expand "pack_format": vProps.pack_format.split('\\.')[0]
+        def parts = vProps.pack_format.split('\\.')
+        def major = parts[0] as int
+        def packSection = major >= 65 ? "\"min_format\": ${major}, \"max_format\": ${major}" : "\"pack_format\": ${major}"
+        expand "pack_section": packSection
     }
 }
 
