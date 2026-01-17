@@ -2,8 +2,11 @@ name: Compliance Notification Test
 
 on:
   push:
-    branches: [main, master]
+    branches:
+      - mc*
   pull_request:
+    branches:
+      - mc*
   workflow_dispatch:
 
 jobs:
