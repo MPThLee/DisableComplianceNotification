@@ -44,7 +44,7 @@ public class ComplianceClientGameTest implements FabricClientGameTest {
         LOGGER.info("Creating singleplayer world...");
 
         try (TestSingleplayerContext singleplayer = context.worldBuilder().create()) {
-            singleplayer.getClientWorld().waitForChunksRender();
+            singleplayer.getClientLevel().waitForChunksRender();
             LOGGER.info("World loaded, waiting {} ticks ({} seconds)", WAIT_TICKS, WAIT_TICKS / 20);
 
             for (int i = 0; i < WAIT_TICKS; i++) {

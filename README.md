@@ -21,11 +21,9 @@ Image and quote reference: https://minecraft.wiki/w/Java_Edition_1.18.2#General
 
 Older changelog is available on [CHANGELOG.md](./CHANGELOG.md).
 
-### v1.5.0+ (Latest)
+### v1.5.6+ (Latest)
 
-- Updated to Minecraft 1.21.6 (and above)
-- Migrated from Cloth Config to [YACL (Yet Another Config Lib)](https://modrinth.com/mod/yacl) for Fabric and NeoForge
-- **Dropped LexForge support** - Related library and its API are no longer maintained (unable to maintain further)
+- Updated to Minecraft 26.1 (and above)
 
 ## Platform Support
 
@@ -44,20 +42,20 @@ Older changelog is available on [CHANGELOG.md](./CHANGELOG.md).
 
 Older releases links are on [DOWNLOAD.md](./DOWNLOAD.md).
 
-### Latest (v1.5.5 for Minecraft 1.21.11)
+### Latest (v1.5.6 for Minecraft 26.1)
 
-[GitHub Release](https://github.com/MPThLee/DisableComplianceNotification/releases/tag/v1.5.5) or Modrinth.
+[GitHub Release](https://github.com/MPThLee/DisableComplianceNotification/releases/tag/v1.5.6) or Modrinth.
 
-[Nightly.link for 1.21.11](https://nightly.link/MPThLee/DisableComplianceNotification/workflows/build/mc1.21.11)
+[Nightly.link for 26.1](https://nightly.link/MPThLee/DisableComplianceNotification/workflows/build/mc26.1)
 
 #### Fabric
 
-[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.5.5/disable_compliance_notification-v1.5.5+fabric-1.21.11.jar)
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.5.6/disable_compliance_notification-v1.5.6+fabric-26.1.jar)
 
 Recommended with [YACL](https://modrinth.com/mod/yacl) and [Mod Menu](https://modrinth.com/mod/modmenu).
 
 #### NeoForge
 
-[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.5.5/disable_compliance_notification-v1.5.5+neoforge-1.21.11.jar)
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.5.6/disable_compliance_notification-v1.5.6+neoforge-26.1.jar)
 
 Recommended with [YACL](https://modrinth.com/mod/yacl).
