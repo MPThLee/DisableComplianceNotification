@@ -7,7 +7,7 @@ plugins {
 
 repositories {
     maven { url = 'https://maven.neoforged.net/releases' }
-    jcenter()
+//    jcenter()
     mavenCentral()
     maven { url = 'https://repo.spongepowered.org/maven' }
     maven { url = 'https://maven.isxander.dev/releases' }
@@ -18,7 +18,9 @@ repositories {
 def vProps = new Properties()
 file("../config.properties").withInputStream { vProps.load(it) }
 
-archivesBaseName = vProps.archives_base_name
+base {
+    archivesName = vProps.archives_base_name as String
+}
 version = "v${vProps.mod_version}+neoforge-${vProps.minecraft_version}"
 group = vProps.maven_group
 
