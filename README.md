@@ -42,20 +42,20 @@ Older changelog is available on [CHANGELOG.md](./CHANGELOG.md).
 
 Older releases links are on [DOWNLOAD.md](./DOWNLOAD.md).
 
-### Latest (v1.5.6 for Minecraft 26.1)
+### Latest (v1.5.7 for Minecraft 26.1.1)
 
-[GitHub Release](https://github.com/MPThLee/DisableComplianceNotification/releases/tag/v1.5.6) or Modrinth.
+[GitHub Release](https://github.com/MPThLee/DisableComplianceNotification/releases/tag/v1.5.7) or Modrinth.
 
-[Nightly.link for 26.1](https://nightly.link/MPThLee/DisableComplianceNotification/workflows/build/mc26.1)
+[Nightly.link for 26.1.1](https://nightly.link/MPThLee/DisableComplianceNotification/workflows/build/mc26.1.1)
 
 #### Fabric
 
-[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.5.6/disable_compliance_notification-v1.5.6+fabric-26.1.jar)
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.5.7/disable_compliance_notification-v1.5.7+fabric-26.1.1.jar)
 
 Recommended with [YACL](https://modrinth.com/mod/yacl) and [Mod Menu](https://modrinth.com/mod/modmenu).
 
 #### NeoForge
 
-[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.5.6/disable_compliance_notification-v1.5.6+neoforge-26.1.jar)
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.5.7/disable_compliance_notification-v1.5.7+neoforge-26.1.1.jar)
 
 Recommended with [YACL](https://modrinth.com/mod/yacl).
