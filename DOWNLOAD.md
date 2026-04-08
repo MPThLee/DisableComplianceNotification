@@ -5,6 +5,24 @@
 
 ## 26.1.x
 
+### 26.1.1
+
+[GitHub Release](https://github.com/MPThLee/DisableComplianceNotification/releases/tag/v1.5.7) or Modrinth.
+
+[Nightly.link for 26.1.1](https://nightly.link/MPThLee/DisableComplianceNotification/workflows/build/mc26.1.1)
+
+#### Fabric
+
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.5.7/disable_compliance_notification-v1.5.7+fabric-26.1.1.jar)
+
+Recommended with [YACL](https://modrinth.com/mod/yacl) and [Mod Menu](https://modrinth.com/mod/modmenu).
+
+#### NeoForge
+
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.5.7/disable_compliance_notification-v1.5.7+neoforge-26.1.1.jar)
+
+Recommended with [YACL](https://modrinth.com/mod/yacl).
+
 ### 26.1
 
 [GitHub Release](https://github.com/MPThLee/DisableComplianceNotification/releases/tag/v1.5.6) or Modrinth.
