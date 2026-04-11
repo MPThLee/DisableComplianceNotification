@@ -1,0 +1,78 @@
+name: Check Minecraft Update
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+    inputs:
+      snapshot:
+        description: 'Track snapshot versions instead of releases'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  check-update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Find latest release branch
+        id: base
+        run: |
+          LATEST=$(git branch -r --sort=-version:refname --list 'origin/mc*' | head -1 | sed 's|^ *origin/||')
+          if [ -z "$LATEST" ]; then
+            LATEST="${{ github.ref_name }}"
+          fi
+          echo "branch=$LATEST" >> "$GITHUB_OUTPUT"
+          echo "Latest release branch: $LATEST"
+
+      - name: Checkout latest release branch
+        run: git checkout "${{ steps.base.outputs.branch }}"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Check for Minecraft update
+        id: check
+        run: python3 tools/check-update.py ${{ inputs.snapshot == true && '--snapshot' || '' }}
+
+      - name: Check if branch already exists
+        if: steps.check.outputs.has_update == 'true'
+        id: existing
+        run: |
+          BRANCH="mc${{ steps.check.outputs.new_version }}"
+          if git ls-remote --heads origin "$BRANCH" | grep -q .; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "Branch $BRANCH already exists"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Apply update
+        if: steps.check.outputs.has_update == 'true' && steps.existing.outputs.skip == 'false'
+        run: python3 tools/check-update.py --apply ${{ inputs.snapshot == true && '--snapshot' || '' }}
+
+      # Note: GITHUB_TOKEN pushes don't trigger other workflows (build, test).
+      # To trigger them, use a PAT or manually re-run after creation.
+      - name: Push new branch
+        if: steps.check.outputs.has_update == 'true' && steps.existing.outputs.skip == 'false'
+        env:
+          MC_VERSION: ${{ steps.check.outputs.new_version }}
+          MOD_VERSION: ${{ steps.check.outputs.mod_version }}
+        run: |
+          BRANCH="mc${MC_VERSION}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git checkout -b "$BRANCH"
+          git add -A
+          git commit -m "feat: update to v${MOD_VERSION} for minecraft ${MC_VERSION}"
+          git push -u origin "$BRANCH"
