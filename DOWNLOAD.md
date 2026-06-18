@@ -621,3 +621,23 @@ and [Fabric API](https://www.curseforge.com/minecraft/mc-mods/fabric-api)
 
 Requires [Architectury API (for Fabric)](https://modrinth.com/mod/architectury-api)
 and [Quilt Standard Libraries](https://modrinth.com/mod/qsl)
+
+## 26.2.x
+
+### 26.2
+
+[GitHub Release](https://github.com/MPThLee/DisableComplianceNotification/releases/tag/v1.5.9) or Modrinth.
+
+[Nightly.link for 26.2](https://nightly.link/MPThLee/DisableComplianceNotification/workflows/build/mc26.2)
+
+#### Fabric
+
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.5.9/disable_compliance_notification-v1.5.9+fabric-26.2.jar)
+
+Recommended with [YACL](https://modrinth.com/mod/yacl) and [Mod Menu](https://modrinth.com/mod/modmenu).
+
+#### NeoForge
+
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.5.9/disable_compliance_notification-v1.5.9+neoforge-26.2.jar)
+
+Recommended with [YACL](https://modrinth.com/mod/yacl).
