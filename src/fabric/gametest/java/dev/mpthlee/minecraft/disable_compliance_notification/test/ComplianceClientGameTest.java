@@ -34,7 +34,8 @@ public class ComplianceClientGameTest implements FabricClientGameTest {
         DisableComplianceNotification.setConfig(new DCNConfigDefault());
         ComplianceTestState.startCapture();
 
-        try {
+        try (var singleplayer = context.worldBuilder().create()) {
+            LOGGER.info("Deterministic client gametest entered a singleplayer world");
             context.runOnClient(client -> {
                 ToastManager toastManager = getToastManager(client);
                 toastManager.clear();

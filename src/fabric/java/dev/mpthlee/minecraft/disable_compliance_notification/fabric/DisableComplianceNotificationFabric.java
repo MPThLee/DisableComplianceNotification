@@ -13,5 +13,6 @@ public class DisableComplianceNotificationFabric implements ClientModInitializer
         DisableComplianceNotification.init();
 
         Config.loadConfig();
+        DisableComplianceNotification.startClientGateIfRequested();
     }
 }

@@ -31,6 +31,7 @@ java {
 
     sourceSets.main.java.srcDirs += ['../src/main']
     sourceSets.main.java.srcDirs += ['../src/neoforge']
+    sourceSets.main.java.srcDirs += ['../src/clientgate/java']
 
     sourceSets.main.resources.srcDirs += ['../src/main/resources']
     sourceSets.main.resources.srcDirs += ['../src/neoforge/resources']
@@ -83,6 +84,8 @@ processResources {
 }
 
 jar {
+    exclude 'dev/mpthlee/minecraft/disable_compliance_notification/test/**'
+
     manifest {
         attributes([
                 "Specification-Title"     : "DisableComplianceNotification",

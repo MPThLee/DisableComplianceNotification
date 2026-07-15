@@ -15,6 +15,7 @@ public final class DisableComplianceNotificationForge {
 
         context.registerConfig(ModConfig.Type.CLIENT, ForgeConfig.SPEC);
         FMLCommonSetupEvent.getBus(context.getModBusGroup()).addListener(this::onCommonSetup);
+        DisableComplianceNotification.startClientGateIfRequested();
     }
 
     private void onCommonSetup(final FMLCommonSetupEvent event) {

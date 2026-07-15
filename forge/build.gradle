@@ -26,7 +26,7 @@ java {
 
 sourceSets {
     main {
-        java.srcDirs = ['../src/main/java', '../src/forge/java']
+        java.srcDirs = ['../src/main/java', '../src/forge/java', '../src/clientgate/java']
         resources.srcDirs = ['../src/main/resources', '../src/forge/resources']
     }
 }
@@ -100,6 +100,8 @@ processResources {
 }
 
 tasks.named('jar', Jar) {
+    exclude 'dev/mpthlee/minecraft/disable_compliance_notification/test/**'
+
     manifest {
         attributes([
                 'Specification-Title'     : 'DisableComplianceNotification',

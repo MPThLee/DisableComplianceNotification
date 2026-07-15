@@ -20,6 +20,20 @@ public class DisableComplianceNotification {
         LOGGER.info("Initializing Disable Compliance Notification... [Locale ISO3 Country: {}]", locale);
     }
 
+    public static void startClientGateIfRequested() {
+        if (!Boolean.getBoolean("dcn.client.gate")) {
+            return;
+        }
+
+        try {
+            Class.forName("dev.mpthlee.minecraft.disable_compliance_notification.test.ClientGateBootstrap")
+                    .getMethod("start")
+                    .invoke(null);
+        } catch (ReflectiveOperationException exception) {
+            throw new IllegalStateException("DCN client-gate bootstrap is unavailable", exception);
+        }
+    }
+
     public static DCNConfigInterface getConfig() {
         return config;
     }

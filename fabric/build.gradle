@@ -65,6 +65,7 @@ java {
     sourceSets.main.java {
         srcDirs += ['../src/fabric']
         srcDirs += ['../src/main']
+        srcDirs += ['../src/clientgate/java']
         exclude '**/gametest/**'
     }
 
@@ -108,6 +109,8 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 jar {
+    exclude 'dev/mpthlee/minecraft/disable_compliance_notification/test/**'
+
     from("LICENSE") {
         rename { "${it}_${archivesBaseName}" }
     }
