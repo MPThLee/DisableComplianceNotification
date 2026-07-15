@@ -1,0 +1,11 @@
+{
+  "required": true,
+  "package": "dev.mpthlee.minecraft.disable_compliance_notification.test.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "TrackToastManagerMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

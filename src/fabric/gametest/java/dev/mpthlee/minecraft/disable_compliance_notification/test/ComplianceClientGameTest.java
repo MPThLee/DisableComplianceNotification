@@ -56,6 +56,8 @@ public class ComplianceClientGameTest implements FabricClientGameTest {
                             "the filtered notification should be detected once");
                     assertEquals(1, ComplianceTestState.getFilteredCount(),
                             "the compliance notification should be filtered");
+                    assertEquals(0, ComplianceTestState.getPeriodicToastEnqueueCount(),
+                            "the filtered notification must not enqueue a toast");
                     assertTrue(ComplianceTestState.getFilteredTitles().contains(FILTERED_TITLE),
                             "the filtered title should be captured");
                     assertTrue(toastManager.getToast(
@@ -81,6 +83,8 @@ public class ComplianceClientGameTest implements FabricClientGameTest {
                             "both periodic notifications should be detected");
                     assertEquals(1, ComplianceTestState.getUnfilteredCount(),
                             "the non-compliance notification should remain unfiltered");
+                    assertEquals(1, ComplianceTestState.getPeriodicToastEnqueueCount(),
+                            "the unfiltered notification must enqueue exactly one toast");
                     assertTrue(ComplianceTestState.getUnfilteredTitles().contains(UNFILTERED_TITLE),
                             "the unfiltered title should be captured");
                     assertTrue(toastManager.getToast(

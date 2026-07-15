@@ -12,5 +12,8 @@
     "fabric-client-gametest": [
       "dev.mpthlee.minecraft.disable_compliance_notification.test.ComplianceClientGameTest"
     ]
-  }
+  },
+  "mixins": [
+    "disable_compliance_notification_test.mixins.json"
+  ]
 }

@@ -1,5 +1,7 @@
 package dev.mpthlee.minecraft.disable_compliance_notification.test;
 
+import net.minecraft.client.gui.components.toasts.SystemToast;
+import net.minecraft.client.gui.components.toasts.Toast;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.Logger;
@@ -16,6 +18,7 @@ public class ComplianceTestState {
     private static final AtomicInteger detectedCount = new AtomicInteger(0);
     private static final AtomicInteger filteredCount = new AtomicInteger(0);
     private static final AtomicInteger unfilteredCount = new AtomicInteger(0);
+    private static final AtomicInteger periodicToastEnqueueCount = new AtomicInteger(0);
     private static final Set<String> filteredTitles = ConcurrentHashMap.newKeySet();
     private static final Set<String> unfilteredTitles = ConcurrentHashMap.newKeySet();
     private static TestLogAppender appender;
@@ -27,6 +30,7 @@ public class ComplianceTestState {
         detectedCount.set(0);
         filteredCount.set(0);
         unfilteredCount.set(0);
+        periodicToastEnqueueCount.set(0);
         filteredTitles.clear();
         unfilteredTitles.clear();
         appender = new TestLogAppender();
@@ -55,6 +59,17 @@ public class ComplianceTestState {
 
     public static int getUnfilteredCount() {
         return unfilteredCount.get();
+    }
+
+    public static int getPeriodicToastEnqueueCount() {
+        return periodicToastEnqueueCount.get();
+    }
+
+    public static void recordToast(Toast toast) {
+        if (toast instanceof SystemToast
+                && toast.getToken() == SystemToast.SystemToastId.PERIODIC_NOTIFICATION) {
+            periodicToastEnqueueCount.incrementAndGet();
+        }
     }
 
     public static Set<String> getFilteredTitles() {
