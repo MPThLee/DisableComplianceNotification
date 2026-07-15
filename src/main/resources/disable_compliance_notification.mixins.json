@@ -3,7 +3,7 @@
   "package": "dev.mpthlee.minecraft.disable_compliance_notification.mixin",
   "compatibilityLevel": "JAVA_${java_version}",
   "client": [
-    "ModifyPeriodicNotificationTask"
+    "ModifySystemToast"
   ],
   "mixins": [
   ],

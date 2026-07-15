@@ -8,6 +8,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.PeriodicNotificationManager.Notification;
 import net.minecraft.client.gui.components.toasts.SystemToast;
 import net.minecraft.client.gui.components.toasts.ToastManager;
+import net.minecraft.network.chat.Component;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -39,6 +40,18 @@ public class ComplianceClientGameTest implements FabricClientGameTest {
                 toastManager.clear();
 
                 try {
+                    SystemToast.add(
+                            toastManager,
+                            SystemToast.SystemToastId.PACK_COPY_FAILURE,
+                            Component.translatable(FILTERED_TITLE),
+                            Component.translatable(FILTERED_MESSAGE)
+                    );
+                    assertTrue(toastManager.getToast(
+                            SystemToast.class,
+                            SystemToast.SystemToastId.PACK_COPY_FAILURE
+                    ) != null, "a non-periodic toast must remain untouched");
+                    toastManager.clear();
+
                     createDueNotificationTask(FILTERED_TITLE, FILTERED_MESSAGE).run();
                 } catch (RuntimeException | Error throwable) {
                     toastManager.clear();

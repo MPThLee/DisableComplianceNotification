@@ -36,13 +36,13 @@ public class ComplianceTestState {
         appender = new TestLogAppender();
         appender.start();
 
-        Logger logger = (Logger) LogManager.getLogger("ModifyPeriodicNotificationManager");
+        Logger logger = (Logger) LogManager.getLogger("ModifySystemToast");
         logger.addAppender(appender);
     }
 
     public static void stopCapture() {
         if (appender != null) {
-            Logger logger = (Logger) LogManager.getLogger("ModifyPeriodicNotificationManager");
+            Logger logger = (Logger) LogManager.getLogger("ModifySystemToast");
             logger.removeAppender(appender);
             appender.stop();
             appender = null;
