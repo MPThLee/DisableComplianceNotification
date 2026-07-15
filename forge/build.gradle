@@ -10,6 +10,8 @@ def vProps = new Properties()
 file('../config.properties').withInputStream { vProps.load(it) }
 
 def forgeMajorVersion = vProps.forge_version.split('\\.')[0]
+// Forge 65 embeds upstream Mixin 0.8.7, whose highest compatibility level is Java 21.
+def forgeMixinJavaVersion = 21
 def packFormatParts = vProps.pack_format.split('\\.')
 def packFormatMajor = packFormatParts[0] as int
 def packFormatMinor = packFormatParts.length > 1 ? packFormatParts[1] as int : 0
@@ -36,6 +38,10 @@ minecraft {
 
             systemProperty 'eventbus.api.strictRuntimeChecks', 'true'
             args '--mixin.config=disable_compliance_notification.mixins.json'
+
+            if (System.getProperty('os.name').toLowerCase().contains('mac')) {
+                jvmArgs '-XstartOnFirstThread'
+            }
         }
 
         register('client')
@@ -60,11 +66,21 @@ dependencies {
     annotationProcessor "org.spongepowered:mixin:${vProps.mixin_processor_version}:processor"
 }
 
+configurations.configureEach {
+    if (canBeResolved) {
+        attributes.attribute(
+                org.gradle.api.attributes.java.TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE,
+                vProps.java_version as int
+        )
+    }
+}
+
 processResources {
     inputs.property 'version', project.version
     inputs.property 'minecraft_version', vProps.minecraft_version
     inputs.property 'forge_major_version', forgeMajorVersion
     inputs.property 'java_version', vProps.java_version
+    inputs.property 'mixin_java_version', forgeMixinJavaVersion
     inputs.property 'pack_format', vProps.pack_format
 
     filesMatching('META-INF/mods.toml') {
@@ -74,7 +90,7 @@ processResources {
     }
 
     filesMatching('disable_compliance_notification.mixins.json') {
-        expand 'java_version': vProps.java_version
+        expand 'java_version': forgeMixinJavaVersion
     }
 
     filesMatching('pack.mcmeta') {
@@ -112,5 +128,5 @@ publishing {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
-    options.release = vProps.java_version as int
+    options.release = forgeMixinJavaVersion
 }
