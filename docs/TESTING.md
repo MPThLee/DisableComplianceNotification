@@ -17,7 +17,7 @@ cd fabric
 ./gradlew runClientGameTest
 ```
 
-The test starts Minecraft with the mod and its mixin applied. It first verifies that a non-periodic system toast remains untouched, then constructs two due vanilla `PeriodicNotificationManager.NotificationTask` instances:
+The test starts Minecraft with the mod and its mixin applied, creates an integrated singleplayer world, and waits for the player to join it. While in that world, it first verifies that a non-periodic system toast remains untouched, then constructs two due vanilla `PeriodicNotificationManager.NotificationTask` instances:
 
 1. A compliance notification must be detected as filtered. After a client tick, no periodic toast may exist.
 2. A non-compliance notification must be detected as unfiltered. After a client tick, one periodic toast must exist.
@@ -37,6 +37,27 @@ Client GameTest logs are written to:
 ```text
 fabric/build/run/clientGameTest/logs/latest.log
 ```
+
+## Two-Minute Loader Gates
+
+Run the production client gate for every loader:
+
+```bash
+./tools/test/run_client_gate.sh fabric
+./tools/test/run_client_gate.sh neoforge
+./tools/test/run_client_gate.sh forge
+```
+
+Pass `--xvfb` on a headless Linux host. Each gate generates a Minecraft-26.2-compatible resource pack from `tools/test/fixtures/compliance_gate`, enables it temporarily, and temporarily removes any existing DCN config so the default `ONLY_COMPLIANCE` mode is tested. A dev-only bootstrap creates and joins a disposable integrated singleplayer world; that bootstrap is excluded from production JARs. The generated save is deleted and the loader's original options, resource pack, and config are restored byte-for-byte afterward.
+
+The default gate remains in the world for 150 seconds after the player joins. It only passes after both vanilla notification tasks have run and logged `Filtered: true`:
+
+```text
+compliance.playtime.hours
+compliance.playtime.greaterThan24Hours
+```
+
+The first notification repeats every minute and the second has a two-minute delay. The gate also requires the exact `KOR` initialization marker, positive proof that Minecraft reloaded `file/dcn-compliance-gate.zip`, and an explicit `DCN compliance gate entered world` marker. A client crash, startup timeout, early exit, main-menu-only run, incompatible test pack, missing mixin, or unfiltered notification therefore fails the gate. Full console output is retained at `<loader>/build/client-gate.log`.
 
 ## Other Checks
 
@@ -64,14 +85,15 @@ python3 -m unittest discover -s tools/test -p 'test_*.py'
 | --- | :---: | :---: | :---: |
 | Compile and package | Yes | Yes | Yes |
 | Load the client | Yes | Yes | Yes |
-| Require a successful mod-initialization marker | Yes | Yes | Yes |
-| Assert non-periodic, filtered, unfiltered, and single-enqueue behavior | Yes | No | No |
+| Deterministic non-periodic, filtered, unfiltered, and enqueue assertions | Yes | No | No |
+| Run at least two minutes inside a singleplayer world | Yes | Yes | Yes |
+| Require both real compliance notifications to be filtered | Yes | Yes | Yes |
 
-The Fabric client test normally finishes a few seconds after Minecraft starts. NeoForge and Forge smoke tests only accept the expected timeout after the mod has logged successful initialization; a timeout during dependency or asset setup is a failure. CI retains client logs even when a task fails.
+The Fabric deterministic test normally finishes a few seconds after Minecraft starts. The separate production gates exercise the regional timer on all three loaders. CI retains client logs even when a task fails.
 
 ## Legacy Resource-Pack Fixture
 
-`misc/compliance.zip` is retained for optional, slow manual testing of Minecraft's resource reload and regional timer. It is no longer copied into automated GameTest runs. Its `pack.mcmeta` must be updated when Minecraft changes the resource-pack format before using it on a newer branch.
+`misc/compliance.zip` remains as a legacy manual fixture. Automated gates use the source fixture under `tools/test/fixtures/compliance_gate` and generate `pack.mcmeta` from the current `pack_format` in `config.properties`, avoiding a stale binary pack when the Minecraft target changes.
 
 ## Troubleshooting
 

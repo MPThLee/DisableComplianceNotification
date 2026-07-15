@@ -58,6 +58,10 @@ jobs:
         env:
           _JAVA_OPTIONS: "-Duser.country=KR -Duser.language=ko"
 
+      - name: Run two-minute client compliance gate
+        run: ./tools/test/run_client_gate.sh fabric --xvfb
+        timeout-minutes: 10
+
       - name: Upload test logs
         if: always()
         uses: actions/upload-artifact@v4
@@ -65,6 +69,8 @@ jobs:
           name: test-logs-fabric
           path: |
             fabric/build/run/clientGameTest/logs/
+            fabric/run/logs/
+            fabric/build/client-gate.log
           retention-days: 7
 
   test-neoforge:
@@ -104,11 +110,9 @@ jobs:
           chmod +x ./gradlew
           ./gradlew build
 
-      - name: Run client smoke test
-        run: ./tools/test/run_client_smoke.sh neoforge
-        timeout-minutes: 5
-        env:
-          _JAVA_OPTIONS: "-Duser.country=KR -Duser.language=ko"
+      - name: Run two-minute client compliance gate
+        run: ./tools/test/run_client_gate.sh neoforge --xvfb
+        timeout-minutes: 10
 
       - name: Upload test logs
         if: always()
@@ -117,7 +121,7 @@ jobs:
           name: test-logs-neoforge
           path: |
             neoforge/run/logs/
-            neoforge/build/client-smoke.log
+            neoforge/build/client-gate.log
           retention-days: 7
 
   test-forge:
@@ -157,11 +161,9 @@ jobs:
           chmod +x ./gradlew
           ./gradlew build
 
-      - name: Run client smoke test
-        run: ./tools/test/run_client_smoke.sh forge
-        timeout-minutes: 5
-        env:
-          _JAVA_OPTIONS: "-Duser.country=KR -Duser.language=ko"
+      - name: Run two-minute client compliance gate
+        run: ./tools/test/run_client_gate.sh forge --xvfb
+        timeout-minutes: 10
 
       - name: Upload test logs
         if: always()
@@ -170,5 +172,5 @@ jobs:
           name: test-logs-forge
           path: |
             forge/run/logs/
-            forge/build/client-smoke.log
+            forge/build/client-gate.log
           retention-days: 7
