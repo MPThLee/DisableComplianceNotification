@@ -23,6 +23,9 @@ jobs:
           echo "mc_version=$(grep '^minecraft_version=' config.properties | cut -d'=' -f2)" >> $GITHUB_OUTPUT
           echo "java_version=$(grep '^java_version=' config.properties | cut -d'=' -f2)" >> $GITHUB_OUTPUT
 
+      - name: Test version selection
+        run: python3 tools/test/test_update_version.py
+
       - name: Setup Java ${{ steps.config.outputs.java_version }}
         uses: actions/setup-java@v4
         with:
@@ -61,7 +64,7 @@ jobs:
         with:
           name: test-logs-fabric
           path: |
-            fabric/run/logs/
+            fabric/build/run/clientGameTest/logs/
           retention-days: 7
 
   test-neoforge:

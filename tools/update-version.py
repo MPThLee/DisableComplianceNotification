@@ -250,9 +250,24 @@ def forge(mcv: str, timeout: float, select_oldest: bool) -> str:
 def neoforge(mcv: str, timeout: float, select_oldest: bool) -> str:
     maven_resp = url_xml(NEOFORGE_METADATA_URL, timeout=timeout)
     versions = parse_maven_versions(maven_resp)
-    candidates = [version for version in versions if f"{mcv[2:]}." in version]
+    parts = mcv.split(".")
+    minecraft_prefix = ".".join(parts[1:]) if mcv.startswith("1.") else mcv
+    if len(parts) == 2:
+        minecraft_prefix = f"{minecraft_prefix}.0"
+
+    candidates = [
+        version for version in versions if version.startswith(f"{minecraft_prefix}.")
+    ]
     if not candidates:
         raise VersionUpdateError(f"neoforge version not found for {mcv}")
+
+    non_snapshot_candidates = [
+        version
+        for version in candidates
+        if "-alpha" not in version and "+snapshot" not in version
+    ]
+    if non_snapshot_candidates:
+        candidates = non_snapshot_candidates
 
     return candidates[0] if select_oldest else candidates[-1]
 
