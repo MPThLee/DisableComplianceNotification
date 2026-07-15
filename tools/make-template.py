@@ -102,7 +102,13 @@ Recommended with [YACL](https://modrinth.com/mod/yacl) and [Mod Menu](https://mo
 
 [Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/{mod_ver}/disable_compliance_notification-{mod_ver}+neoforge-{game_ver}.jar)
 
-Recommended with [YACL](https://modrinth.com/mod/yacl)."""
+Recommended with [YACL](https://modrinth.com/mod/yacl).
+
+#### Forge
+
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/{mod_ver}/disable_compliance_notification-{mod_ver}+forge-{game_ver}.jar)
+
+Uses Forge's built-in client config."""
 
 
 def insert_version_in_download(
@@ -190,6 +196,12 @@ Recommended with [YACL](https://modrinth.com/mod/yacl) and [Mod Menu](https://mo
 [Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/{mod_ver}/disable_compliance_notification-{mod_ver}+neoforge-{game_ver}.jar)
 
 Recommended with [YACL](https://modrinth.com/mod/yacl).
+
+#### Forge
+
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/{mod_ver}/disable_compliance_notification-{mod_ver}+forge-{game_ver}.jar)
+
+Uses Forge's built-in client config.
 """
 
 

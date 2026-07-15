@@ -42,7 +42,7 @@ WORKFLOW:
     1. Create mc<minecraft_version> branch
     2. Update mod_version in config.properties
     3. Fetch dependency versions via update-version.py (unless --no-update-version)
-    4. Build and test (fabric, neoforge)
+    4. Build and test (fabric, neoforge, forge)
     5. Update DOWNLOAD.md and README.md via make-template.py
     6. Commit changes
     7. Tag release (v<mod_version>)
@@ -200,6 +200,11 @@ if [ "$SKIP_TEST" = false ]; then
     cd "$PROJECT_ROOT/neoforge"
     chmod +x ./gradlew
     ./gradlew build
+
+    echo "  Building Forge..."
+    cd "$PROJECT_ROOT/forge"
+    chmod +x ./gradlew
+    ./gradlew build
     
     cd "$PROJECT_ROOT"
     echo "  Build successful!"
@@ -258,4 +263,5 @@ fi
 echo "Release artifacts in:"
 echo "  fabric/build/libs/"
 echo "  neoforge/build/libs/"
+echo "  forge/build/libs/"
 echo ""
