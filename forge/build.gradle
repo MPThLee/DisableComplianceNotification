@@ -1,0 +1,120 @@
+plugins {
+    id 'java'
+    id 'idea'
+    id 'eclipse'
+    id 'maven-publish'
+    id 'net.minecraftforge.gradle' version '[7.0.17,8)'
+}
+
+def vProps = new Properties()
+file('../config.properties').withInputStream { vProps.load(it) }
+
+def minecraftVersionParts = vProps.minecraft_version.split('\\.')
+def minecraftNextVersion = "${minecraftVersionParts[0]}.${(minecraftVersionParts[1] as int) + 1}"
+def forgeMajorVersion = vProps.forge_version.split('\\.')[0]
+def packFormatParts = vProps.pack_format.split('\\.')
+def packFormatMajor = packFormatParts[0] as int
+def packFormatMinor = packFormatParts.length > 1 ? packFormatParts[1] as int : 0
+
+base.archivesName = vProps.archives_base_name
+version = "v${vProps.mod_version}+forge-${vProps.minecraft_version}"
+group = vProps.maven_group
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(vProps.java_version as int)
+}
+
+sourceSets {
+    main {
+        java.srcDirs = ['../src/main/java', '../src/forge/java']
+        resources.srcDirs = ['../src/main/resources', '../src/forge/resources']
+    }
+}
+
+minecraft {
+    runs {
+        configureEach {
+            workingDir = layout.projectDirectory.dir('run')
+
+            systemProperty 'eventbus.api.strictRuntimeChecks', 'true'
+            args '--mixin.config=disable_compliance_notification.mixins.json'
+        }
+
+        register('client')
+
+        register('server') {
+            args '--nogui'
+        }
+    }
+}
+
+repositories {
+    minecraft.mavenizer(it)
+    maven fg.forgeMaven
+    maven fg.minecraftLibsMaven
+    mavenCentral()
+}
+
+dependencies {
+    implementation minecraft.dependency("net.minecraftforge:forge:${vProps.minecraft_version}-${vProps.forge_version}")
+
+    annotationProcessor 'net.minecraftforge:eventbus-validator:7.0.1'
+    annotationProcessor "org.spongepowered:mixin:${vProps.mixin_processor_version}:processor"
+}
+
+processResources {
+    inputs.property 'version', project.version
+    inputs.property 'minecraft_version', vProps.minecraft_version
+    inputs.property 'minecraft_next_version', minecraftNextVersion
+    inputs.property 'forge_major_version', forgeMajorVersion
+    inputs.property 'java_version', vProps.java_version
+    inputs.property 'pack_format', vProps.pack_format
+
+    filesMatching('META-INF/mods.toml') {
+        expand 'version': vProps.mod_version,
+                'minecraft_version': vProps.minecraft_version,
+                'minecraft_next_version': minecraftNextVersion,
+                'forge_major_version': forgeMajorVersion
+    }
+
+    filesMatching('disable_compliance_notification.mixins.json') {
+        expand 'java_version': vProps.java_version
+    }
+
+    filesMatching('pack.mcmeta') {
+        expand 'pack_format_major': packFormatMajor,
+                'pack_format_minor': packFormatMinor
+    }
+}
+
+tasks.named('jar', Jar) {
+    manifest {
+        attributes([
+                'Specification-Title'     : 'DisableComplianceNotification',
+                'Specification-Vendor'    : 'MPThLee',
+                'Specification-Version'   : '1',
+                'Implementation-Title'    : 'Disable Compliance Notification',
+                'Implementation-Version'  : project.version,
+                'Implementation-Vendor'   : 'MPThLee',
+                'MixinConfigs'            : 'disable_compliance_notification.mixins.json'
+        ])
+    }
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+        }
+    }
+    repositories {
+        maven {
+            url = layout.projectDirectory.dir('mcmodsrepo')
+        }
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = vProps.java_version as int
+}

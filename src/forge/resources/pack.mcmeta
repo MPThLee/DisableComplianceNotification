@@ -1,0 +1,7 @@
+{
+  "pack": {
+    "description": "Disable Compliance Notification",
+    "min_format": [${pack_format_major}, ${pack_format_minor}],
+    "max_format": ${pack_format_major}
+  }
+}
