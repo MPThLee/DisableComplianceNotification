@@ -9,8 +9,6 @@ plugins {
 def vProps = new Properties()
 file('../config.properties').withInputStream { vProps.load(it) }
 
-def minecraftVersionParts = vProps.minecraft_version.split('\\.')
-def minecraftNextVersion = "${minecraftVersionParts[0]}.${(minecraftVersionParts[1] as int) + 1}"
 def forgeMajorVersion = vProps.forge_version.split('\\.')[0]
 def packFormatParts = vProps.pack_format.split('\\.')
 def packFormatMajor = packFormatParts[0] as int
@@ -65,7 +63,6 @@ dependencies {
 processResources {
     inputs.property 'version', project.version
     inputs.property 'minecraft_version', vProps.minecraft_version
-    inputs.property 'minecraft_next_version', minecraftNextVersion
     inputs.property 'forge_major_version', forgeMajorVersion
     inputs.property 'java_version', vProps.java_version
     inputs.property 'pack_format', vProps.pack_format
@@ -73,7 +70,6 @@ processResources {
     filesMatching('META-INF/mods.toml') {
         expand 'version': vProps.mod_version,
                 'minecraft_version': vProps.minecraft_version,
-                'minecraft_next_version': minecraftNextVersion,
                 'forge_major_version': forgeMajorVersion
     }
 
