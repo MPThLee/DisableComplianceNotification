@@ -1,177 +1,79 @@
 # Testing the Compliance Notification Filter
 
-This document describes how to test that the mod correctly filters compliance notifications.
+The primary regression test is a real Fabric client launch with deterministic notification timing. It does not wait for Minecraft's regional timer or require a test resource pack.
 
-## Test Resource Pack
+## Fabric Client GameTest
 
-The `misc/compliance.zip` resource pack modifies the notification timing for testing:
-
-| Setting | Original | Test Pack |
-|---------|----------|-----------|
-| Period | 60 minutes | 1 minute |
-| Delay (24h message) | 1440 minutes | 2 minutes |
-| Regions | KOR only | KOR, USA, GBR |
-
-This allows notifications to trigger within 2-3 minutes instead of 1-24 hours.
-
-## Expected Notifications
-
-With the test resource pack, you should see **two different notifications**:
-
-| Time | Notification | Message Key |
-|------|--------------|-------------|
-| ~1 min | Hourly playtime | `compliance.playtime.hours` |
-| ~2 min | 24h+ playtime | `compliance.playtime.greaterThan24Hours` |
-
-**Test is successful when both notifications are filtered.**
-
-## Local Testing
-
-### GUI Test (Recommended for Compliance Testing)
+Run the client test from the repository root:
 
 ```bash
-./tools/test-local.sh fabric --build
+./tools/test-gametest.sh fabric
 ```
 
-Then manually:
-1. Enable compliance.zip resourcepack
-2. Create/join a world
-3. Wait 2.5-3 minutes
-4. Exit and verify: `./tools/test-local.sh fabric --verify-only`
-
-### Headless Test (Experimental)
-
-Uses [HeadlessMC](https://github.com/headlesshq/headlessmc) with [hmc-specifics](https://github.com/headlesshq/hmc-specifics):
+Or invoke Loom directly:
 
 ```bash
-./tools/test-headless.sh fabric --build --timeout 200
+cd fabric
+./gradlew runClientGameTest
 ```
 
-**Note**: Requires manual interaction via HeadlessMC console to join a world:
-```
-gui              # Show current screen buttons
-click 1          # Click Singleplayer
-click 1          # Click first world / Create New
-click 1          # Enter world
-```
+The test starts Minecraft with the mod and its mixin applied, then constructs two due vanilla `PeriodicNotificationManager.NotificationTask` instances:
 
-### Manual Test Steps
+1. A compliance notification must be detected as filtered. After a client tick, no periodic toast may exist.
+2. A non-compliance notification must be detected as unfiltered. After a client tick, one periodic toast must exist.
 
-1. Build the mod:
-   ```bash
-   cd fabric  # or neoforge/forge
-   ./gradlew build
-   ```
+This covers both sides of the filter and executes the vanilla toast path that changed between Minecraft 26.1 and 26.2. The test harness locates the toast manager through either the 26.1 getter or the 26.2 GUI accessor, so the same test can be reused on both version branches.
 
-2. Prepare test environment:
-   ```bash
-   mkdir -p run/mods run/resourcepacks
-   cp build/libs/*.jar run/mods/
-   cp ../misc/compliance.zip run/resourcepacks/
-   ```
+Expected log lines include:
 
-3. Run the client:
-   ```bash
-   ./gradlew runClient
-   ```
-
-4. In-game:
-   - Go to **Options > Resource Packs**
-   - Enable **compliance.zip**
-   - Create or load a singleplayer world
-   - Wait **2.5-3 minutes** (to trigger both hourly and 24h notifications)
-
-5. Verify the mod filtered the notification:
-   ```bash
-   ../tools/verify-compliance-log.sh run
-   ```
-
-### Expected Log Output
-
-When working correctly, the log should contain **both** messages:
-```
-[ModifyPeriodicNotificationManager] Detected Period Notification: (title='compliance.playtime.hours', message='compliance.playtime.message') [DCN-MODE: ONLY_COMPLIANCE, Filtered: true]
-[ModifyPeriodicNotificationManager] Detected Period Notification: (title='compliance.playtime.greaterThan24Hours', message='compliance.playtime.message') [DCN-MODE: ONLY_COMPLIANCE, Filtered: true]
+```text
+Detected Period Notification: (title='compliance.gametest.filtered.title', ...) [DCN-MODE: ONLY_COMPLIANCE, Filtered: true]
+Detected Period Notification: (title='dcn.gametest.unfiltered.title', ...) [DCN-MODE: ONLY_COMPLIANCE, Filtered: false]
+Deterministic periodic notification client gametest passed
 ```
 
-Key indicators:
-- `Detected Period Notification:` - The mixin intercepted a notification
-- `Filtered: true` - The notification was successfully blocked
-- Both `playtime.hours` and `greaterThan24Hours` - Both notification types were tested
+Client GameTest logs are written to:
 
-### Verify Only (After Manual Test)
+```text
+fabric/build/run/clientGameTest/logs/latest.log
+```
 
-If you've already run the client manually:
+## Other Checks
+
+Build each production loader independently:
+
 ```bash
-./tools/test-local.sh fabric --verify-only
+cd fabric && ./gradlew build
+cd neoforge && ./gradlew build
 ```
 
-## CI Testing
+The Fabric build also runs the basic server GameTest. The client GameTest is a separate task because it launches a graphical client.
 
-The GitHub Actions workflow (`.github/workflows/test.yml`) uses [mc-runtime-test](https://github.com/headlesshq/mc-runtime-test) with Fabric's GameTest framework.
+The version-selection regression tests can be run without Gradle:
 
-### What CI Tests
-
-| Test | Fabric CI | NeoForge CI | Local |
-|------|:---------:|:-----------:|:-----:|
-| Mod compiles | :white_check_mark: | :white_check_mark: | :white_check_mark: |
-| Mod loads without crash | :white_check_mark: | :white_check_mark: | :white_check_mark: |
-| Mixins apply correctly | :white_check_mark: | :white_check_mark: | :white_check_mark: |
-| GameTest waits 3 min | :white_check_mark: | :x: | :white_check_mark: |
-
-### How Fabric CI Works
-
-1. Builds mod with `./gradlew build` (runs server-side GameTest)
-2. mc-runtime-test runs client with `-DMcRuntimeGameTest=true`
-3. GameTest keeps game running for 3 minutes
-4. Compliance notifications trigger during this time
-5. Logs verified for filtering
-
-### How NeoForge CI Works
-
-mc-runtime-test runs for basic mod loading verification (no long wait).
-
-### GameTest Source Location
-
-GameTest sources are in `src/gametest/`:
+```bash
+python3 tools/test/test_update_version.py
 ```
-src/gametest/
-├── java/dev/mpthlee/.../test/ComplianceGameTest.java
-└── resources/fabric.mod.json
-```
+
+## CI Coverage
+
+`.github/workflows/test.yml` performs:
+
+| Check | Fabric | NeoForge |
+| --- | :---: | :---: |
+| Compile and package | Yes | Yes |
+| Load the client | Yes | Yes |
+| Apply the compliance mixin | Yes | Smoke test |
+| Assert filtered and unfiltered toast behavior | Yes | No |
+
+The Fabric client test normally finishes a few seconds after Minecraft starts. CI retains its client log even when the task fails.
+
+## Legacy Resource-Pack Fixture
+
+`misc/compliance.zip` is retained for optional, slow manual testing of Minecraft's resource reload and regional timer. It is no longer copied into automated GameTest runs. Its `pack.mcmeta` must be updated when Minecraft changes the resource-pack format before using it on a newer branch.
 
 ## Troubleshooting
 
-### "No compliance notification detected in logs"
+If the client test does not start, confirm that Java matches `java_version` in `config.properties` and inspect `fabric/build/run/clientGameTest/logs/latest.log`.
 
-1. **Resource pack not enabled**: Ensure compliance.zip is active in-game
-2. **Wrong locale**: Set system locale to KR, US, or GB
-3. **Not enough time**: Wait at least 2.5-3 minutes in-game for both notifications
-4. **Wrong log file**: Check `run/logs/latest.log`
-
-### "Notifications detected but none were filtered"
-
-Check the mod configuration:
-- Default mode is `ONLY_COMPLIANCE` which should filter compliance notifications
-- If set to `DISABLE`, notifications won't be filtered
-
-**Config file locations:**
-| Loader | Config Library | File Path |
-|--------|----------------|-----------|
-| Fabric | YACL | `config/disable_compliance_notification.json5` |
-| NeoForge | YACL | `config/disable_compliance_notification.json5` |
-| Forge | Native Forge Config | `config/disable_compliance_notification-client.toml` |
-
-**Note**: YACL is optional for Fabric/NeoForge. Without it, the mod uses default settings.
-
-### Locale Issues
-
-The compliance system uses `Locale.getDefault().getISO3Country()`. To test with a specific locale:
-
-```bash
-# Run with Korean locale
-./gradlew runClient -Duser.country=KR -Duser.language=ko
-
-# Or US locale
-./gradlew runClient -Duser.country=US -Duser.language=en
-```
+If a notification is detected but classified incorrectly, check the configured `NotificationFilterMode`. The deterministic test temporarily uses the default `ONLY_COMPLIANCE` mode and restores the prior configuration afterward.
