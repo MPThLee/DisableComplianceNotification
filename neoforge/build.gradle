@@ -58,6 +58,10 @@ dependencies {
 processResources {
     inputs.property "version", project.version
     inputs.property "minecraft_version", vProps.minecraft_version
+    inputs.property "neoforge_version", vProps.neoforge_version
+    inputs.property "java_version", vProps.java_version
+    inputs.property "yacl_version", vProps.yacl_version
+    inputs.property "pack_format", vProps.pack_format
 
     filesMatching("META-INF/neoforge.mods.toml") {
         expand "version": vProps.mod_version,

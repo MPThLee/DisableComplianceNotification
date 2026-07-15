@@ -83,6 +83,10 @@ sourceSets.gametest {
 processResources {
     inputs.property "version", project.version
     inputs.property "minecraft_version", vProps.minecraft_version
+    inputs.property "fabric_loader_version", vProps.fabric_loader_version
+    inputs.property "java_version", vProps.java_version
+    inputs.property "yacl_version", vProps.yacl_version
+    inputs.property "modmenu_version", vProps.modmenu_version
 
     filesMatching("fabric.mod.json") {
         expand "version": vProps.mod_version,
