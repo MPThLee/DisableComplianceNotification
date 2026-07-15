@@ -1,85 +1,148 @@
 package dev.mpthlee.minecraft.disable_compliance_notification.test;
 
+import dev.mpthlee.minecraft.disable_compliance_notification.DisableComplianceNotification;
+import dev.mpthlee.minecraft.disable_compliance_notification.config.DCNConfigDefault;
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest;
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
-import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContext;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.PeriodicNotificationManager.Notification;
+import net.minecraft.client.gui.components.toasts.SystemToast;
+import net.minecraft.client.gui.components.toasts.ToastManager;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.lang.reflect.Constructor;
+import java.util.List;
+import java.util.TimerTask;
 
 @SuppressWarnings("UnstableApiUsage")
 public class ComplianceClientGameTest implements FabricClientGameTest {
 
     private static final Logger LOGGER = LogManager.getLogger("ComplianceClientGameTest");
-    private static final int WAIT_TICKS = 20 * 60 * 2 + 30;
-    private static final int REQUIRED_FILTERED_COUNT = 2;
-    private static final int REQUIRED_UNIQUE_TITLES = 1;
+    private static final String FILTERED_TITLE = "compliance.gametest.filtered.title";
+    private static final String FILTERED_MESSAGE = "compliance.gametest.filtered.message";
+    private static final String UNFILTERED_TITLE = "dcn.gametest.unfiltered.title";
+    private static final String UNFILTERED_MESSAGE = "dcn.gametest.unfiltered.message";
 
     @Override
     public void runTest(ClientGameTestContext context) {
-        LOGGER.info("Starting client gametest");
-        LOGGER.info("Expecting at least {} filtered notifications with {} unique titles",
-                REQUIRED_FILTERED_COUNT, REQUIRED_UNIQUE_TITLES);
+        LOGGER.info("Starting deterministic periodic notification client gametest");
 
+        var previousConfig = DisableComplianceNotification.getConfig();
+        DisableComplianceNotification.setConfig(new DCNConfigDefault());
         ComplianceTestState.startCapture();
 
-        context.runOnClient(client -> {
-            LOGGER.info("Enabling compliance resourcepack...");
-            var packRepo = client.getResourcePackRepository();
-            packRepo.reload();
+        try {
+            context.runOnClient(client -> {
+                ToastManager toastManager = getToastManager(client);
+                toastManager.clear();
 
-            var compliancePack = packRepo.getPack("file/compliance.zip");
-            if (compliancePack != null) {
-                LOGGER.info("Found compliance.zip, enabling it");
-                packRepo.setSelected(java.util.List.of(compliancePack.getId()));
-                client.reloadResourcePacks();
-            } else {
-                LOGGER.warn("compliance.zip not found in resourcepacks!");
-                packRepo.getAvailablePacks().forEach(p -> LOGGER.info("Available pack: {}", p.getId()));
-            }
-        });
-
-        context.waitTicks(20);
-
-        LOGGER.info("Creating singleplayer world...");
-
-        try (TestSingleplayerContext singleplayer = context.worldBuilder().create()) {
-            singleplayer.getClientLevel().waitForChunksRender();
-            LOGGER.info("World loaded, waiting {} ticks ({} seconds)", WAIT_TICKS, WAIT_TICKS / 20);
-
-            for (int i = 0; i < WAIT_TICKS; i++) {
-                context.waitTick();
-
-                int filteredCount = ComplianceTestState.getFilteredCount();
-                int uniqueTitles = ComplianceTestState.getUniqueFilteredTitleCount();
-
-                if (filteredCount >= REQUIRED_FILTERED_COUNT && uniqueTitles >= REQUIRED_UNIQUE_TITLES) {
-                    LOGGER.info("SUCCESS at tick {}: {} notifications filtered, {} unique titles: {}",
-                            i, filteredCount, uniqueTitles, ComplianceTestState.getFilteredTitles());
-                    ComplianceTestState.stopCapture();
-                    return;
+                try {
+                    createDueNotificationTask(FILTERED_TITLE, FILTERED_MESSAGE).run();
+                } catch (RuntimeException | Error throwable) {
+                    toastManager.clear();
+                    throw throwable;
                 }
+            });
 
-                if (i % 600 == 0) {
-                    LOGGER.info("Progress: {} sec | filtered: {}, unique titles: {}",
-                            i / 20, filteredCount, uniqueTitles);
+            context.waitTick();
+
+            context.runOnClient(client -> {
+                ToastManager toastManager = getToastManager(client);
+
+                try {
+                    assertEquals(1, ComplianceTestState.getDetectedCount(),
+                            "the filtered notification should be detected once");
+                    assertEquals(1, ComplianceTestState.getFilteredCount(),
+                            "the compliance notification should be filtered");
+                    assertTrue(ComplianceTestState.getFilteredTitles().contains(FILTERED_TITLE),
+                            "the filtered title should be captured");
+                    assertTrue(toastManager.getToast(
+                            SystemToast.class,
+                            SystemToast.SystemToastId.PERIODIC_NOTIFICATION
+                    ) == null, "a filtered notification must not enqueue a toast");
+
+                    toastManager.clear();
+                    createDueNotificationTask(UNFILTERED_TITLE, UNFILTERED_MESSAGE).run();
+                } catch (RuntimeException | Error throwable) {
+                    toastManager.clear();
+                    throw throwable;
                 }
-            }
+            });
 
+            context.waitTick();
+
+            context.runOnClient(client -> {
+                ToastManager toastManager = getToastManager(client);
+
+                try {
+                    assertEquals(2, ComplianceTestState.getDetectedCount(),
+                            "both periodic notifications should be detected");
+                    assertEquals(1, ComplianceTestState.getUnfilteredCount(),
+                            "the non-compliance notification should remain unfiltered");
+                    assertTrue(ComplianceTestState.getUnfilteredTitles().contains(UNFILTERED_TITLE),
+                            "the unfiltered title should be captured");
+                    assertTrue(toastManager.getToast(
+                            SystemToast.class,
+                            SystemToast.SystemToastId.PERIODIC_NOTIFICATION
+                    ) != null, "an unfiltered notification should enqueue a periodic toast");
+                } finally {
+                    toastManager.clear();
+                }
+            });
+
+            LOGGER.info("Deterministic periodic notification client gametest passed");
+        } finally {
             ComplianceTestState.stopCapture();
+            DisableComplianceNotification.setConfig(previousConfig);
+        }
+    }
 
-            int filteredCount = ComplianceTestState.getFilteredCount();
-            int uniqueTitles = ComplianceTestState.getUniqueFilteredTitleCount();
+    private static TimerTask createDueNotificationTask(String title, String message) {
+        try {
+            Class<?> notificationTaskClass = Class.forName(
+                    "net.minecraft.client.PeriodicNotificationManager$NotificationTask");
+            Constructor<?> constructor = notificationTaskClass.getDeclaredConstructor(
+                    List.class, long.class, long.class);
+            constructor.setAccessible(true);
 
-            if (filteredCount >= REQUIRED_FILTERED_COUNT && uniqueTitles >= REQUIRED_UNIQUE_TITLES) {
-                LOGGER.info("SUCCESS: {} notifications filtered, {} unique titles: {}",
-                        filteredCount, uniqueTitles, ComplianceTestState.getFilteredTitles());
-            } else {
-                throw new AssertionError(String.format(
-                        "FAILED: Expected at least %d filtered with %d unique titles, got %d filtered with %d unique titles: %s",
-                        REQUIRED_FILTERED_COUNT, REQUIRED_UNIQUE_TITLES,
-                        filteredCount, uniqueTitles, ComplianceTestState.getFilteredTitles()));
+            return (TimerTask) constructor.newInstance(
+                    List.of(new Notification(1L, 1L, title, message)),
+                    1L,
+                    1L
+            );
+        } catch (ReflectiveOperationException exception) {
+            throw new AssertionError("Unable to construct a due periodic notification task", exception);
+        }
+    }
+
+    private static ToastManager getToastManager(Minecraft client) {
+        try {
+            try {
+                return (ToastManager) Minecraft.class
+                        .getMethod("getToastManager")
+                        .invoke(client);
+            } catch (NoSuchMethodException ignored) {
+                Object gui = Minecraft.class.getField("gui").get(client);
+                return (ToastManager) gui.getClass()
+                        .getMethod("toastManager")
+                        .invoke(gui);
             }
+        } catch (ReflectiveOperationException exception) {
+            throw new AssertionError("Unable to access Minecraft's toast manager", exception);
+        }
+    }
+
+    private static void assertEquals(int expected, int actual, String message) {
+        if (expected != actual) {
+            throw new AssertionError(message + ": expected " + expected + ", got " + actual);
+        }
+    }
+
+    private static void assertTrue(boolean condition, String message) {
+        if (!condition) {
+            throw new AssertionError(message);
         }
     }
 }

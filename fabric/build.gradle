@@ -124,10 +124,6 @@ tasks.register('copyComplianceResourcepack', Copy) {
     into "$buildDir/run/clientGameTest/resourcepacks"
 }
 
-tasks.named('runClientGameTest') {
-    dependsOn 'copyComplianceResourcepack'
-}
-
 publishing {
     publications {
         create("mavenJava", MavenPublication) {

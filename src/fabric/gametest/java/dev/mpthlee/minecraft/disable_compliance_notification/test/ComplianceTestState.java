@@ -13,17 +13,22 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class ComplianceTestState {
+    private static final AtomicInteger detectedCount = new AtomicInteger(0);
     private static final AtomicInteger filteredCount = new AtomicInteger(0);
+    private static final AtomicInteger unfilteredCount = new AtomicInteger(0);
     private static final Set<String> filteredTitles = ConcurrentHashMap.newKeySet();
+    private static final Set<String> unfilteredTitles = ConcurrentHashMap.newKeySet();
     private static TestLogAppender appender;
 
     private static final Pattern TITLE_PATTERN = Pattern.compile("title='([^']+)'");
 
-    private static final Logger LOGGER = (Logger) LogManager.getLogger("ComplianceTestState");
-
     public static void startCapture() {
+        stopCapture();
+        detectedCount.set(0);
         filteredCount.set(0);
+        unfilteredCount.set(0);
         filteredTitles.clear();
+        unfilteredTitles.clear();
         appender = new TestLogAppender();
         appender.start();
 
@@ -44,12 +49,20 @@ public class ComplianceTestState {
         return filteredCount.get();
     }
 
-    public static int getUniqueFilteredTitleCount() {
-        return filteredTitles.size();
+    public static int getDetectedCount() {
+        return detectedCount.get();
+    }
+
+    public static int getUnfilteredCount() {
+        return unfilteredCount.get();
     }
 
     public static Set<String> getFilteredTitles() {
         return Set.copyOf(filteredTitles);
+    }
+
+    public static Set<String> getUnfilteredTitles() {
+        return Set.copyOf(unfilteredTitles);
     }
 
     private static class TestLogAppender extends AbstractAppender {
@@ -63,12 +76,26 @@ public class ComplianceTestState {
 
             System.out.println(message);
 
+            if (!message.contains("Detected Period Notification:")) {
+                return;
+            }
+
+            detectedCount.incrementAndGet();
+
+            Matcher matcher = TITLE_PATTERN.matcher(message);
+            String title = matcher.find() ? matcher.group(1) : null;
+
             if (message.contains("Filtered: true")) {
                 filteredCount.incrementAndGet();
 
-                Matcher matcher = TITLE_PATTERN.matcher(message);
-                if (matcher.find()) {
-                    filteredTitles.add(matcher.group(1));
+                if (title != null) {
+                    filteredTitles.add(title);
+                }
+            } else if (message.contains("Filtered: false")) {
+                unfilteredCount.incrementAndGet();
+
+                if (title != null) {
+                    unfilteredTitles.add(title);
                 }
             }
         }
