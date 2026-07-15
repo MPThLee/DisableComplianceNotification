@@ -21,19 +21,24 @@ Image and quote reference: https://minecraft.wiki/w/Java_Edition_1.18.2#General
 
 Older changelog is available on [CHANGELOG.md](./CHANGELOG.md).
 
-### v1.5.6+ (Latest)
+### Unreleased (Minecraft 26.2+)
+
+- Restored Forge (LexForge) with a native Forge client config.
+- Moved filtering to the unobfuscated `SystemToast.add` API so the same artifact can remain usable on later Minecraft releases while that API stays compatible.
+
+### v1.5.6+
 
 - Updated to Minecraft 26.1 (and above)
 
 ## Platform Support
 
-| Platform             | Status                       | Config GUI              | Notes                                                                                                   |
-| -------------------- | ---------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------- |
-| **Fabric**           | :white_check_mark: Supported | :white_check_mark: YACL | Recommended with [YACL](https://modrinth.com/mod/yacl) and [Mod Menu](https://modrinth.com/mod/modmenu) |
-| **NeoForge**         | :white_check_mark: Supported | :white_check_mark: YACL | Recommended with [YACL](https://modrinth.com/mod/yacl)                                                  |
-| **Forge (LexForge)** | :x: Dropped                  | -                       | Use older versions (v1.4.x) or switch to NeoForge                                                       |
+| Platform             | Status                       | Config GUI                     | Notes                                                                                                   |
+| -------------------- | ---------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------- |
+| **Fabric**           | :white_check_mark: Supported | :white_check_mark: YACL        | Recommended with [YACL](https://modrinth.com/mod/yacl) and [Mod Menu](https://modrinth.com/mod/modmenu) |
+| **NeoForge**         | :white_check_mark: Supported | :white_check_mark: YACL        | Recommended with [YACL](https://modrinth.com/mod/yacl)                                                  |
+| **Forge (LexForge)** | :white_check_mark: Supported | :white_check_mark: ForgeConfig | Uses Forge's built-in client config; restored for Minecraft 26.2+                                      |
 
-> **Note**: LexForge support has been dropped starting from v1.5.0. Cloth Config for Forge is no longer maintained, making it impractical to continue support. Please use NeoForge instead.
+Minecraft metadata accepts 26.2 and later. The production mixin avoids the version-specific internals that changed between 26.1 and 26.2, but a future Minecraft release can still require a new build if Mojang changes the intercepted toast API.
 
 ## Download
 
