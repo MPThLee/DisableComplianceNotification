@@ -1,0 +1,517 @@
+#!/usr/bin/env python3
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import shutil
+import signal
+import subprocess
+import sys
+import threading
+import time
+import zipfile
+from contextlib import contextmanager
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Iterator
+
+
+INITIALIZED_MARKER = (
+    "Initializing Disable Compliance Notification... [Locale ISO3 Country: KOR]"
+)
+RESOURCE_PACK_RELOAD_MARKER = "Reloading ResourceManager:"
+INTEGRATED_SERVER_MARKER = "Starting integrated minecraft server version"
+PLAYER_JOINED_MARKER = " joined the game"
+WORLD_JOINED_MARKER = "DCN compliance gate entered world:"
+WORLD_START_FAILED_MARKER = "DCN compliance gate failed to enter a singleplayer world"
+FILTERED_NOTIFICATION_MARKERS = {
+    "hourly": (
+        "title='compliance.playtime.hours', "
+        "message='compliance.playtime.message') "
+        "[DCN-MODE: ONLY_COMPLIANCE, Filtered: true]"
+    ),
+    "delayed": (
+        "title='compliance.playtime.greaterThan24Hours', "
+        "message='compliance.playtime.message') "
+        "[DCN-MODE: ONLY_COMPLIANCE, Filtered: true]"
+    ),
+}
+MINIMUM_GATE_RUNTIME_SECONDS = 120
+DEFAULT_GATE_RUNTIME_SECONDS = 150
+DEFAULT_STARTUP_TIMEOUT_SECONDS = 300
+GATE_PACK_FILENAME = "dcn-compliance-gate.zip"
+GATE_PACK_ID = f"file/{GATE_PACK_FILENAME}"
+
+
+def read_properties(path: Path) -> dict[str, str]:
+    properties: dict[str, str] = {}
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if line and not line.startswith("#"):
+            key, value = line.split("=", 1)
+            properties[key] = value
+    return properties
+
+
+def pack_metadata(pack_format: str) -> dict[str, object]:
+    parts = [int(part) for part in pack_format.split(".")]
+    major = parts[0]
+    minor = parts[1] if len(parts) > 1 else 0
+    return {
+        "pack": {
+            "description": "DCN compliance gate (1 minute period, 2 minute delay)",
+            "min_format": [major, minor],
+            "max_format": major,
+        }
+    }
+
+
+def _read_option_array(lines: list[str], key: str) -> list[str]:
+    prefix = f"{key}:"
+    for line in lines:
+        if line.startswith(prefix):
+            value = json.loads(line[len(prefix) :])
+            if not isinstance(value, list) or not all(
+                isinstance(item, str) for item in value
+            ):
+                raise ValueError(f"{key} must be a JSON string array")
+            return value
+    return []
+
+
+def _replace_option(lines: list[str], key: str, value: list[str]) -> list[str]:
+    rendered = f"{key}:{json.dumps(value, separators=(',', ':'))}"
+    prefix = f"{key}:"
+    replaced = False
+    result: list[str] = []
+    for line in lines:
+        if line.startswith(prefix):
+            if not replaced:
+                result.append(rendered)
+                replaced = True
+        else:
+            result.append(line)
+    if not replaced:
+        result.append(rendered)
+    return result
+
+
+def enable_gate_pack(options_text: str) -> str:
+    lines = options_text.splitlines()
+    resource_packs = [
+        pack for pack in _read_option_array(lines, "resourcePacks") if pack != GATE_PACK_ID
+    ]
+    resource_packs.append(GATE_PACK_ID)
+    incompatible = [
+        pack
+        for pack in _read_option_array(lines, "incompatibleResourcePacks")
+        if pack != GATE_PACK_ID
+    ]
+    lines = _replace_option(lines, "resourcePacks", resource_packs)
+    lines = _replace_option(lines, "incompatibleResourcePacks", incompatible)
+    return "\n".join(lines) + "\n"
+
+
+def create_gate_pack(project_root: Path, destination: Path) -> None:
+    properties = read_properties(project_root / "config.properties")
+    fixture = (
+        project_root
+        / "tools/test/fixtures/compliance_gate/regional_compliancies.json"
+    )
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    temporary = destination.with_suffix(".tmp")
+    temporary.unlink(missing_ok=True)
+    with zipfile.ZipFile(temporary, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr(
+            "pack.mcmeta",
+            json.dumps(pack_metadata(properties["pack_format"]), indent=2) + "\n",
+        )
+        archive.write(
+            fixture,
+            "assets/minecraft/regional_compliancies.json",
+        )
+    temporary.replace(destination)
+
+
+@contextmanager
+def prepared_gate_workspace(
+    project_root: Path, loader_dir: Path, world_name: str
+) -> Iterator[None]:
+    game_dir = loader_dir / "run"
+    options_path = game_dir / "options.txt"
+    pack_path = game_dir / "resourcepacks" / GATE_PACK_FILENAME
+    original_options = options_path.read_bytes() if options_path.exists() else None
+    original_pack = pack_path.read_bytes() if pack_path.exists() else None
+    config_paths = (
+        game_dir / "config/disable_compliance_notification.json5",
+        game_dir / "config/disable_compliance_notification-client.toml",
+    )
+    original_configs = {
+        path: path.read_bytes() if path.exists() else None for path in config_paths
+    }
+    world_path = game_dir / "saves" / world_name
+    if world_path.exists():
+        raise RuntimeError(f"refusing to replace existing gate world: {world_path}")
+
+    game_dir.mkdir(parents=True, exist_ok=True)
+    options_text = (
+        original_options.decode("utf-8") if original_options is not None else ""
+    )
+    options_path.write_text(enable_gate_pack(options_text), encoding="utf-8")
+    create_gate_pack(project_root, pack_path)
+    for config_path in config_paths:
+        config_path.unlink(missing_ok=True)
+
+    try:
+        yield
+    finally:
+        if original_options is None:
+            options_path.unlink(missing_ok=True)
+        else:
+            options_path.write_bytes(original_options)
+
+        if original_pack is None:
+            pack_path.unlink(missing_ok=True)
+        else:
+            pack_path.write_bytes(original_pack)
+
+        for config_path, original_config in original_configs.items():
+            if original_config is None:
+                config_path.unlink(missing_ok=True)
+            else:
+                config_path.parent.mkdir(parents=True, exist_ok=True)
+                config_path.write_bytes(original_config)
+        if world_path.exists():
+            shutil.rmtree(world_path)
+
+
+@dataclass
+class GateState:
+    initialized_at: float | None = None
+    resource_pack_loaded: bool = False
+    integrated_server_started: bool = False
+    player_joined: bool = False
+    world_joined_at: float | None = None
+    world_start_failed: bool = False
+    filtered_notifications: set[str] = field(default_factory=set)
+    lock: threading.Lock = field(default_factory=threading.Lock, repr=False)
+
+    def observe(self, line: str, observed_at: float | None = None) -> bool:
+        now = time.monotonic() if observed_at is None else observed_at
+        milestone = False
+        with self.lock:
+            if self.initialized_at is None and INITIALIZED_MARKER in line:
+                self.initialized_at = now
+                milestone = True
+            if (
+                not self.resource_pack_loaded
+                and RESOURCE_PACK_RELOAD_MARKER in line
+                and GATE_PACK_ID in line
+            ):
+                self.resource_pack_loaded = True
+                milestone = True
+            if not self.integrated_server_started and INTEGRATED_SERVER_MARKER in line:
+                self.integrated_server_started = True
+                milestone = True
+            if not self.player_joined and PLAYER_JOINED_MARKER in line:
+                self.player_joined = True
+                milestone = True
+            if self.world_joined_at is None and WORLD_JOINED_MARKER in line:
+                self.world_joined_at = now
+                milestone = True
+            if not self.world_start_failed and WORLD_START_FAILED_MARKER in line:
+                self.world_start_failed = True
+                milestone = True
+            if self.world_joined_at is not None:
+                for name, marker in FILTERED_NOTIFICATION_MARKERS.items():
+                    if marker in line and name not in self.filtered_notifications:
+                        self.filtered_notifications.add(name)
+                        milestone = True
+        return milestone
+
+    def snapshot(
+        self,
+    ) -> tuple[float | None, bool, bool, bool, float | None, bool, set[str]]:
+        with self.lock:
+            return (
+                self.initialized_at,
+                self.resource_pack_loaded,
+                self.integrated_server_started,
+                self.player_joined,
+                self.world_joined_at,
+                self.world_start_failed,
+                set(self.filtered_notifications),
+            )
+
+
+def _terminate_process_group(process: subprocess.Popen[str]) -> None:
+    process_group_id = process.pid
+
+    def group_exists() -> bool:
+        process.poll()
+        try:
+            os.killpg(process_group_id, 0)
+            return True
+        except ProcessLookupError:
+            return False
+        except PermissionError:
+            return True
+
+    for sent_signal, timeout in (
+        (signal.SIGINT, 10),
+        (signal.SIGTERM, 5),
+        (signal.SIGKILL, 5),
+    ):
+        if not group_exists():
+            break
+        try:
+            os.killpg(process_group_id, sent_signal)
+        except ProcessLookupError:
+            break
+        deadline = time.monotonic() + timeout
+        while group_exists() and time.monotonic() < deadline:
+            time.sleep(0.1)
+
+    try:
+        process.wait(timeout=1)
+    except subprocess.TimeoutExpired:
+        pass
+
+
+def _tail(path: Path, line_count: int = 40) -> str:
+    if not path.exists():
+        return ""
+    return "".join(path.read_text(encoding="utf-8", errors="replace").splitlines(True)[-line_count:])
+
+
+def run_gate(
+    project_root: Path,
+    loader: str,
+    runtime_seconds: int,
+    startup_timeout_seconds: int,
+    use_xvfb: bool,
+) -> None:
+    if runtime_seconds < MINIMUM_GATE_RUNTIME_SECONDS:
+        raise ValueError(
+            f"runtime must be at least {MINIMUM_GATE_RUNTIME_SECONDS} seconds"
+        )
+
+    loader_dir = project_root / loader
+    if not (loader_dir / "gradlew").is_file():
+        raise ValueError(f"loader Gradle wrapper not found: {loader_dir / 'gradlew'}")
+    if use_xvfb and shutil.which("xvfb-run") is None:
+        raise ValueError("--xvfb requested, but xvfb-run is unavailable")
+
+    command = ["./gradlew", "runClient", "--console=plain"]
+    if use_xvfb:
+        command = ["xvfb-run", "-a", *command]
+
+    output_path = loader_dir / "build/client-gate.log"
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.unlink(missing_ok=True)
+    environment = os.environ.copy()
+    java_options = environment.get("_JAVA_OPTIONS", "")
+    required_options = ("-Duser.country=KR", "-Duser.language=ko")
+    for option in required_options:
+        if option not in java_options:
+            java_options = f"{java_options} {option}".strip()
+    environment["_JAVA_OPTIONS"] = java_options
+    world_name = f"dcn_compliance_gate_{os.getpid()}_{int(time.time())}"
+    environment["_JAVA_OPTIONS"] = (
+        f"{environment['_JAVA_OPTIONS']} -Ddcn.client.gate=true "
+        f"-Ddcn.client.gate.worldName={world_name}"
+    )
+
+    state = GateState()
+    process: subprocess.Popen[str] | None = None
+    reader: threading.Thread | None = None
+    started_at = time.monotonic()
+
+    print(
+        f"Starting {loader} compliance gate: {runtime_seconds}s inside a singleplayer world; "
+        f"log={output_path.relative_to(project_root)}",
+        flush=True,
+    )
+
+    with prepared_gate_workspace(project_root, loader_dir, world_name):
+        try:
+            with output_path.open("w", encoding="utf-8") as output:
+                process = subprocess.Popen(
+                    command,
+                    cwd=loader_dir,
+                    env=environment,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                    bufsize=1,
+                    start_new_session=True,
+                )
+                assert process.stdout is not None
+
+                def copy_output() -> None:
+                    assert process is not None and process.stdout is not None
+                    for line in process.stdout:
+                        output.write(line)
+                        output.flush()
+                        if state.observe(line):
+                            print(line.rstrip(), flush=True)
+
+                reader = threading.Thread(target=copy_output, daemon=True)
+                reader.start()
+                next_status_at = time.monotonic() + 30
+                failure: str | None = None
+
+                while True:
+                    now = time.monotonic()
+                    (
+                        initialized_at,
+                        resource_pack_loaded,
+                        integrated_server_started,
+                        player_joined,
+                        world_joined_at,
+                        world_start_failed,
+                        filtered,
+                    ) = state.snapshot()
+                    return_code = process.poll()
+                    if return_code is not None:
+                        failure = (
+                            f"client exited with code {return_code} before the gate completed"
+                        )
+                        break
+                    if world_start_failed:
+                        failure = "dev bootstrap failed to enter a singleplayer world"
+                        break
+                    if world_joined_at is None:
+                        if now - started_at >= startup_timeout_seconds:
+                            if initialized_at is None:
+                                failure = (
+                                    "mod did not initialize within "
+                                    f"{startup_timeout_seconds} seconds"
+                                )
+                            else:
+                                failure = (
+                                    "client did not enter a singleplayer world within "
+                                    f"{startup_timeout_seconds} seconds"
+                                )
+                            break
+                    else:
+                        world_runtime = now - world_joined_at
+                        if world_runtime >= runtime_seconds:
+                            missing = set(FILTERED_NOTIFICATION_MARKERS) - filtered
+                            if initialized_at is None:
+                                failure = "exact KOR mod-initialization marker was not observed"
+                            elif not resource_pack_loaded:
+                                failure = "generated compliance resource pack was not loaded"
+                            elif not integrated_server_started:
+                                failure = "integrated server start was not observed"
+                            elif not player_joined:
+                                failure = "player join was not observed"
+                            elif missing:
+                                failure = "missing filtered notifications: " + ", ".join(
+                                    sorted(missing)
+                                )
+                            break
+
+                    if now >= next_status_at:
+                        runtime = 0 if world_joined_at is None else int(now - world_joined_at)
+                        print(
+                            f"{loader} gate status: initialized={initialized_at is not None}, "
+                            f"pack_loaded={resource_pack_loaded}, "
+                            f"server_started={integrated_server_started}, "
+                            f"player_joined={player_joined}, "
+                            f"world_joined={world_joined_at is not None}, "
+                            f"runtime={runtime}/{runtime_seconds}s, "
+                            f"filtered={len(filtered)}/{len(FILTERED_NOTIFICATION_MARKERS)}",
+                            flush=True,
+                        )
+                        next_status_at = now + 30
+                    time.sleep(0.25)
+
+                _terminate_process_group(process)
+                reader.join(timeout=10)
+
+                (
+                    initialized_at,
+                    resource_pack_loaded,
+                    integrated_server_started,
+                    player_joined,
+                    world_joined_at,
+                    world_start_failed,
+                    filtered,
+                ) = state.snapshot()
+                world_runtime = (
+                    0 if world_joined_at is None else time.monotonic() - world_joined_at
+                )
+                if failure is not None:
+                    raise RuntimeError(
+                        f"{loader} compliance gate failed: {failure}\n"
+                        f"Last log lines:\n{_tail(output_path)}"
+                    )
+                print(
+                    f"{loader} compliance gate passed after {world_runtime:.1f}s in-world: "
+                    f"filtered {', '.join(sorted(filtered))}",
+                    flush=True,
+                )
+        finally:
+            if process is not None:
+                _terminate_process_group(process)
+            if reader is not None:
+                reader.join(timeout=2)
+
+
+def parse_args(argv: list[str]) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description=(
+            "Run a Minecraft client long enough to verify both real compliance "
+            "notifications are filtered."
+        )
+    )
+    parser.add_argument("loader", choices=("fabric", "neoforge", "forge"))
+    parser.add_argument(
+        "--runtime-seconds",
+        type=int,
+        default=DEFAULT_GATE_RUNTIME_SECONDS,
+        help=(
+            "seconds to keep the client running after entering a singleplayer world "
+            f"(default: {DEFAULT_GATE_RUNTIME_SECONDS}, minimum: "
+            f"{MINIMUM_GATE_RUNTIME_SECONDS})"
+        ),
+    )
+    parser.add_argument(
+        "--startup-timeout-seconds",
+        type=int,
+        default=DEFAULT_STARTUP_TIMEOUT_SECONDS,
+        help="maximum seconds allowed for Gradle and Minecraft startup",
+    )
+    parser.add_argument(
+        "--xvfb",
+        action="store_true",
+        help="launch the client through xvfb-run",
+    )
+    return parser.parse_args(argv)
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = parse_args(sys.argv[1:] if argv is None else argv)
+    project_root = Path(__file__).resolve().parents[2]
+    try:
+        run_gate(
+            project_root,
+            args.loader,
+            args.runtime_seconds,
+            args.startup_timeout_seconds,
+            args.xvfb,
+        )
+    except KeyboardInterrupt:
+        print("client compliance gate interrupted", file=sys.stderr)
+        return 130
+    except (OSError, RuntimeError, ValueError) as exception:
+        print(exception, file=sys.stderr)
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
