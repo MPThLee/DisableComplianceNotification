@@ -82,7 +82,7 @@ public class ModifyPeriodicNotificationTask {
                     }
 
                     this.minecraft.execute(() -> SystemToast.add(
-                            Minecraft.getInstance().getToastManager(),
+                            Minecraft.getInstance().gui.toastManager(),
                             SystemToast.SystemToastId.PERIODIC_NOTIFICATION,
                             Component.translatable(title, elapsedPeriod),
                             Component.translatable(message, elapsedPeriod)
