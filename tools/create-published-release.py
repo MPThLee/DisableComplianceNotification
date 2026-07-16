@@ -50,6 +50,24 @@ FRAGMENT_KEYS = {
     "modrinth_version_id",
     "curseforge_file_id",
 }
+PUBLICATION_COORDINATE_KEYS = (
+    "release_version",
+    "build_minecraft_version",
+    "source_commit",
+    "tag",
+    "github_repository",
+    "modrinth_project_id",
+    "curseforge_project_id",
+)
+ARTIFACT_COORDINATE_KEYS = (
+    "filename",
+    "github_url",
+    "sha256",
+    "modrinth_version_id",
+    "modrinth_sha512",
+    "curseforge_file_id",
+    "curseforge_loader",
+)
 
 
 class PublicationCreationError(RuntimeError):
@@ -80,6 +98,14 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument(
         "--published-on",
         help="UTC publication date in YYYY-MM-DD form (defaults to today)",
+    )
+    parser.add_argument(
+        "--previous-data",
+        type=Path,
+        help=(
+            "previous published-release.json used to prevent marketplace ID "
+            "reuse and immutable publication drift"
+        ),
     )
     parser.add_argument("--output", type=Path, required=True)
     return parser.parse_args(argv)
@@ -442,12 +468,121 @@ def create_document(
             }
         ],
         "desired_game_versions": [minecraft_version],
-        "marketplace_sync": {
-            "publication": tag,
-            "game_versions": [minecraft_version],
-            "synced_on": verified_on,
-        },
     }
+
+
+def require_object(value: object, description: str) -> dict[str, object]:
+    if not isinstance(value, dict):
+        raise PublicationCreationError(f"{description} must be a JSON object")
+    return value
+
+
+def previous_publication(
+    value: dict[str, object],
+) -> tuple[str, dict[str, object], dict[str, dict[str, object]]]:
+    if value.get("schema_version") != 1:
+        raise PublicationCreationError(
+            "previous publication must use schema_version 1"
+        )
+    publication = require_object(
+        value.get("publication"), "previous publication"
+    )
+    publication_id = require_string(
+        publication.get("id"), "previous publication ID"
+    )
+    raw_artifacts = require_object(
+        publication.get("artifacts"), "previous publication artifacts"
+    )
+    if set(raw_artifacts) != set(LOADERS):
+        raise PublicationCreationError(
+            "previous publication artifacts must cover exactly every loader"
+        )
+
+    artifacts: dict[str, dict[str, object]] = {}
+    for loader in LOADERS:
+        artifacts[loader] = require_object(
+            raw_artifacts[loader],
+            f"previous {loader} publication artifact",
+        )
+        require_string(
+            artifacts[loader].get("modrinth_version_id"),
+            f"previous {loader} Modrinth version ID",
+            pattern=MODRINTH_ID_PATTERN,
+        )
+        require_positive_integer(
+            artifacts[loader].get("curseforge_file_id"),
+            f"previous {loader} CurseForge file ID",
+        )
+    return publication_id, publication, artifacts
+
+
+def validate_against_previous(
+    document: dict[str, object],
+    previous: dict[str, object],
+) -> None:
+    previous_id, previous_coordinates, previous_artifacts = previous_publication(
+        previous
+    )
+    publication = require_object(document.get("publication"), "publication")
+    publication_id = require_string(publication.get("id"), "publication ID")
+    artifacts = require_object(
+        publication.get("artifacts"), "publication artifacts"
+    )
+
+    if previous_id == publication_id:
+        for key in PUBLICATION_COORDINATE_KEYS:
+            if previous_coordinates.get(key) != publication.get(key):
+                raise PublicationCreationError(
+                    f"rerun of {publication_id} changed publication coordinate {key}"
+                )
+        for loader in LOADERS:
+            artifact = require_object(
+                artifacts.get(loader), f"{loader} publication artifact"
+            )
+            for key in ARTIFACT_COORDINATE_KEYS:
+                if previous_artifacts[loader].get(key) != artifact.get(key):
+                    raise PublicationCreationError(
+                        f"rerun of {publication_id} changed {loader} artifact "
+                        f"coordinate {key}"
+                    )
+        return
+
+    previous_modrinth_ids = {
+        require_string(
+            artifact.get("modrinth_version_id"),
+            f"previous {loader} Modrinth version ID",
+            pattern=MODRINTH_ID_PATTERN,
+        )
+        for loader, artifact in previous_artifacts.items()
+    }
+    previous_curseforge_ids = {
+        require_positive_integer(
+            artifact.get("curseforge_file_id"),
+            f"previous {loader} CurseForge file ID",
+        )
+        for loader, artifact in previous_artifacts.items()
+    }
+    for loader in LOADERS:
+        artifact = require_object(
+            artifacts.get(loader), f"{loader} publication artifact"
+        )
+        modrinth_id = require_string(
+            artifact.get("modrinth_version_id"),
+            f"{loader} Modrinth version ID",
+            pattern=MODRINTH_ID_PATTERN,
+        )
+        if modrinth_id in previous_modrinth_ids:
+            raise PublicationCreationError(
+                f"{publication_id} reuses prior Modrinth version ID {modrinth_id}"
+            )
+        curseforge_id = require_positive_integer(
+            artifact.get("curseforge_file_id"),
+            f"{loader} CurseForge file ID",
+        )
+        if curseforge_id in previous_curseforge_ids:
+            raise PublicationCreationError(
+                f"{publication_id} reuses prior CurseForge file ID {curseforge_id}"
+            )
 
 
 def write_json(path: Path, value: dict[str, object]) -> None:
@@ -517,6 +652,9 @@ def main(argv: list[str] | None = None) -> int:
             gate_results=gates,
             verified_on=published_on,
         )
+        if args.previous_data is not None:
+            previous = read_json(args.previous_data, "previous publication data")
+            validate_against_previous(document, previous)
         write_json(args.output, document)
     except (KeyError, PublicationCreationError) as exc:
         print(f"error: {exc}", file=sys.stderr)

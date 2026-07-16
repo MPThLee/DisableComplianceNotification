@@ -39,20 +39,36 @@ MARKETPLACE_SPEC.loader.exec_module(marketplace)
 
 
 SOURCE_COMMIT = "1" * 40
+OLD_SOURCE_COMMIT = "0" * 40
 HASHES = {
     "fabric": ("a" * 64, "1" * 128),
     "neoforge": ("b" * 64, "2" * 128),
     "forge": ("c" * 64, "3" * 128),
+}
+OLD_HASHES = {
+    "fabric": ("d" * 64, "4" * 128),
+    "neoforge": ("e" * 64, "5" * 128),
+    "forge": ("f" * 64, "6" * 128),
 }
 MODRINTH_IDS = {
     "fabric": "newFab01",
     "neoforge": "newNeo01",
     "forge": "newFor01",
 }
+OLD_MODRINTH_IDS = {
+    "fabric": "oldFab01",
+    "neoforge": "oldNeo01",
+    "forge": "oldFor01",
+}
 CURSEFORGE_IDS = {
     "fabric": 9000001,
     "neoforge": 9000002,
     "forge": 9000003,
+}
+OLD_CURSEFORGE_IDS = {
+    "fabric": 8000001,
+    "neoforge": 8000002,
+    "forge": 8000003,
 }
 
 
@@ -127,6 +143,43 @@ def parsed_inputs() -> tuple[
     return fragments, gates
 
 
+def old_artifact(loader: str) -> dict[str, object]:
+    filename = (
+        "disable_compliance_notification-"
+        f"v1.6.0+{loader}-26.2.jar"
+    )
+    return {
+        "filename": filename,
+        "github_url": (
+            "https://github.com/MPThLee/DisableComplianceNotification/"
+            f"releases/download/v1.6.0/{filename}"
+        ),
+        "sha256": OLD_HASHES[loader][0],
+        "modrinth_version_id": OLD_MODRINTH_IDS[loader],
+        "modrinth_sha512": OLD_HASHES[loader][1],
+        "curseforge_file_id": OLD_CURSEFORGE_IDS[loader],
+        "curseforge_loader": creator.CURSEFORGE_LOADERS[loader],
+    }
+
+
+def old_runtime_record(minecraft_version: str) -> dict[str, object]:
+    return {
+        "minecraft_version": minecraft_version,
+        "verified_on": "2026-07-16",
+        "required_in_world_seconds": 120,
+        "filtered_notifications": sorted(creator.EXPECTED_NOTIFICATIONS),
+        "loaders": {
+            loader: {
+                "observed_in_world_seconds": 150.5,
+                "periodic_toast_absent": True,
+                "passed": True,
+                "artifact_sha256": OLD_HASHES[loader][0],
+            }
+            for loader in creator.LOADERS
+        },
+    }
+
+
 def old_publication() -> dict[str, object]:
     return {
         "schema_version": 1,
@@ -134,20 +187,26 @@ def old_publication() -> dict[str, object]:
             "id": "v1.6.0",
             "release_version": "1.6.0",
             "build_minecraft_version": "26.2",
+            "source_commit": OLD_SOURCE_COMMIT,
+            "tag": "v1.6.0",
+            "github_repository": creator.GITHUB_REPOSITORY,
+            "modrinth_project_id": creator.MODRINTH_PROJECT_ID,
+            "curseforge_project_id": creator.CURSEFORGE_PROJECT_ID,
             "artifacts": {
-                loader: {
-                    "modrinth_version_id": f"old-{loader}",
-                    "curseforge_file_id": 8000000 + index,
-                }
-                for index, loader in enumerate(creator.LOADERS)
+                loader: old_artifact(loader) for loader in creator.LOADERS
             },
         },
         "runtime_verification": [
-            {"minecraft_version": "26.2"},
-            {"minecraft_version": "26.3"},
-            {"minecraft_version": "27.0"},
+            old_runtime_record("26.2"),
+            old_runtime_record("26.2.1"),
+            old_runtime_record("26.3"),
         ],
-        "desired_game_versions": ["26.2", "26.3", "27.0"],
+        "desired_game_versions": ["26.2", "26.2.1", "26.3"],
+        "marketplace_sync": {
+            "publication": "v1.6.0",
+            "game_versions": ["26.2", "26.2.1", "26.3"],
+            "synced_on": "2026-07-16",
+        },
     }
 
 
@@ -217,6 +276,7 @@ class CreatePublishedReleaseTest(unittest.TestCase):
         tag: str = "v1.6.1",
         source_commit: str = SOURCE_COMMIT,
         published_on: str = "2026-08-01",
+        previous_data: Path | None = None,
     ) -> list[str]:
         arguments = [
             "--config",
@@ -230,6 +290,8 @@ class CreatePublishedReleaseTest(unittest.TestCase):
             "--published-on",
             published_on,
         ]
+        if previous_data is not None:
+            arguments.extend(["--previous-data", str(previous_data)])
         for path in fragments:
             arguments.extend(["--publication-fragment", str(path)])
         for path in gates:
@@ -264,14 +326,7 @@ class CreatePublishedReleaseTest(unittest.TestCase):
             publication["artifacts"]["neoforge"]["curseforge_loader"],
         )
         self.assertEqual(["26.2"], document["desired_game_versions"])
-        self.assertEqual(
-            {
-                "publication": "v1.6.1",
-                "game_versions": ["26.2"],
-                "synced_on": "2026-08-01",
-            },
-            document["marketplace_sync"],
-        )
+        self.assertNotIn("marketplace_sync", document)
         self.assertEqual(1, len(document["runtime_verification"]))
         runtime = document["runtime_verification"][0]
         self.assertEqual("26.2", runtime["minecraft_version"])
@@ -282,24 +337,39 @@ class CreatePublishedReleaseTest(unittest.TestCase):
         parsed = sync.parse_release_data(document)
         self.assertEqual("v1.6.1", parsed.publication.publication_id)
         self.assertEqual(("26.2",), parsed.verified_minecraft_versions)
-        self.assertTrue(marketplace.check_marketplace_sync(document)[0])
+        current, message = marketplace.check_marketplace_sync(document)
+        self.assertFalse(current)
+        self.assertIn("no sync record", message)
 
-    def test_v160_history_rolls_to_v161_new_ids_without_inheriting_versions(self):
+    def test_262_2621_263_history_rolls_to_v161_base_only(self):
         config = self.write_config()
         fragment_paths, gate_paths = self.write_inputs()
         output = self.root / "published-release.json"
-        output.write_text(json.dumps(old_publication()), encoding="utf-8")
+        previous = self.root / "previous-published-release.json"
+        previous.write_text(json.dumps(old_publication()), encoding="utf-8")
 
         self.assertEqual(
             0,
             creator.main(
-                self.command(config, fragment_paths, gate_paths, output)
+                self.command(
+                    config,
+                    fragment_paths,
+                    gate_paths,
+                    output,
+                    previous_data=previous,
+                )
             ),
         )
 
         updated = json.loads(output.read_text(encoding="utf-8"))
-        self.assertEqual("v1.6.1", updated["publication"]["id"])
+        publication = updated["publication"]
+        self.assertEqual("v1.6.1", publication["id"])
+        self.assertEqual("v1.6.1", publication["tag"])
+        self.assertEqual("1.6.1", publication["release_version"])
+        self.assertEqual(SOURCE_COMMIT, publication["source_commit"])
+        self.assertEqual("26.2", publication["build_minecraft_version"])
         self.assertEqual(["26.2"], updated["desired_game_versions"])
+        self.assertNotIn("marketplace_sync", updated)
         self.assertEqual(
             ["26.2"],
             [
@@ -307,15 +377,94 @@ class CreatePublishedReleaseTest(unittest.TestCase):
                 for record in updated["runtime_verification"]
             ],
         )
+        old_modrinth_ids = set(OLD_MODRINTH_IDS.values())
+        old_curseforge_ids = set(OLD_CURSEFORGE_IDS.values())
         for loader in creator.LOADERS:
-            artifact = updated["publication"]["artifacts"][loader]
+            artifact = publication["artifacts"][loader]
+            expected = fragment(loader)
+            self.assertEqual(expected["filename"], artifact["filename"])
+            self.assertEqual(expected["github_url"], artifact["github_url"])
+            self.assertEqual(HASHES[loader][0], artifact["sha256"])
+            self.assertEqual(HASHES[loader][1], artifact["modrinth_sha512"])
             self.assertEqual(
                 MODRINTH_IDS[loader], artifact["modrinth_version_id"]
             )
             self.assertEqual(
                 CURSEFORGE_IDS[loader], artifact["curseforge_file_id"]
             )
-            self.assertNotIn("old-", artifact["modrinth_version_id"])
+            self.assertNotIn(
+                artifact["modrinth_version_id"], old_modrinth_ids
+            )
+            self.assertNotIn(
+                artifact["curseforge_file_id"], old_curseforge_ids
+            )
+
+    def test_new_publication_rejects_reused_marketplace_ids(self):
+        fragments, gates = parsed_inputs()
+        previous = old_publication()
+        cases = {
+            "Modrinth": ("fabric", "modrinth_version_id", OLD_MODRINTH_IDS["forge"]),
+            "CurseForge": ("neoforge", "curseforge_file_id", OLD_CURSEFORGE_IDS["fabric"]),
+        }
+        for label, (loader, field, value) in cases.items():
+            with self.subTest(platform=label):
+                changed = copy.deepcopy(fragments)
+                changed[loader][field] = value
+                document = creator.create_document(
+                    properties=properties(),
+                    tag="v1.6.1",
+                    source_commit=SOURCE_COMMIT,
+                    fragments=changed,
+                    gate_results=gates,
+                    verified_on="2026-08-01",
+                )
+                with self.assertRaisesRegex(
+                    creator.PublicationCreationError, f"prior {label}"
+                ):
+                    creator.validate_against_previous(document, previous)
+
+    def test_same_publication_rerun_requires_identical_coordinates_and_hashes(self):
+        fragments, gates = parsed_inputs()
+        document = creator.create_document(
+            properties=properties(),
+            tag="v1.6.1",
+            source_commit=SOURCE_COMMIT,
+            fragments=fragments,
+            gate_results=gates,
+            verified_on="2026-08-01",
+        )
+        creator.validate_against_previous(document, copy.deepcopy(document))
+
+        cases = {
+            "publication source": (
+                ("publication", "source_commit"),
+                OLD_SOURCE_COMMIT,
+            ),
+            "artifact hash": (
+                ("publication", "artifacts", "fabric", "sha256"),
+                "9" * 64,
+            ),
+            "marketplace coordinate": (
+                (
+                    "publication",
+                    "artifacts",
+                    "forge",
+                    "modrinth_version_id",
+                ),
+                "driftedId",
+            ),
+        }
+        for label, (path, value) in cases.items():
+            with self.subTest(case=label):
+                previous = copy.deepcopy(document)
+                target = previous
+                for key in path[:-1]:
+                    target = target[key]
+                target[path[-1]] = value
+                with self.assertRaisesRegex(
+                    creator.PublicationCreationError, "rerun.*changed"
+                ):
+                    creator.validate_against_previous(document, previous)
 
     def test_fragment_loader_coverage_is_exact(self):
         paths, _ = self.write_inputs()
@@ -496,7 +645,13 @@ class CreatePublishedReleaseTest(unittest.TestCase):
             self.assertEqual(
                 1,
                 creator.main(
-                    self.command(config, fragment_paths, gate_paths, output)
+                    self.command(
+                        config,
+                        fragment_paths,
+                        gate_paths,
+                        output,
+                        previous_data=output,
+                    )
                 ),
             )
         self.assertEqual(
