@@ -180,6 +180,80 @@ class RecordPublishedCompatibilityTest(unittest.TestCase):
         )
         self.assertNotIn("old", updated["runtime_verification"][1])
 
+    def test_records_sequential_versions_only_after_complete_loader_evidence(self):
+        data = published_data()
+        publication_before = copy.deepcopy(data["publication"])
+        publication, hashes = record.validate_publication(data)
+
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            directory = Path(temporary_directory)
+            for target_version in ("26.2.1", "26.3"):
+                with self.subTest(target_version=target_version):
+                    result_paths = []
+                    artifact_paths = []
+                    for loader in sorted(record.EXPECTED_LOADERS):
+                        result_path = (
+                            directory / f"{target_version}-{loader}-gate.json"
+                        )
+                        result_path.write_text(
+                            json.dumps(gate_result(loader, target_version)),
+                            encoding="utf-8",
+                        )
+                        result_paths.append(result_path)
+
+                        artifact_path = (
+                            directory / f"{target_version}-{loader}-artifact.json"
+                        )
+                        artifact_path.write_text(
+                            json.dumps(
+                                artifact_verification(loader, target_version)
+                            ),
+                            encoding="utf-8",
+                        )
+                        artifact_paths.append(artifact_path)
+
+                    with self.assertRaisesRegex(
+                        record.PublishedCompatibilityError,
+                        "gate results must cover exactly every loader",
+                    ):
+                        record.load_gate_results(result_paths[:-1])
+
+                    loaded_target, gates = record.load_gate_results(result_paths)
+                    with self.assertRaisesRegex(
+                        record.PublishedCompatibilityError,
+                        "artifact verifications must cover exactly every loader",
+                    ):
+                        record.load_artifact_verifications(
+                            artifact_paths[:-1],
+                            publication_id=str(publication["id"]),
+                            target_minecraft_version=loaded_target,
+                            published_hashes=hashes,
+                        )
+
+                    artifacts = record.load_artifact_verifications(
+                        artifact_paths,
+                        publication_id=str(publication["id"]),
+                        target_minecraft_version=loaded_target,
+                        published_hashes=hashes,
+                    )
+                    record.update_published_compatibility(
+                        data,
+                        gates,
+                        artifacts,
+                        target_minecraft_version=loaded_target,
+                        published_hashes=hashes,
+                        verified_on="2026-08-01",
+                    )
+
+        self.assertEqual(publication_before, data["publication"])
+        self.assertEqual(
+            ["26.2", "26.2.1", "26.3"],
+            [item["minecraft_version"] for item in data["runtime_verification"]],
+        )
+        self.assertEqual(
+            ["26.2", "26.2.1", "26.3"], data["desired_game_versions"]
+        )
+
     def test_gate_loading_requires_exact_coverage_and_matching_target(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
             directory = Path(temporary_directory)
