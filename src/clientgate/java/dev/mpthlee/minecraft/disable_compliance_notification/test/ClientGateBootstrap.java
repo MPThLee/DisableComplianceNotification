@@ -56,27 +56,11 @@ public final class ClientGateBootstrap {
                 return null;
             });
 
-            waitFor(client, () -> client.gui.screen() instanceof CreateWorldScreen);
-            runOnClient(client, () -> {
-                if (!(client.gui.screen() instanceof CreateWorldScreen screen)) {
-                    throw new IllegalStateException("Create-world screen disappeared before the gate could start it");
-                }
-
-                String worldName = System.getProperty("dcn.client.gate.worldName");
-                if (worldName == null || worldName.isBlank()) {
-                    throw new IllegalStateException("dcn.client.gate.worldName is required");
-                }
-                screen.getUiState().setName(worldName);
-
-                Button createButton = screen.children().stream()
-                        .filter(Button.class::isInstance)
-                        .map(Button.class::cast)
-                        .filter(ClientGateBootstrap::isCreateWorldButton)
-                        .findFirst()
-                        .orElseThrow(() -> new IllegalStateException("Create-world button was not found"));
-                createButton.onPress(null);
-                return null;
-            });
+            String worldName = System.getProperty("dcn.client.gate.worldName");
+            if (worldName == null || worldName.isBlank()) {
+                throw new IllegalStateException("dcn.client.gate.worldName is required");
+            }
+            startWorldWhenReady(client, worldName);
 
             waitFor(client, () -> client.level != null && client.player != null);
             runOnClient(client, () -> {
@@ -91,6 +75,36 @@ public final class ClientGateBootstrap {
         } catch (Throwable throwable) {
             LOGGER.error("DCN compliance gate failed to enter a singleplayer world", throwable);
         }
+    }
+
+    private static void startWorldWhenReady(Minecraft client, String worldName) throws Exception {
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(WORLD_START_TIMEOUT_SECONDS);
+        while (System.nanoTime() < deadline) {
+            boolean started = runOnClient(client, () -> {
+                if (!(client.gui.screen() instanceof CreateWorldScreen screen)) {
+                    return false;
+                }
+
+                Button createButton = screen.children().stream()
+                        .filter(Button.class::isInstance)
+                        .map(Button.class::cast)
+                        .filter(ClientGateBootstrap::isCreateWorldButton)
+                        .findFirst()
+                        .orElse(null);
+                if (createButton == null) {
+                    return false;
+                }
+
+                screen.getUiState().setName(worldName);
+                createButton.onPress(null);
+                return true;
+            });
+            if (started) {
+                return;
+            }
+            Thread.sleep(100);
+        }
+        throw new IllegalStateException("Timed out waiting for the create-world screen and button");
     }
 
     private static void verifyNoPeriodicToast(Minecraft client) throws Exception {

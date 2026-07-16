@@ -278,6 +278,50 @@ class ClientGateTest(unittest.TestCase):
         self.assertIn("dcn.client.gate.runtimeSeconds", bootstrap)
         self.assertIn(gate.NO_PERIODIC_TOAST_MARKER, bootstrap)
 
+    def test_world_start_check_and_click_are_atomic_and_retryable(self):
+        bootstrap = (
+            PROJECT_ROOT
+            / "src/clientgate/java/dev/mpthlee/minecraft/disable_compliance_notification"
+            / "test/ClientGateBootstrap.java"
+        ).read_text(encoding="utf-8")
+        helper_start = bootstrap.index("private static void startWorldWhenReady")
+        helper_end = bootstrap.index(
+            "private static void verifyNoPeriodicToast", helper_start
+        )
+        helper = bootstrap[helper_start:helper_end]
+
+        loop = helper.index("while (System.nanoTime() < deadline)")
+        callback = helper.index("boolean started = runOnClient(client, () -> {")
+        screen_check = helper.index(
+            "client.gui.screen() instanceof CreateWorldScreen screen", callback
+        )
+        missing_screen = helper.index("return false;", screen_check)
+        missing_button = helper.index("return false;", missing_screen + 1)
+        click = helper.index("createButton.onPress(null);", missing_button)
+        callback_success = helper.index("return true;", click)
+        callback_end = helper.index("            });", callback_success)
+        started_check = helper.index("if (started)", callback_end)
+        successful_return = helper.index("return;", started_check)
+        retry_sleep = helper.index("Thread.sleep(100);", successful_return)
+
+        self.assertEqual(1, helper.count("runOnClient(client, () -> {"))
+        self.assertEqual(2, helper.count("return false;"))
+        self.assertLess(loop, callback)
+        self.assertLess(callback, screen_check)
+        self.assertLess(screen_check, missing_screen)
+        self.assertLess(missing_screen, missing_button)
+        self.assertLess(missing_button, click)
+        self.assertLess(click, callback_success)
+        self.assertLess(callback_success, callback_end)
+        self.assertLess(callback_end, started_check)
+        self.assertLess(started_check, successful_return)
+        self.assertLess(successful_return, retry_sleep)
+        self.assertNotIn(
+            "waitFor(client, () -> client.gui.screen() instanceof CreateWorldScreen)",
+            bootstrap,
+        )
+        self.assertNotIn("Create-world screen disappeared before", bootstrap)
+
     def test_ci_runs_the_gate_for_every_loader(self):
         workflow = (PROJECT_ROOT / ".github/workflows/test.yml").read_text(
             encoding="utf-8"
