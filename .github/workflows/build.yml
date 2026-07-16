@@ -5,6 +5,10 @@ on: [push, pull_request]
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ startsWith(github.ref, 'refs/tags/v') && 'published-compatibility-state' || format('build-{0}', github.ref) }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+
 jobs:
   metadata:
     runs-on: ubuntu-latest
@@ -126,6 +130,15 @@ jobs:
         timeout-minutes: 10
         run: ./tools/test/run_client_gate.sh "${{ matrix.loader }}" --xvfb
 
+      - name: Upload tagged ${{ matrix.loader }} gate evidence
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: tagged-gate-evidence-${{ matrix.loader }}
+          if-no-files-found: error
+          retention-days: 14
+          path: ${{ matrix.loader }}/build/client-gate-result.json
+
       - name: Upload tagged ${{ matrix.loader }} test logs
         if: startsWith(github.ref, 'refs/tags/v') && always()
         continue-on-error: true
@@ -205,6 +218,7 @@ jobs:
     permissions:
       contents: read
     strategy:
+      fail-fast: false
       matrix:
         loader: [
             "forge",
@@ -244,6 +258,7 @@ jobs:
           name: ${{ matrix.loader }}-artifact
 
       - name: Upload ${{ matrix.loader }} version to CurseForge and Modrinth
+        id: publish
         uses: Kira-NT/mc-publish@52307b03863581dec6b652b83e597aec02ebb075 # v3.3.1
         with:
           modrinth-id: vAYtksKy
@@ -258,3 +273,398 @@ jobs:
           version: ${{ steps.variables.outputs.full_version }}
           game-versions: ${{ steps.variables.outputs.prop_minecraft_version }}
           loaders: ${{ matrix.loader }}
+
+      - name: Stage immutable ${{ matrix.loader }} publication coordinates
+        shell: bash
+        env:
+          CURSEFORGE_FILE_ID: ${{ steps.publish.outputs.curseforge-version }}
+          LOADER: ${{ matrix.loader }}
+          MODRINTH_VERSION_ID: ${{ steps.publish.outputs.modrinth-version }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          mapfile -t jars < <(find "$LOADER" -maxdepth 1 -type f -name '*.jar')
+          if [ "${#jars[@]}" -ne 1 ]; then
+            echo "Expected exactly one published $LOADER jar, found ${#jars[@]}" >&2
+            printf '%s\n' "${jars[@]}" >&2
+            exit 1
+          fi
+          if [[ ! "$MODRINTH_VERSION_ID" =~ ^[A-Za-z0-9_-]+$ ]]; then
+            echo "Invalid Modrinth version ID returned by mc-publish" >&2
+            exit 1
+          fi
+          if [[ ! "$CURSEFORGE_FILE_ID" =~ ^[0-9]+$ ]] || [ "$CURSEFORGE_FILE_ID" -le 0 ]; then
+            echo "Invalid CurseForge file ID returned by mc-publish" >&2
+            exit 1
+          fi
+
+          jar=${jars[0]}
+          filename=$(basename "$jar")
+          sha256=$(sha256sum "$jar" | awk '{print $1}')
+          sha512=$(sha512sum "$jar" | awk '{print $1}')
+          github_url="https://github.com/$GITHUB_REPOSITORY/releases/download/$RELEASE_TAG/$filename"
+          mkdir -p publication-fragment
+          jq -n \
+            --arg loader "$LOADER" \
+            --arg filename "$filename" \
+            --arg sha256 "$sha256" \
+            --arg sha512 "$sha512" \
+            --arg github_url "$github_url" \
+            --arg modrinth_version_id "$MODRINTH_VERSION_ID" \
+            --argjson curseforge_file_id "$CURSEFORGE_FILE_ID" \
+            '{
+              loader: $loader,
+              filename: $filename,
+              sha256: $sha256,
+              sha512: $sha512,
+              github_url: $github_url,
+              modrinth_version_id: $modrinth_version_id,
+              curseforge_file_id: $curseforge_file_id
+            }' > "publication-fragment/$LOADER.json"
+
+      - name: Upload ${{ matrix.loader }} publication coordinates
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: publication-fragment-${{ matrix.loader }}
+          if-no-files-found: error
+          retention-days: 14
+          path: publication-fragment/
+
+  create_publication:
+    runs-on: ubuntu-latest
+    needs:
+      - metadata
+      - build
+      - publish
+    if: startsWith(github.ref, 'refs/tags/v')
+    timeout-minutes: 15
+    permissions:
+      actions: read
+      contents: read
+    outputs:
+      previous_state_sha: ${{ steps.previous.outputs.previous_state_sha }}
+
+    steps:
+      - name: Checkout exact tagged source
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+          path: tagged-source
+          persist-credentials: false
+          ref: ${{ github.sha }}
+
+      - name: Checkout canonical previous publication state
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 1
+          path: previous-state
+          persist-credentials: false
+          ref: refs/heads/${{ github.event.repository.default_branch }}
+
+      - name: Record canonical previous state SHA
+        id: previous
+        shell: bash
+        env:
+          SOURCE_COMMIT: ${{ github.sha }}
+        run: |
+          if [ "$(git -C tagged-source rev-parse HEAD)" != "$SOURCE_COMMIT" ]; then
+            echo "Tagged source checkout does not match the release SHA" >&2
+            exit 1
+          fi
+          echo "previous_state_sha=$(git -C previous-state rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.12"
+
+      - name: Download immutable publication coordinates
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: publication-fragment-*
+          merge-multiple: true
+          path: tagged-source/publication-fragments
+
+      - name: Download tagged Fabric gate evidence
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: tagged-gate-evidence-fabric
+          path: tagged-source/tagged-gates/fabric
+
+      - name: Download tagged NeoForge gate evidence
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: tagged-gate-evidence-neoforge
+          path: tagged-source/tagged-gates/neoforge
+
+      - name: Download tagged Forge gate evidence
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: tagged-gate-evidence-forge
+          path: tagged-source/tagged-gates/forge
+
+      - name: Create the pending publication manifest
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+          SOURCE_COMMIT: ${{ github.sha }}
+        run: |
+          mkdir -p generated-publication
+          python3 tagged-source/tools/create-published-release.py \
+            --config tagged-source/config.properties \
+            --tag "$RELEASE_TAG" \
+            --source-commit "$SOURCE_COMMIT" \
+            --publication-fragment tagged-source/publication-fragments/fabric.json \
+            --publication-fragment tagged-source/publication-fragments/neoforge.json \
+            --publication-fragment tagged-source/publication-fragments/forge.json \
+            --gate-result tagged-source/tagged-gates/fabric/client-gate-result.json \
+            --gate-result tagged-source/tagged-gates/neoforge/client-gate-result.json \
+            --gate-result tagged-source/tagged-gates/forge/client-gate-result.json \
+            --previous-data previous-state/data/published-release.json \
+            --output generated-publication/published-release.json
+
+      - name: Validate the new publication state
+        working-directory: tagged-source
+        run: >-
+          python3 -m unittest
+          tools.test.test_create_published_release
+          tools.test.test_record_marketplace_sync
+          tools.test.test_sync_platform_compatibility
+
+      - name: Upload pending publication manifest
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pending-published-release
+          if-no-files-found: error
+          retention-days: 14
+          path: generated-publication/published-release.json
+
+  record_publication:
+    runs-on: ubuntu-latest
+    needs:
+      - metadata
+      - create_publication
+    if: startsWith(github.ref, 'refs/tags/v')
+    timeout-minutes: 15
+    permissions:
+      actions: read
+      contents: write
+    outputs:
+      state_branch: ${{ steps.record.outputs.state_branch }}
+      state_sha: ${{ steps.record.outputs.state_sha }}
+
+    steps:
+      - name: Checkout current canonical publication branch
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+          path: canonical-state
+          ref: refs/heads/${{ github.event.repository.default_branch }}
+
+      - name: Download pending publication manifest
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: pending-published-release
+          path: generated-publication
+
+      - name: Record publication on the canonical branch
+        id: record
+        shell: bash
+        working-directory: canonical-state
+        env:
+          EXPECTED_BASE_SHA: ${{ needs.create_publication.outputs.previous_state_sha }}
+          MOD_VERSION: ${{ needs.metadata.outputs.mod_version }}
+          STATE_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          if [[ ! "$EXPECTED_BASE_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "Unsafe expected canonical state SHA: $EXPECTED_BASE_SHA" >&2
+            exit 1
+          fi
+          if ! git check-ref-format "refs/heads/$STATE_BRANCH"; then
+            echo "Unsafe canonical state branch: $STATE_BRANCH" >&2
+            exit 1
+          fi
+          if [[ ! "$MOD_VERSION" =~ ^[0-9]+(\.[0-9]+)*$ ]]; then
+            echo "Unsafe mod version: $MOD_VERSION" >&2
+            exit 1
+          fi
+          if [ "$(git rev-parse HEAD)" != "$EXPECTED_BASE_SHA" ]; then
+            echo "Canonical branch moved after manifest creation" >&2
+            exit 1
+          fi
+          remote_head=$(git ls-remote --heads origin "refs/heads/$STATE_BRANCH" | awk '{print $1}')
+          if [ "$remote_head" != "$EXPECTED_BASE_SHA" ]; then
+            echo "Canonical branch moved before publication recording: $remote_head" >&2
+            exit 1
+          fi
+
+          cp ../generated-publication/published-release.json data/published-release.json
+          while IFS= read -r path; do
+            case "$path" in
+              data/published-release.json) ;;
+              *)
+                echo "Publication binding changed an unexpected path: $path" >&2
+                exit 1
+                ;;
+            esac
+          done < <(git diff --name-only)
+
+          if git diff --quiet -- data/published-release.json; then
+            remote_head=$(git ls-remote --heads origin "refs/heads/$STATE_BRANCH" | awk '{print $1}')
+            if [ "$remote_head" != "$EXPECTED_BASE_SHA" ]; then
+              echo "Canonical branch moved before idempotent state reuse: $remote_head" >&2
+              exit 1
+            fi
+            echo "Canonical publication state is already current"
+            {
+              echo "state_branch=$STATE_BRANCH"
+              echo "state_sha=$EXPECTED_BASE_SHA"
+            } >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          git add data/published-release.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "ci: bind v$MOD_VERSION published artifacts [skip ci]"
+          remote_head=$(git ls-remote --heads origin "refs/heads/$STATE_BRANCH" | awk '{print $1}')
+          if [ "$remote_head" != "$EXPECTED_BASE_SHA" ]; then
+            echo "Canonical branch moved before publication push: $remote_head" >&2
+            exit 1
+          fi
+          git push origin "HEAD:refs/heads/$STATE_BRANCH"
+          {
+            echo "state_branch=$STATE_BRANCH"
+            echo "state_sha=$(git rev-parse HEAD)"
+          } >> "$GITHUB_OUTPUT"
+
+  sync_modrinth:
+    runs-on: ubuntu-latest
+    needs: record_publication
+    if: startsWith(github.ref, 'refs/tags/v')
+    timeout-minutes: 15
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout exact committed publication state
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+          ref: ${{ needs.record_publication.outputs.state_sha }}
+
+      - name: Preflight new Modrinth IDs and synchronize metadata
+        env:
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+        run: >-
+          python3 tools/sync-platform-compatibility.py
+          --data data/published-release.json
+          --platform modrinth
+
+  sync_curseforge:
+    runs-on: ubuntu-latest
+    needs: record_publication
+    if: startsWith(github.ref, 'refs/tags/v')
+    timeout-minutes: 15
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout exact committed publication state
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+          ref: ${{ needs.record_publication.outputs.state_sha }}
+
+      - name: Preflight new CurseForge IDs and synchronize metadata
+        env:
+          CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
+        run: >-
+          python3 tools/sync-platform-compatibility.py
+          --data data/published-release.json
+          --platform curseforge
+
+  record_marketplace_sync:
+    runs-on: ubuntu-latest
+    needs:
+      - metadata
+      - record_publication
+      - sync_modrinth
+      - sync_curseforge
+    if: >-
+      startsWith(github.ref, 'refs/tags/v') &&
+      needs.sync_modrinth.result == 'success' &&
+      needs.sync_curseforge.result == 'success'
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    outputs:
+      state_sha: ${{ steps.checkpoint.outputs.state_sha }}
+
+    steps:
+      - name: Checkout exact synchronized publication state
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.record_publication.outputs.state_sha }}
+
+      - name: Record synchronized marketplace checkpoint
+        id: checkpoint
+        shell: bash
+        env:
+          EXPECTED_STATE_SHA: ${{ needs.record_publication.outputs.state_sha }}
+          MOD_VERSION: ${{ needs.metadata.outputs.mod_version }}
+          STATE_BRANCH: ${{ needs.record_publication.outputs.state_branch }}
+        run: |
+          if [[ ! "$EXPECTED_STATE_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "Unsafe publication state SHA: $EXPECTED_STATE_SHA" >&2
+            exit 1
+          fi
+          if ! git check-ref-format "refs/heads/$STATE_BRANCH"; then
+            echo "Unsafe canonical state branch: $STATE_BRANCH" >&2
+            exit 1
+          fi
+          if [ "$(git rev-parse HEAD)" != "$EXPECTED_STATE_SHA" ]; then
+            echo "Marketplace checkpoint checkout is not the synchronized state" >&2
+            exit 1
+          fi
+          remote_head=$(git ls-remote --heads origin "refs/heads/$STATE_BRANCH" | awk '{print $1}')
+          if [ "$remote_head" != "$EXPECTED_STATE_SHA" ]; then
+            echo "Canonical branch moved before marketplace checkpoint: $remote_head" >&2
+            exit 1
+          fi
+
+          python3 tools/record-marketplace-sync.py \
+            --data data/published-release.json \
+            --record
+          while IFS= read -r path; do
+            case "$path" in
+              data/published-release.json) ;;
+              *)
+                echo "Marketplace checkpoint changed an unexpected path: $path" >&2
+                exit 1
+                ;;
+            esac
+          done < <(git diff --name-only)
+
+          if git diff --quiet -- data/published-release.json; then
+            remote_head=$(git ls-remote --heads origin "refs/heads/$STATE_BRANCH" | awk '{print $1}')
+            if [ "$remote_head" != "$EXPECTED_STATE_SHA" ]; then
+              echo "Canonical branch moved before idempotent checkpoint reuse: $remote_head" >&2
+              exit 1
+            fi
+            echo "Marketplace checkpoint is already current"
+            echo "state_sha=$EXPECTED_STATE_SHA" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          git add data/published-release.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "ci: record v$MOD_VERSION marketplace sync [skip ci]"
+          remote_head=$(git ls-remote --heads origin "refs/heads/$STATE_BRANCH" | awk '{print $1}')
+          if [ "$remote_head" != "$EXPECTED_STATE_SHA" ]; then
+            echo "Canonical branch moved before checkpoint push: $remote_head" >&2
+            exit 1
+          fi
+          git push origin "HEAD:refs/heads/$STATE_BRANCH"
+          echo "state_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
