@@ -72,5 +72,12 @@
   ],
   "desired_game_versions": [
     "26.2"
-  ]
+  ],
+  "marketplace_sync": {
+    "publication": "v1.6.0",
+    "game_versions": [
+      "26.2"
+    ],
+    "synced_on": "2026-07-16"
+  }
 }
