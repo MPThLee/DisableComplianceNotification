@@ -162,6 +162,28 @@ class CheckUpdateTest(unittest.TestCase):
         self.assertIn("if-no-files-found: error", workflow)
         self.assertNotIn("pierotofy/set-swap-space", workflow)
 
+    def test_every_ci_gradle_build_has_a_one_hour_step_timeout(self):
+        workflows = [
+            PROJECT_ROOT / ".github/workflows/build.yml",
+            PROJECT_ROOT / ".github/workflows/test.yml",
+            PROJECT_ROOT / ".github/workflows/check-update.yml",
+        ]
+        build_count = 0
+        for path in workflows:
+            content = path.read_text(encoding="utf-8")
+            blocks = re.findall(
+                r"^      - name: Build[^\n]*\n(.*?)(?=^      - name: |\Z)",
+                content,
+                re.MULTILINE | re.DOTALL,
+            )
+            build_count += len(blocks)
+            for block in blocks:
+                with self.subTest(workflow=path.name):
+                    self.assertIn("timeout-minutes: 60", block)
+                    self.assertIn("retrying once after 15 seconds", block)
+
+        self.assertEqual(5, build_count)
+
     def test_workflow_actions_use_pinned_node24_releases(self):
         expected = {
             "actions/checkout": (
