@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 
+import json
 import re
 import unittest
 from pathlib import Path
 
 
 PROJECT_ROOT = Path(__file__).parents[2]
+COMPATIBILITY_PATH = PROJECT_ROOT / "data/minecraft-compatibility.json"
 
 
 def read_properties() -> dict[str, str]:
@@ -34,6 +36,8 @@ class LoaderMetadataTest(unittest.TestCase):
     def setUp(self):
         self.properties = read_properties()
         self.minecraft = self.properties["minecraft_version"]
+        self.compatibility = json.loads(COMPATIBILITY_PATH.read_text(encoding="utf-8"))
+        self.minimum = self.compatibility["metadata_compatibility"]["minimum_version"]
 
     def test_fabric_accepts_the_configured_version_and_later(self):
         metadata = (PROJECT_ROOT / "src/fabric/resources/fabric.mod.json").read_text(
@@ -58,13 +62,24 @@ class LoaderMetadataTest(unittest.TestCase):
                     rendered,
                 )
 
-    def test_26_2_and_later_contract(self):
-        self.assertEqual("26.2", self.minecraft)
-        supported = ("26.2", "26.2.1", "26.3", "27.0", "30.4")
-        unsupported = ("26.1.2", "26.1", "25.5")
+    def test_repository_compatibility_minimum_is_open_ended(self):
+        self.assertEqual(self.minimum, self.minecraft)
+        self.assertEqual(
+            "minimum_inclusive",
+            self.compatibility["metadata_compatibility"]["range_kind"],
+        )
 
         def numeric_version(candidate: str) -> tuple[int, ...]:
             return tuple(int(part) for part in candidate.split("."))
+
+        major, minor = numeric_version(self.minimum)[:2]
+        supported = (
+            self.minimum,
+            f"{self.minimum}.1",
+            f"{major}.{minor + 1}",
+            f"{major + 1}.0",
+        )
+        unsupported = (f"{major}.{minor - 1}", f"{major - 1}.0")
 
         for version in supported:
             self.assertGreaterEqual(numeric_version(version), numeric_version(self.minecraft))

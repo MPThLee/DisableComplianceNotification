@@ -4,18 +4,7 @@
   "build_minecraft_version": "26.2",
   "metadata_compatibility": {
     "minimum_version": "26.2",
-    "accepted_examples": [
-      "26.2",
-      "26.2.1",
-      "26.3",
-      "27.0",
-      "30.4"
-    ],
-    "rejected_examples": [
-      "26.1.2",
-      "26.1",
-      "25.5"
-    ]
+    "range_kind": "minimum_inclusive"
   },
   "runtime_verification": [
     {

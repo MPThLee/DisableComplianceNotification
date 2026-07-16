@@ -71,6 +71,7 @@ jobs:
             fabric/build/run/clientGameTest/logs/
             fabric/run/logs/
             fabric/build/client-gate.log
+            fabric/build/client-gate-result.json
           retention-days: 7
 
   test-neoforge:
@@ -122,6 +123,7 @@ jobs:
           path: |
             neoforge/run/logs/
             neoforge/build/client-gate.log
+            neoforge/build/client-gate-result.json
           retention-days: 7
 
   test-forge:
@@ -173,4 +175,5 @@ jobs:
           path: |
             forge/run/logs/
             forge/build/client-gate.log
+            forge/build/client-gate-result.json
           retention-days: 7

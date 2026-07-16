@@ -38,11 +38,16 @@ FILTERED_NOTIFICATION_MARKERS = {
         "[DCN-MODE: ONLY_COMPLIANCE, Filtered: true]"
     ),
 }
+FILTERED_NOTIFICATION_TRANSLATION_KEYS = {
+    "hourly": "compliance.playtime.hours",
+    "delayed": "compliance.playtime.greaterThan24Hours",
+}
 MINIMUM_GATE_RUNTIME_SECONDS = 120
 DEFAULT_GATE_RUNTIME_SECONDS = 150
 DEFAULT_STARTUP_TIMEOUT_SECONDS = 300
 GATE_PACK_FILENAME = "dcn-compliance-gate.zip"
 GATE_PACK_ID = f"file/{GATE_PACK_FILENAME}"
+GATE_RESULT_FILENAME = "client-gate-result.json"
 
 
 def read_properties(path: Path) -> dict[str, str]:
@@ -286,13 +291,40 @@ def _tail(path: Path, line_count: int = 40) -> str:
     return "".join(path.read_text(encoding="utf-8", errors="replace").splitlines(True)[-line_count:])
 
 
+def write_gate_result(
+    path: Path,
+    loader: str,
+    minecraft_version: str,
+    requested_runtime_seconds: int,
+    observed_runtime_seconds: float,
+    filtered: set[str],
+) -> dict[str, object]:
+    result = {
+        "schema_version": 1,
+        "loader": loader,
+        "minecraft_version": minecraft_version,
+        "minimum_in_world_seconds": MINIMUM_GATE_RUNTIME_SECONDS,
+        "requested_in_world_seconds": requested_runtime_seconds,
+        "observed_in_world_seconds": round(observed_runtime_seconds, 1),
+        "filtered_notifications": sorted(
+            FILTERED_NOTIFICATION_TRANSLATION_KEYS[name] for name in filtered
+        ),
+        "passed": True,
+    }
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(".tmp")
+    temporary.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
+    temporary.replace(path)
+    return result
+
+
 def run_gate(
     project_root: Path,
     loader: str,
     runtime_seconds: int,
     startup_timeout_seconds: int,
     use_xvfb: bool,
-) -> None:
+) -> dict[str, object]:
     if runtime_seconds < MINIMUM_GATE_RUNTIME_SECONDS:
         raise ValueError(
             f"runtime must be at least {MINIMUM_GATE_RUNTIME_SECONDS} seconds"
@@ -309,8 +341,10 @@ def run_gate(
         command = ["xvfb-run", "-a", *command]
 
     output_path = loader_dir / "build/client-gate.log"
+    result_path = loader_dir / "build" / GATE_RESULT_FILENAME
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.unlink(missing_ok=True)
+    result_path.unlink(missing_ok=True)
     environment = os.environ.copy()
     java_options = environment.get("_JAVA_OPTIONS", "")
     required_options = ("-Duser.country=KR", "-Duser.language=ko")
@@ -453,6 +487,15 @@ def run_gate(
                     f"{loader} compliance gate passed after {world_runtime:.1f}s in-world: "
                     f"filtered {', '.join(sorted(filtered))}",
                     flush=True,
+                )
+                properties = read_properties(project_root / "config.properties")
+                return write_gate_result(
+                    result_path,
+                    loader,
+                    properties["minecraft_version"],
+                    runtime_seconds,
+                    world_runtime,
+                    filtered,
                 )
         finally:
             if process is not None:

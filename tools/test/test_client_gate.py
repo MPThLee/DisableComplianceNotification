@@ -143,6 +143,31 @@ class ClientGateTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "at least 120 seconds"):
             gate.run_gate(PROJECT_ROOT, "fabric", 119, 300, False)
 
+    def test_gate_result_is_machine_readable_compatibility_evidence(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            result_path = Path(temporary_directory) / gate.GATE_RESULT_FILENAME
+            result = gate.write_gate_result(
+                result_path,
+                "fabric",
+                "26.2",
+                150,
+                150.64,
+                {"hourly", "delayed"},
+            )
+
+            self.assertEqual(result, json.loads(result_path.read_text(encoding="utf-8")))
+            self.assertEqual(120, result["minimum_in_world_seconds"])
+            self.assertEqual(150, result["requested_in_world_seconds"])
+            self.assertEqual(150.6, result["observed_in_world_seconds"])
+            self.assertEqual(
+                [
+                    "compliance.playtime.greaterThan24Hours",
+                    "compliance.playtime.hours",
+                ],
+                result["filtered_notifications"],
+            )
+            self.assertIs(result["passed"], True)
+
     def test_workspace_restores_files_and_removes_the_disposable_world(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
             loader_dir = Path(temporary_directory) / "fabric"
