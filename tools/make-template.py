@@ -106,9 +106,7 @@ Recommended with [YACL](https://modrinth.com/mod/yacl).
 
 #### Forge
 
-[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/{mod_ver}/disable_compliance_notification-{mod_ver}+forge-{game_ver}.jar)
-
-Uses Forge's built-in client config."""
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/{mod_ver}/disable_compliance_notification-{mod_ver}+forge-{game_ver}.jar)"""
 
 
 def insert_version_in_download(
@@ -179,7 +177,7 @@ def build_latest_block(game_ver: str, mod_ver: str) -> str:
     Typically simpler or slightly different from DOWNLOAD.md.
     """
     mod_ver = ensure_leading_v(mod_ver)
-    return f"""### Latest ({mod_ver} for Minecraft {game_ver})
+    return f"""### Latest ({mod_ver} for Minecraft {game_ver} and later)
 
 [GitHub Release](https://github.com/MPThLee/DisableComplianceNotification/releases/tag/{mod_ver}) or Modrinth.
 
@@ -200,8 +198,6 @@ Recommended with [YACL](https://modrinth.com/mod/yacl).
 #### Forge
 
 [Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/{mod_ver}/disable_compliance_notification-{mod_ver}+forge-{game_ver}.jar)
-
-Uses Forge's built-in client config.
 """
 
 

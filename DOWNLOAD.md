@@ -645,5 +645,3 @@ Recommended with [YACL](https://modrinth.com/mod/yacl).
 #### Forge
 
 [Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.6.0/disable_compliance_notification-v1.6.0+forge-26.2.jar)
-
-Uses Forge's built-in client config.
