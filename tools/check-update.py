@@ -53,6 +53,14 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         "--target-version",
         help="use an already-detected exact candidate (requires --apply)",
     )
+    parser.add_argument(
+        "--bump-mod-version",
+        action="store_true",
+        help=(
+            "increment the mod patch version while preparing the candidate; "
+            "compatibility-only updates preserve the published mod version by default"
+        ),
+    )
     parser.add_argument("--timeout", type=float, default=30)
     return parser.parse_args(argv)
 
@@ -249,7 +257,9 @@ def main(argv: list[str] | None = None) -> int:
             set_output("has_update", "false")
             return 0
 
-        new_mod_version = bump_patch(mod_version)
+        new_mod_version = (
+            bump_patch(mod_version) if args.bump_mod_version else mod_version
+        )
         print(f"Candidate available: Minecraft {current} -> {target}")
         set_output("has_update", "true")
         set_output("new_version", target)

@@ -42,6 +42,22 @@ class CheckUpdateTest(unittest.TestCase):
         with self.assertRaises(check_update.UpdateCheckError):
             check_update.bump_patch("1.6.0-beta")
 
+    def test_compatibility_updates_do_not_create_synthetic_mod_releases(self):
+        compatibility = check_update.parse_args(
+            ["--apply", "--target-version", "26.3"]
+        )
+        release = check_update.parse_args(
+            [
+                "--apply",
+                "--target-version",
+                "26.3",
+                "--bump-mod-version",
+            ]
+        )
+
+        self.assertFalse(compatibility.bump_mod_version)
+        self.assertTrue(release.bump_mod_version)
+
     def test_malformed_manifest_is_rejected(self):
         with self.assertRaisesRegex(
             check_update.UpdateCheckError, "missing latest versions"
@@ -56,87 +72,198 @@ class CheckUpdateTest(unittest.TestCase):
                 False,
             )
 
-    def test_periodic_workflow_tests_every_loader_before_pushing(self):
+    def test_periodic_workflow_is_publication_centric_and_api_retryable(self):
         workflow = (
             PROJECT_ROOT / ".github/workflows/check-update.yml"
         ).read_text(encoding="utf-8")
 
         self.assertIn('cron: "0 */6 * * *"', workflow)
-        self.assertIn("Reject failed loader verification", workflow)
-        self.assertIn("persist-credentials: false", workflow)
-        self.assertIn("contents: read", workflow)
-        self.assertIn("contents: write", workflow)
-        probe_position = workflow.index("  probe:\n")
-        verify_position = workflow.index("  verify:\n")
-        finalize_position = workflow.index("  finalize:\n")
-        publish_position = workflow.index("  publish:\n")
-        self.assertLess(probe_position, verify_position)
-        self.assertLess(verify_position, finalize_position)
-        self.assertLess(finalize_position, publish_position)
-        probe = workflow[probe_position:verify_position]
-        verify = workflow[verify_position:finalize_position]
-        finalize = workflow[finalize_position:publish_position]
-        publish = workflow[publish_position:]
+        self.assertIn("group: published-compatibility-state", workflow)
+        jobs_start = workflow.index("jobs:\n") + len("jobs:\n")
+        jobs_workflow = workflow[jobs_start:]
+        names = re.findall(
+            r"^  ([a-z][a-z0-9_]*):\n",
+            jobs_workflow,
+            re.MULTILINE,
+        )
+        expected_jobs = (
+            "probe",
+            "verify",
+            "aggregate",
+            "publish_evidence",
+            "sync_modrinth",
+            "sync_curseforge",
+            "record_marketplace_sync",
+        )
+        self.assertEqual(list(expected_jobs), names)
+
+        positions = {
+            name: workflow.index(f"  {name}:\n") for name in expected_jobs
+        }
+
+        def job(name: str) -> str:
+            start = positions[name]
+            later = [
+                position
+                for position in positions.values()
+                if position > start
+            ]
+            end = min(later) if later else len(workflow)
+            return workflow[start:end]
+
+        probe = job("probe")
+        verify = job("verify")
+        aggregate = job("aggregate")
+        publish = job("publish_evidence")
+        sync_modrinth = job("sync_modrinth")
+        sync_curseforge = job("sync_curseforge")
+        checkpoint = job("record_marketplace_sync")
+
+        self.assertLess(positions["probe"], positions["verify"])
+        self.assertLess(positions["verify"], positions["aggregate"])
+        self.assertLess(positions["aggregate"], positions["publish_evidence"])
+        for platform in ("sync_modrinth", "sync_curseforge"):
+            self.assertLess(positions["publish_evidence"], positions[platform])
+            self.assertLess(positions[platform], positions["record_marketplace_sync"])
+
         for section_name, section in (
             ("probe", probe),
             ("verify", verify),
-            ("finalize", finalize),
+            ("aggregate", aggregate),
+            ("sync_modrinth", sync_modrinth),
+            ("sync_curseforge", sync_curseforge),
         ):
             with self.subTest(section=section_name):
                 self.assertNotIn("contents: write", section)
                 self.assertNotIn("git push", section)
-        for section in (verify, finalize, publish):
-            self.assertIn(
-                "needs.probe.outputs.needs_publish == 'true'",
-                section,
-            )
+
         self.assertIn("contents: write", publish)
         self.assertIn("git push", publish)
+        self.assertIn("contents: write", checkpoint)
+        self.assertIn("git push", checkpoint)
+
+        self.assertIn("github.event.repository.default_branch", probe)
+        self.assertIn("data/published-release.json", probe)
+        self.assertIn(".publication.source_commit", probe)
+        self.assertIn("record-marketplace-sync.py --check", probe)
+        self.assertIn('1) echo "pending=true"', probe)
         self.assertIn(
-            'remote_base=$(git ls-remote --heads origin "refs/heads/$BASE_BRANCH"',
-            publish,
+            "if: steps.marketplace.outputs.pending == 'false'",
+            probe,
         )
-        self.assertIn('if [ "$remote_base" != "$BASE_SHA" ]', publish)
+        self.assertIn("plan-published-compatibility.py", probe)
+        self.assertIn(
+            "--source-config publication-source/config.properties",
+            probe,
+        )
+        self.assertNotIn("./gradlew", probe)
+        self.assertNotIn("git branch -r", probe)
+        self.assertNotIn("check-update.py --apply", workflow)
+
         for uses_line in re.findall(r"^\s*uses:\s*(.+)$", workflow, re.MULTILINE):
             with self.subTest(action=uses_line):
                 self.assertRegex(uses_line, r"@[0-9a-f]{40}(?:\s+#.*)?$")
 
+        self.assertIn(
+            "matrix: ${{ fromJSON(needs.probe.outputs.matrix) }}",
+            verify,
+        )
         self.assertIn("fail-fast: false", verify)
         self.assertIn("timeout-minutes: 90", verify)
         self.assertIn("timeout-minutes: 60", verify)
-        for loader in ("fabric", "neoforge", "forge"):
-            with self.subTest(loader=loader):
-                self.assertIn(f"          - {loader}\n", verify)
+        self.assertIn("ref: ${{ matrix.source_commit }}", verify)
+        self.assertIn("candidate/config.properties", verify)
+        self.assertIn("./gradlew clean build", verify)
         self.assertIn(
-            './tools/test/run_client_gate.sh "${{ matrix.loader }}" --xvfb',
+            "--project-root candidate",
             verify,
         )
         self.assertIn("Run Fabric deterministic client gametest", verify)
-        self.assertIn("Upload passing ${{ matrix.loader }} gate evidence", verify)
-        self.assertIn('candidate-evidence/$LOADER/build', verify)
-        self.assertIn("Create candidate source patch", probe)
-        self.assertIn("Upload candidate source patch", probe)
+        self.assertIn("Gate candidate in-world for at least two minutes", verify)
+        self.assertIn("Upload passing publication-bound evidence", verify)
+        artifact_binding_position = verify.index(
+            "- name: Bind candidate to the exact published artifact"
+        )
+        client_gate_position = verify.index(
+            "- name: Gate candidate in-world for at least two minutes"
+        )
+        self.assertLess(artifact_binding_position, client_gate_position)
+        self.assertIn("verify-published-artifact.py", verify)
+        self.assertIn("published-artifact-verification.json", verify)
 
-        reject_position = finalize.index("- name: Reject failed loader verification")
-        evidence_position = finalize.index("- name: Download all passing gate evidence")
-        record_position = finalize.index(
-            "- name: Record passing compatibility evidence"
+        self.assertIn("Reject failed target or loader verification", aggregate)
+        self.assertIn(
+            '.targets[] | select(.status == "pending")',
+            aggregate,
         )
-        candidate_tests_position = finalize.index(
-            "- name: Validate candidate tooling and metadata"
-        )
-        patch_position = finalize.index("- name: Create tested candidate patch")
-        artifact_position = finalize.index("- name: Upload tested candidate patch")
-        self.assertLess(reject_position, evidence_position)
-        self.assertLess(evidence_position, record_position)
+        self.assertIn("--target-plan", aggregate)
         for loader in ("fabric", "neoforge", "forge"):
             self.assertIn(
-                f"--result {loader}/build/client-gate-result.json",
-                finalize,
+                f'--result "compatibility-evidence/$target/{loader}/'
+                'client-gate-result.json"',
+                aggregate,
             )
-        self.assertLess(record_position, candidate_tests_position)
-        self.assertLess(candidate_tests_position, patch_position)
-        self.assertLess(patch_position, artifact_position)
+            self.assertIn(
+                f'--artifact "compatibility-evidence/$target/{loader}/'
+                'published-artifact-verification.json"',
+                aggregate,
+            )
+        self.assertIn("data/published-release.json) ;;", aggregate)
+        self.assertNotIn("data/minecraft-compatibility.json", aggregate)
+
+        self.assertIn(
+            "published_sha: ${{ steps.publish.outputs.published_sha }}",
+            publish,
+        )
+        self.assertIn(
+            'git ls-remote --heads origin "refs/heads/$STATE_BRANCH"',
+            publish,
+        )
+        self.assertIn(
+            'if [ "$(git diff --cached --name-only)" != '
+            '"data/published-release.json" ]',
+            publish,
+        )
+        self.assertIn("[skip ci]", publish)
+        self.assertNotIn('target_branch="mc', publish)
+
+        for section in (sync_modrinth, sync_curseforge):
+            self.assertIn(
+                "needs.publish_evidence.result == 'success'",
+                section,
+            )
+            self.assertIn(
+                "needs.publish_evidence.result == 'skipped'",
+                section,
+            )
+            self.assertIn(
+                "needs.probe.outputs.has_work == 'false'",
+                section,
+            )
+            self.assertIn(
+                "needs.probe.outputs.marketplace_pending == 'true'",
+                section,
+            )
+            self.assertIn("persist-credentials: false", section)
+            self.assertIn(
+                "needs.publish_evidence.outputs.published_sha || "
+                "needs.probe.outputs.base_sha",
+                section,
+            )
+            self.assertIn("sync-platform-compatibility.py", section)
+            self.assertNotIn("./gradlew", section)
+        self.assertIn("MODRINTH_TOKEN", sync_modrinth)
+        self.assertNotIn("CURSEFORGE_TOKEN", sync_modrinth)
+        self.assertIn("CURSEFORGE_TOKEN", sync_curseforge)
+        self.assertNotIn("MODRINTH_TOKEN", sync_curseforge)
+        self.assertIn("${{ github.run_attempt }}", workflow)
+
+        self.assertIn("needs.sync_modrinth.result == 'success'", checkpoint)
+        self.assertIn("needs.sync_curseforge.result == 'success'", checkpoint)
+        self.assertIn("record-marketplace-sync.py --record", checkpoint)
+        self.assertIn("data/published-release.json", checkpoint)
+        self.assertIn("[skip ci]", checkpoint)
+        self.assertNotIn("./gradlew", checkpoint)
 
     def test_release_workflow_validates_tags_and_gates_every_loader(self):
         workflow = (PROJECT_ROOT / ".github/workflows/build.yml").read_text(

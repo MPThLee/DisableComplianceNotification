@@ -10,191 +10,149 @@ permissions:
   contents: read
 
 concurrency:
-  group: minecraft-update-check
+  group: published-compatibility-state
   cancel-in-progress: false
 
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     outputs:
-      base_branch: ${{ steps.base.outputs.branch }}
-      base_sha: ${{ steps.plan.outputs.base_sha }}
-      candidate_mod_version: ${{ steps.plan.outputs.candidate_mod_version }}
-      candidate_version: ${{ steps.plan.outputs.candidate_version }}
-      java_version: ${{ steps.config.outputs.java_version }}
-      needs_publish: ${{ steps.plan.outputs.needs_work }}
-      target_branch: ${{ steps.plan.outputs.target_branch }}
+      base_sha: ${{ steps.outputs.outputs.base_sha }}
+      has_work: ${{ steps.outputs.outputs.has_work }}
+      marketplace_pending: ${{ steps.outputs.outputs.marketplace_pending }}
+      matrix: ${{ steps.outputs.outputs.matrix }}
+      publication: ${{ steps.outputs.outputs.publication }}
+      source_commit: ${{ steps.outputs.outputs.source_commit }}
+      state_branch: ${{ steps.outputs.outputs.state_branch }}
 
     steps:
-      - name: Checkout repository without write credentials
+      - name: Checkout canonical publication state
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0
           persist-credentials: false
-
-      - name: Find latest maintained Minecraft branch
-        id: base
-        shell: bash
-        env:
-          FALLBACK_BRANCH: ${{ github.ref_name }}
-        run: |
-          latest=$(git branch -r --sort=-version:refname --list 'origin/mc*' | head -1 | sed 's|^ *origin/||')
-          if [ -z "$latest" ]; then
-            latest="$FALLBACK_BRANCH"
-          fi
-          if [[ ! "$latest" =~ ^mc[0-9]+(\.[0-9]+)*$ ]]; then
-            echo "Unsafe Minecraft branch name: $latest" >&2
-            exit 1
-          fi
-          echo "branch=$latest" >> "$GITHUB_OUTPUT"
-          echo "Testing from $latest"
-
-      - name: Checkout latest maintained Minecraft branch
-        shell: bash
-        env:
-          BASE_BRANCH: ${{ steps.base.outputs.branch }}
-        run: git switch --detach "origin/$BASE_BRANCH"
+          ref: ${{ github.event.repository.default_branch }}
 
       - name: Set up Python
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: "3.12"
 
-      - name: Check Mojang release manifest
-        id: check
-        run: python3 tools/check-update.py
-
-      - name: Check stored evidence for the current branch
-        id: evidence
-        shell: bash
-        run: |
-          if python3 tools/record-minecraft-compatibility.py --check-current; then
-            echo "verified=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "verified=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Plan candidate verification
-        id: plan
+      - name: Read immutable publication identity
+        id: publication
         shell: bash
         env:
-          BASE_BRANCH: ${{ steps.base.outputs.branch }}
-          CURRENT_MOD_VERSION: ${{ steps.check.outputs.current_mod_version }}
-          CURRENT_VERSION: ${{ steps.check.outputs.current_version }}
-          HAS_UPDATE: ${{ steps.check.outputs.has_update }}
-          NEW_MOD_VERSION: ${{ steps.check.outputs.mod_version }}
-          NEW_VERSION: ${{ steps.check.outputs.new_version }}
-          VERIFIED_CURRENT: ${{ steps.evidence.outputs.verified }}
+          STATE_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
-          case "$HAS_UPDATE" in
-            true)
-              candidate_version="$NEW_VERSION"
-              candidate_mod_version="$NEW_MOD_VERSION"
-              needs_work=true
-              ;;
-            false)
-              candidate_version="$CURRENT_VERSION"
-              candidate_mod_version="$CURRENT_MOD_VERSION"
-              if [ "$VERIFIED_CURRENT" = true ]; then
-                needs_work=false
-              else
-                needs_work=true
-              fi
-              ;;
-            *)
-              echo "Invalid update status: $HAS_UPDATE" >&2
-              exit 1
-              ;;
-          esac
-
-          if [[ ! "$BASE_BRANCH" =~ ^mc[0-9]+(\.[0-9]+)*$ ]]; then
-            echo "Unsafe base branch: $BASE_BRANCH" >&2
+          if ! git check-ref-format --branch "$STATE_BRANCH" >/dev/null; then
+            echo "Unsafe publication-state branch: $STATE_BRANCH" >&2
             exit 1
           fi
-          if [[ ! "$candidate_version" =~ ^[0-9]+(\.[0-9]+)*$ ]]; then
-            echo "Unsafe candidate version: $candidate_version" >&2
+          publication=$(jq -r '.publication.id' data/published-release.json)
+          source_commit=$(jq -r '.publication.source_commit' data/published-release.json)
+          if [[ ! "$publication" =~ ^v[0-9]+(\.[0-9]+)*$ ]]; then
+            echo "Unsafe publication ID: $publication" >&2
             exit 1
           fi
-          if [[ ! "$candidate_mod_version" =~ ^[0-9]+(\.[0-9]+)*$ ]]; then
-            echo "Unsafe candidate mod version: $candidate_mod_version" >&2
+          if [[ ! "$source_commit" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "Unsafe publication source commit: $source_commit" >&2
             exit 1
           fi
-
           {
             echo "base_sha=$(git rev-parse HEAD)"
-            echo "candidate_mod_version=$candidate_mod_version"
-            echo "candidate_version=$candidate_version"
-            echo "has_update=$HAS_UPDATE"
-            echo "needs_work=$needs_work"
-            echo "target_branch=mc$candidate_version"
+            echo "publication=$publication"
+            echo "source_commit=$source_commit"
+            echo "state_branch=$STATE_BRANCH"
           } >> "$GITHUB_OUTPUT"
 
-      - name: Prepare candidate dependency versions
-        if: steps.plan.outputs.has_update == 'true'
+      - name: Check marketplace synchronization state
+        id: marketplace
+        shell: bash
+        run: |
+          set +e
+          python3 tools/record-marketplace-sync.py --check
+          status=$?
+          set -e
+          case "$status" in
+            0) echo "pending=false" >> "$GITHUB_OUTPUT" ;;
+            1) echo "pending=true" >> "$GITHUB_OUTPUT" ;;
+            *) exit "$status" ;;
+          esac
+
+      - name: Checkout exact publication source for dependency planning
+        if: steps.marketplace.outputs.pending == 'false'
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          path: publication-source
+          persist-credentials: false
+          ref: ${{ steps.publication.outputs.source_commit }}
+
+      - name: Plan every missing or stale Minecraft target
+        if: steps.marketplace.outputs.pending == 'false'
+        id: plan
+        run: >-
+          python3 tools/plan-published-compatibility.py
+          --publication-data data/published-release.json
+          --source-config publication-source/config.properties
+          --output-dir compatibility-plan
+
+      - name: Upload dependency-only compatibility plan
+        if: steps.marketplace.outputs.pending == 'false' && steps.plan.outputs.has_work == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: published-compatibility-plan-${{ steps.publication.outputs.publication }}-${{ github.run_attempt }}
+          if-no-files-found: error
+          retention-days: 3
+          path: compatibility-plan/
+
+      - name: Export workflow decision
+        id: outputs
         shell: bash
         env:
-          CANDIDATE_VERSION: ${{ steps.plan.outputs.candidate_version }}
-        run: >-
-          python3 tools/check-update.py --apply
-          --target-version "$CANDIDATE_VERSION"
-
-      - name: Read candidate Java version
-        if: steps.plan.outputs.needs_work == 'true'
-        id: config
-        shell: bash
+          BASE_SHA: ${{ steps.publication.outputs.base_sha }}
+          MARKETPLACE_PENDING: ${{ steps.marketplace.outputs.pending }}
+          PLAN_HAS_WORK: ${{ steps.plan.outputs.has_work }}
+          PLAN_MATRIX: ${{ steps.plan.outputs.matrix }}
+          PUBLICATION: ${{ steps.publication.outputs.publication }}
+          SOURCE_COMMIT: ${{ steps.publication.outputs.source_commit }}
+          STATE_BRANCH: ${{ steps.publication.outputs.state_branch }}
         run: |
-          java_version=$(grep '^java_version=' config.properties | cut -d'=' -f2)
-          if [[ ! "$java_version" =~ ^[0-9]+$ ]]; then
-            echo "Invalid Java version: $java_version" >&2
-            exit 1
-          fi
-          echo "java_version=$java_version" >> "$GITHUB_OUTPUT"
-
-      - name: Validate prepared candidate scope
-        if: steps.plan.outputs.needs_work == 'true'
-        shell: bash
-        run: |
-          while IFS= read -r path; do
-            case "$path" in
-              config.properties|README.md|DOWNLOAD.md) ;;
+          if [ "$MARKETPLACE_PENDING" = true ]; then
+            has_work=false
+            matrix='{"include":[{"publication":"none","source_commit":"0000000000000000000000000000000000000000","minecraft_version":"0","loader":"fabric","java_version":"0","dependency_fingerprint":"0000000000000000000000000000000000000000000000000000000000000000","config_file":"none","target_plan_file":"none"}]}'
+          else
+            case "$PLAN_HAS_WORK" in
+              true)
+                has_work=true
+                matrix="$PLAN_MATRIX"
+                ;;
+              false)
+                has_work=false
+                matrix='{"include":[{"publication":"none","source_commit":"0000000000000000000000000000000000000000","minecraft_version":"0","loader":"fabric","java_version":"0","dependency_fingerprint":"0000000000000000000000000000000000000000000000000000000000000000","config_file":"none","target_plan_file":"none"}]}'
+                ;;
               *)
-                echo "Candidate preparation changed an unexpected path: $path" >&2
+                echo "Planner did not return a valid work decision" >&2
                 exit 1
                 ;;
             esac
-          done < <(git diff --name-only)
-
-      - name: Create candidate source patch
-        if: steps.plan.outputs.needs_work == 'true'
-        shell: bash
-        env:
-          HAS_UPDATE: ${{ steps.plan.outputs.has_update }}
-        run: |
-          git diff --binary -- config.properties README.md DOWNLOAD.md > candidate-source.patch
-          if [ "$HAS_UPDATE" = true ] && [ ! -s candidate-source.patch ]; then
-            echo "New Minecraft release produced no candidate source update" >&2
-            exit 1
           fi
-          sha256sum candidate-source.patch > candidate-source.patch.sha256
-
-      - name: Upload candidate source patch
-        if: steps.plan.outputs.needs_work == 'true'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: minecraft-${{ steps.plan.outputs.candidate_version }}-candidate-source
-          if-no-files-found: error
-          retention-days: 3
-          path: |
-            candidate-source.patch
-            candidate-source.patch.sha256
+          {
+            echo "base_sha=$BASE_SHA"
+            echo "has_work=$has_work"
+            echo "marketplace_pending=$MARKETPLACE_PENDING"
+            echo "matrix=$matrix"
+            echo "publication=$PUBLICATION"
+            echo "source_commit=$SOURCE_COMMIT"
+            echo "state_branch=$STATE_BRANCH"
+          } >> "$GITHUB_OUTPUT"
 
   verify:
-    name: Verify ${{ matrix.loader }}
+    name: Verify ${{ matrix.minecraft_version }} / ${{ matrix.loader }}
     needs: probe
     if: >-
       needs.probe.result == 'success' &&
-      needs.probe.outputs.needs_publish == 'true'
+      needs.probe.outputs.has_work == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     permissions:
@@ -202,64 +160,76 @@ jobs:
       contents: read
     strategy:
       fail-fast: false
-      matrix:
-        loader:
-          - fabric
-          - neoforge
-          - forge
+      matrix: ${{ fromJSON(needs.probe.outputs.matrix) }}
 
     steps:
-      - name: Checkout exact candidate base
+      - name: Checkout exact canonical publication state
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
           ref: ${{ needs.probe.outputs.base_sha }}
+
+      - name: Checkout exact immutable publication source
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          path: candidate
+          persist-credentials: false
+          ref: ${{ matrix.source_commit }}
 
       - name: Set up Python
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: "3.12"
 
-      - name: Download candidate source patch
+      - name: Download resolved compatibility plan
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          name: minecraft-${{ needs.probe.outputs.candidate_version }}-candidate-source
-          path: candidate-source
+          name: published-compatibility-plan-${{ matrix.publication }}-${{ github.run_attempt }}
+          path: compatibility-plan
 
-      - name: Verify and apply candidate source patch
+      - name: Apply exact resolved target configuration
         shell: bash
         env:
-          CANDIDATE_MOD_VERSION: ${{ needs.probe.outputs.candidate_mod_version }}
-          CANDIDATE_VERSION: ${{ needs.probe.outputs.candidate_version }}
+          CONFIG_FILE: ${{ matrix.config_file }}
+          DEPENDENCY_FINGERPRINT: ${{ matrix.dependency_fingerprint }}
+          PUBLICATION: ${{ matrix.publication }}
+          TARGET_VERSION: ${{ matrix.minecraft_version }}
         run: |
-          cd candidate-source
-          sha256sum --check candidate-source.patch.sha256
-          cd ..
-          if [ -s candidate-source/candidate-source.patch ]; then
-            git apply --check candidate-source/candidate-source.patch
-            git apply candidate-source/candidate-source.patch
-          fi
-          actual_version=$(grep '^minecraft_version=' config.properties | cut -d'=' -f2)
-          actual_mod_version=$(grep '^mod_version=' config.properties | cut -d'=' -f2)
-          if [ "$actual_version" != "$CANDIDATE_VERSION" ]; then
-            echo "Candidate Minecraft version mismatch: $actual_version" >&2
+          if [[ ! "$TARGET_VERSION" =~ ^[0-9]+(\.[0-9]+)*$ ]]; then
+            echo "Unsafe target Minecraft version: $TARGET_VERSION" >&2
             exit 1
           fi
-          if [ "$actual_mod_version" != "$CANDIDATE_MOD_VERSION" ]; then
-            echo "Candidate mod version mismatch: $actual_mod_version" >&2
+          if [[ ! "$DEPENDENCY_FINGERPRINT" =~ ^[0-9a-f]{64}$ ]]; then
+            echo "Unsafe dependency fingerprint" >&2
+            exit 1
+          fi
+          source_config="compatibility-plan/$CONFIG_FILE"
+          if [ ! -f "$source_config" ]; then
+            echo "Resolved target config is missing: $source_config" >&2
+            exit 1
+          fi
+          cp "$source_config" candidate/config.properties
+          actual_version=$(grep '^minecraft_version=' candidate/config.properties | cut -d'=' -f2)
+          actual_mod_version=$(grep '^mod_version=' candidate/config.properties | cut -d'=' -f2)
+          if [ "$actual_version" != "$TARGET_VERSION" ]; then
+            echo "Resolved Minecraft version mismatch: $actual_version" >&2
+            exit 1
+          fi
+          if [ "v$actual_mod_version" != "$PUBLICATION" ]; then
+            echo "Resolved mod version does not match the publication" >&2
             exit 1
           fi
 
-      - name: Set up Java ${{ needs.probe.outputs.java_version }}
+      - name: Set up Java ${{ matrix.java_version }}
         uses: actions/setup-java@0f481fcb613427c0f801b606911222b5b6f3083a # v5.5.0
         with:
           distribution: temurin
-          java-version: ${{ needs.probe.outputs.java_version }}
+          java-version: ${{ matrix.java_version }}
           cache: gradle
           cache-dependency-path: |
-            config.properties
-            ${{ matrix.loader }}/*.gradle*
-            ${{ matrix.loader }}/gradle.properties
+            candidate/config.properties
+            candidate/${{ matrix.loader }}/*.gradle*
+            candidate/${{ matrix.loader }}/gradle.properties
 
       - name: Set up swap space
         shell: bash
@@ -272,8 +242,8 @@ jobs:
       - name: Install xvfb
         run: sudo apt-get update && sudo apt-get install -y xvfb
 
-      - name: Build ${{ matrix.loader }} candidate
-        working-directory: ${{ matrix.loader }}
+      - name: Build ${{ matrix.loader }} for Minecraft ${{ matrix.minecraft_version }}
+        working-directory: candidate/${{ matrix.loader }}
         timeout-minutes: 60
         run: |
           chmod +x ./gradlew
@@ -288,56 +258,92 @@ jobs:
             sleep 15
           done
 
+      - name: Bind candidate to the exact published artifact
+        shell: bash
+        env:
+          LOADER: ${{ matrix.loader }}
+          TARGET_VERSION: ${{ matrix.minecraft_version }}
+        run: |
+          mapfile -t jars < <(
+            find "candidate/$LOADER/build/libs" -maxdepth 1 -type f -name '*.jar' \
+              ! -name '*-dev.jar' \
+              ! -name '*-sources.jar' \
+              ! -name '*-javadoc.jar' \
+              ! -name '*-gametest.jar'
+          )
+          if [ "${#jars[@]}" -ne 1 ]; then
+            echo "Expected exactly one $LOADER production jar, found ${#jars[@]}" >&2
+            printf '%s\n' "${jars[@]}" >&2
+            exit 1
+          fi
+          python3 tools/verify-published-artifact.py \
+            --data data/published-release.json \
+            --loader "$LOADER" \
+            --target-minecraft-version "$TARGET_VERSION" \
+            --candidate-jar "${jars[0]}" \
+            --output "candidate/$LOADER/build/published-artifact-verification.json"
+
       - name: Run Fabric deterministic client gametest
         if: matrix.loader == 'fabric'
-        working-directory: fabric
+        working-directory: candidate/fabric
         timeout-minutes: 5
         env:
           _JAVA_OPTIONS: "-Duser.country=KR -Duser.language=ko"
         run: xvfb-run -a ./gradlew runClientGameTest --console=plain
 
-      - name: Gate ${{ matrix.loader }} candidate in-world
+      - name: Gate candidate in-world for at least two minutes
         timeout-minutes: 10
-        run: ./tools/test/run_client_gate.sh "${{ matrix.loader }}" --xvfb
+        run: >-
+          ./tools/test/run_client_gate.sh
+          "${{ matrix.loader }}"
+          --project-root candidate
+          --xvfb
 
-      - name: Stage passing gate evidence
+      - name: Stage passing publication-bound evidence
         shell: bash
         env:
           LOADER: ${{ matrix.loader }}
+          TARGET_PLAN_FILE: ${{ matrix.target_plan_file }}
+          TARGET_VERSION: ${{ matrix.minecraft_version }}
         run: |
-          mkdir -p "candidate-evidence/$LOADER/build"
-          cp "$LOADER/build/client-gate-result.json" \
-            "candidate-evidence/$LOADER/build/client-gate-result.json"
+          destination="compatibility-evidence/$TARGET_VERSION/$LOADER"
+          mkdir -p "$destination"
+          cp "candidate/$LOADER/build/client-gate-result.json" \
+            "$destination/client-gate-result.json"
+          cp "candidate/$LOADER/build/published-artifact-verification.json" \
+            "$destination/published-artifact-verification.json"
+          cp "compatibility-plan/$TARGET_PLAN_FILE" \
+            "$destination/target-plan.json"
 
-      - name: Upload passing ${{ matrix.loader }} gate evidence
+      - name: Upload passing publication-bound evidence
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: minecraft-${{ needs.probe.outputs.candidate_version }}-gate-evidence-${{ matrix.loader }}
+          name: compatibility-${{ matrix.publication }}-${{ matrix.minecraft_version }}-${{ matrix.loader }}-${{ github.run_attempt }}
           if-no-files-found: error
           retention-days: 3
-          path: candidate-evidence/
+          path: compatibility-evidence/
 
-      - name: Upload ${{ matrix.loader }} candidate logs
+      - name: Upload candidate logs
         if: always()
         continue-on-error: true
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: minecraft-${{ needs.probe.outputs.candidate_version }}-logs-${{ matrix.loader }}
+          name: compatibility-logs-${{ matrix.publication }}-${{ matrix.minecraft_version }}-${{ matrix.loader }}-${{ github.run_attempt }}
           if-no-files-found: warn
           retention-days: 14
           path: |
-            ${{ matrix.loader }}/build/client-gate.log
-            ${{ matrix.loader }}/build/client-gate-result.json
-            ${{ matrix.loader }}/run/logs/
+            candidate/${{ matrix.loader }}/build/client-gate.log
+            candidate/${{ matrix.loader }}/build/client-gate-result.json
+            candidate/${{ matrix.loader }}/run/logs/
 
-  finalize:
+  aggregate:
     needs:
       - probe
       - verify
     if: >-
       !cancelled() &&
       needs.probe.result == 'success' &&
-      needs.probe.outputs.needs_publish == 'true'
+      needs.probe.outputs.has_work == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -345,20 +351,13 @@ jobs:
       contents: read
 
     steps:
-      - name: Reject failed loader verification
+      - name: Reject failed target or loader verification
         if: needs.verify.result != 'success'
-        shell: bash
-        env:
-          CANDIDATE_VERSION: ${{ needs.probe.outputs.candidate_version }}
         run: |
-          {
-            echo "## Minecraft $CANDIDATE_VERSION candidate failed"
-            echo
-            echo "No branch or compatibility record was pushed. Inspect the per-loader artifacts."
-          } >> "$GITHUB_STEP_SUMMARY"
+          echo "At least one publication compatibility gate failed." >&2
           exit 1
 
-      - name: Checkout exact candidate base
+      - name: Checkout exact canonical publication state
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
@@ -369,170 +368,297 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Download candidate source patch
+      - name: Download resolved compatibility plan
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          name: minecraft-${{ needs.probe.outputs.candidate_version }}-candidate-source
-          path: candidate-source
+          name: published-compatibility-plan-${{ needs.probe.outputs.publication }}-${{ github.run_attempt }}
+          path: compatibility-plan
 
-      - name: Verify and apply candidate source patch
+      - name: Download every passing target and loader result
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: compatibility-${{ needs.probe.outputs.publication }}-*-${{ github.run_attempt }}
+          merge-multiple: true
+          path: compatibility-evidence
+
+      - name: Record every complete publication-bound target
         shell: bash
         run: |
-          cd candidate-source
-          sha256sum --check candidate-source.patch.sha256
-          cd ..
-          if [ -s candidate-source/candidate-source.patch ]; then
-            git apply --check candidate-source/candidate-source.patch
-            git apply candidate-source/candidate-source.patch
+          mapfile -t targets < <(
+            jq -r '.targets[] | select(.status == "pending") | .minecraft_version' \
+              compatibility-plan/plan.json
+          )
+          if [ "${#targets[@]}" -eq 0 ]; then
+            echo "Compatibility plan contained no pending targets" >&2
+            exit 1
           fi
+          for target in "${targets[@]}"; do
+            if [[ ! "$target" =~ ^[0-9]+(\.[0-9]+)*$ ]]; then
+              echo "Unsafe planned target: $target" >&2
+              exit 1
+            fi
+            python3 tools/record-published-compatibility.py \
+              --target-plan "compatibility-plan/targets/$target/plan.json" \
+              --result "compatibility-evidence/$target/fabric/client-gate-result.json" \
+              --result "compatibility-evidence/$target/neoforge/client-gate-result.json" \
+              --result "compatibility-evidence/$target/forge/client-gate-result.json" \
+              --artifact "compatibility-evidence/$target/fabric/published-artifact-verification.json" \
+              --artifact "compatibility-evidence/$target/neoforge/published-artifact-verification.json" \
+              --artifact "compatibility-evidence/$target/forge/published-artifact-verification.json"
+          done
 
-      - name: Download all passing gate evidence
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          pattern: minecraft-${{ needs.probe.outputs.candidate_version }}-gate-evidence-*
-          merge-multiple: true
-          path: .
-
-      - name: Record passing compatibility evidence
-        run: >-
-          python3 tools/record-minecraft-compatibility.py
-          --result fabric/build/client-gate-result.json
-          --result neoforge/build/client-gate-result.json
-          --result forge/build/client-gate-result.json
-
-      - name: Validate candidate tooling and metadata
+      - name: Validate tooling and publication state
         run: python3 -m unittest discover -s tools/test -p 'test_*.py'
 
-      - name: Create tested candidate patch
+      - name: Create publication-state patch
         shell: bash
         run: |
           while IFS= read -r path; do
             case "$path" in
-              config.properties|README.md|DOWNLOAD.md|data/minecraft-compatibility.json) ;;
+              data/published-release.json) ;;
               *)
-                echo "Tested candidate changed an unexpected path: $path" >&2
+                echo "Compatibility aggregation changed an unexpected path: $path" >&2
                 exit 1
                 ;;
             esac
           done < <(git diff --name-only)
-          git diff --binary -- config.properties README.md DOWNLOAD.md data/minecraft-compatibility.json > candidate-update.patch
-          if [ ! -s candidate-update.patch ]; then
-            echo "Passing candidate produced no repository update" >&2
+          git diff --binary -- data/published-release.json > publication-state.patch
+          if [ ! -s publication-state.patch ]; then
+            echo "Passing compatibility gates produced no publication update" >&2
             exit 1
           fi
-          sha256sum candidate-update.patch > candidate-update.patch.sha256
+          sha256sum publication-state.patch > publication-state.patch.sha256
 
-      - name: Upload tested candidate patch
+      - name: Upload tested publication-state patch
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: minecraft-${{ needs.probe.outputs.candidate_version }}-tested-candidate
+          name: publication-state-${{ needs.probe.outputs.publication }}-${{ github.run_attempt }}
           if-no-files-found: error
           retention-days: 3
           path: |
-            candidate-update.patch
-            candidate-update.patch.sha256
+            publication-state.patch
+            publication-state.patch.sha256
 
-  publish:
+  publish_evidence:
     needs:
       - probe
-      - finalize
+      - aggregate
     if: >-
+      !cancelled() &&
       needs.probe.result == 'success' &&
-      needs.finalize.result == 'success' &&
-      needs.probe.outputs.needs_publish == 'true'
+      needs.aggregate.result == 'success' &&
+      needs.probe.outputs.has_work == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       actions: read
       contents: write
+    outputs:
+      published_sha: ${{ steps.publish.outputs.published_sha }}
 
     steps:
-      - name: Checkout exact tested base with publish credentials
+      - name: Checkout exact tested publication state with write credentials
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0
           ref: ${{ needs.probe.outputs.base_sha }}
 
-      - name: Download tested candidate patch
+      - name: Download tested publication-state patch
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          name: minecraft-${{ needs.probe.outputs.candidate_version }}-tested-candidate
-          path: candidate-artifact
+          name: publication-state-${{ needs.probe.outputs.publication }}-${{ github.run_attempt }}
+          path: publication-state-artifact
 
-      - name: Verify, commit, and push tested candidate
+      - name: Commit exact tested publication evidence
+        id: publish
         shell: bash
         env:
-          BASE_BRANCH: ${{ needs.probe.outputs.base_branch }}
           BASE_SHA: ${{ needs.probe.outputs.base_sha }}
-          CANDIDATE_MOD_VERSION: ${{ needs.probe.outputs.candidate_mod_version }}
-          CANDIDATE_VERSION: ${{ needs.probe.outputs.candidate_version }}
-          TARGET_BRANCH: ${{ needs.probe.outputs.target_branch }}
+          STATE_BRANCH: ${{ needs.probe.outputs.state_branch }}
         run: |
           if [[ ! "$BASE_SHA" =~ ^[0-9a-f]{40}$ ]]; then
-            echo "Unsafe base SHA: $BASE_SHA" >&2
+            echo "Unsafe tested state SHA: $BASE_SHA" >&2
             exit 1
           fi
-          if [[ ! "$BASE_BRANCH" =~ ^mc[0-9]+(\.[0-9]+)*$ ]]; then
-            echo "Unsafe base branch: $BASE_BRANCH" >&2
-            exit 1
-          fi
-          if [[ ! "$CANDIDATE_VERSION" =~ ^[0-9]+(\.[0-9]+)*$ ]]; then
-            echo "Unsafe candidate version: $CANDIDATE_VERSION" >&2
-            exit 1
-          fi
-          if [[ ! "$CANDIDATE_MOD_VERSION" =~ ^[0-9]+(\.[0-9]+)*$ ]]; then
-            echo "Unsafe candidate mod version: $CANDIDATE_MOD_VERSION" >&2
-            exit 1
-          fi
-          if [ "$TARGET_BRANCH" != "mc$CANDIDATE_VERSION" ]; then
-            echo "Unsafe target branch: $TARGET_BRANCH" >&2
+          if ! git check-ref-format --branch "$STATE_BRANCH" >/dev/null; then
+            echo "Unsafe publication-state branch: $STATE_BRANCH" >&2
             exit 1
           fi
           if [ "$(git rev-parse HEAD)" != "$BASE_SHA" ]; then
-            echo "Publish checkout does not match tested base" >&2
+            echo "Publication-state checkout does not match the tested base" >&2
             exit 1
           fi
-
-          cd candidate-artifact
-          sha256sum --check candidate-update.patch.sha256
+          cd publication-state-artifact
+          sha256sum --check publication-state.patch.sha256
           cd ..
 
-          remote_base=$(git ls-remote --heads origin "refs/heads/$BASE_BRANCH" | awk '{print $1}')
-          if [ "$remote_base" != "$BASE_SHA" ]; then
-            echo "Tested base branch moved or disappeared: $remote_base" >&2
+          remote_state=$(git ls-remote --heads origin "refs/heads/$STATE_BRANCH" | awk '{print $1}')
+          if [ "$remote_state" != "$BASE_SHA" ]; then
+            echo "Canonical publication state moved or disappeared: $remote_state" >&2
             exit 1
           fi
 
-          remote_target=$(git ls-remote --heads origin "refs/heads/$TARGET_BRANCH" | awk '{print $1}')
-          if [ -n "$remote_target" ] && [ "$remote_target" != "$BASE_SHA" ]; then
-            echo "Target branch changed or was not the tested base: $remote_target" >&2
-            exit 1
-          fi
-
-          git switch -c "$TARGET_BRANCH"
-          git apply --check candidate-artifact/candidate-update.patch
-          git apply --index candidate-artifact/candidate-update.patch
-
-          while IFS= read -r path; do
-            case "$path" in
-              config.properties|README.md|DOWNLOAD.md|data/minecraft-compatibility.json) ;;
-              *)
-                echo "Candidate patch contains an unexpected path: $path" >&2
-                exit 1
-                ;;
-            esac
-          done < <(git diff --cached --name-only)
-
-          if git diff --cached --quiet; then
-            echo "Candidate patch contains no repository update" >&2
+          git switch -c publication-state-update
+          git apply --check publication-state-artifact/publication-state.patch
+          git apply --index publication-state-artifact/publication-state.patch
+          if [ "$(git diff --cached --name-only)" != "data/published-release.json" ]; then
+            echo "Tested patch contains an unexpected path" >&2
             exit 1
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "feat: update to v$CANDIDATE_MOD_VERSION for minecraft $CANDIDATE_VERSION"
-          git push -u origin "HEAD:refs/heads/$TARGET_BRANCH"
+          git commit -m "ci: record published Minecraft compatibility [skip ci]"
+          git push origin "HEAD:refs/heads/$STATE_BRANCH"
+          echo "published_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+  sync_modrinth:
+    needs:
+      - probe
+      - publish_evidence
+    if: >-
+      !cancelled() &&
+      needs.probe.result == 'success' &&
+      (
+        needs.publish_evidence.result == 'success' ||
+        (
+          needs.publish_evidence.result == 'skipped' &&
+          needs.probe.outputs.has_work == 'false' &&
+          needs.probe.outputs.marketplace_pending == 'true'
+        )
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout exact committed publication evidence
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+          ref: ${{ needs.publish_evidence.outputs.published_sha || needs.probe.outputs.base_sha }}
+
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.12"
+
+      - name: Mark exact Modrinth versions as supported
+        env:
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+        run: python3 tools/sync-platform-compatibility.py --platform modrinth
+
+  sync_curseforge:
+    needs:
+      - probe
+      - publish_evidence
+    if: >-
+      !cancelled() &&
+      needs.probe.result == 'success' &&
+      (
+        needs.publish_evidence.result == 'success' ||
+        (
+          needs.publish_evidence.result == 'skipped' &&
+          needs.probe.outputs.has_work == 'false' &&
+          needs.probe.outputs.marketplace_pending == 'true'
+        )
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout exact committed publication evidence
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+          ref: ${{ needs.publish_evidence.outputs.published_sha || needs.probe.outputs.base_sha }}
+
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.12"
+
+      - name: Mark exact CurseForge files as supported
+        env:
+          CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
+        run: python3 tools/sync-platform-compatibility.py --platform curseforge
+
+  record_marketplace_sync:
+    needs:
+      - probe
+      - publish_evidence
+      - sync_modrinth
+      - sync_curseforge
+    if: >-
+      !cancelled() &&
+      needs.sync_modrinth.result == 'success' &&
+      needs.sync_curseforge.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout exact synchronized publication evidence
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.publish_evidence.outputs.published_sha || needs.probe.outputs.base_sha }}
+
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.12"
+
+      - name: Record synchronized marketplace metadata
+        run: python3 tools/record-marketplace-sync.py --record
+
+      - name: Commit synchronized marketplace checkpoint
+        shell: bash
+        env:
+          EXPECTED_SHA: ${{ needs.publish_evidence.outputs.published_sha || needs.probe.outputs.base_sha }}
+          STATE_BRANCH: ${{ needs.probe.outputs.state_branch }}
+        run: |
+          if [[ ! "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "Unsafe synchronized evidence SHA: $EXPECTED_SHA" >&2
+            exit 1
+          fi
+          if ! git check-ref-format --branch "$STATE_BRANCH" >/dev/null; then
+            echo "Unsafe publication-state branch: $STATE_BRANCH" >&2
+            exit 1
+          fi
+          if [ "$(git rev-parse HEAD)" != "$EXPECTED_SHA" ]; then
+            echo "Marketplace-state checkout does not match synchronized evidence" >&2
+            exit 1
+          fi
+          remote_state=$(git ls-remote --heads origin "refs/heads/$STATE_BRANCH" | awk '{print $1}')
+          if [ "$remote_state" != "$EXPECTED_SHA" ]; then
+            echo "Canonical publication state moved or disappeared: $remote_state" >&2
+            exit 1
+          fi
+          if git diff --quiet -- data/published-release.json; then
+            echo "Marketplace synchronization checkpoint is already current"
+            exit 0
+          fi
+          while IFS= read -r path; do
+            case "$path" in
+              data/published-release.json) ;;
+              *)
+                echo "Marketplace checkpoint changed an unexpected path: $path" >&2
+                exit 1
+                ;;
+            esac
+          done < <(git diff --name-only)
+          git add data/published-release.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "ci: record marketplace compatibility sync [skip ci]"
+          git push origin "HEAD:refs/heads/$STATE_BRANCH"
 
           {
-            echo "## Minecraft $CANDIDATE_VERSION passed"
+            echo "## Marketplace compatibility synchronized"
             echo
-            echo "All Fabric, NeoForge, and Forge gates passed; pushed $TARGET_BRANCH."
+            echo "Modrinth and CurseForge now advertise every verified Minecraft version."
           } >> "$GITHUB_STEP_SUMMARY"
