@@ -636,6 +636,14 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     )
     parser.add_argument("loader", choices=("fabric", "neoforge", "forge"))
     parser.add_argument(
+        "--project-root",
+        type=Path,
+        help=(
+            "repository checkout containing config.properties and loader directories "
+            "(defaults to this script's repository)"
+        ),
+    )
+    parser.add_argument(
         "--runtime-seconds",
         type=int,
         default=DEFAULT_GATE_RUNTIME_SECONDS,
@@ -661,7 +669,11 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(sys.argv[1:] if argv is None else argv)
-    project_root = Path(__file__).resolve().parents[2]
+    project_root = (
+        args.project_root.resolve()
+        if args.project_root is not None
+        else Path(__file__).resolve().parents[2]
+    )
     try:
         run_gate(
             project_root,

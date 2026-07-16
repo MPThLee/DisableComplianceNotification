@@ -162,6 +162,14 @@ class ClientGateTest(unittest.TestCase):
             args.runtime_seconds,
             gate.MINIMUM_GATE_RUNTIME_SECONDS,
         )
+        self.assertIsNone(args.project_root)
+
+    def test_project_root_can_target_a_separate_candidate_checkout(self):
+        args = gate.parse_args(
+            ["forge", "--project-root", "/tmp/candidate-source"]
+        )
+
+        self.assertEqual(Path("/tmp/candidate-source"), args.project_root)
 
     def test_runtime_shorter_than_two_minutes_is_rejected(self):
         with self.assertRaisesRegex(ValueError, "at least 120 seconds"):
