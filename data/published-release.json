@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "publication": {
+    "id": "v1.6.0",
+    "release_version": "1.6.0",
+    "build_minecraft_version": "26.2",
+    "source_commit": "0484b2f7249e30dd834d30f11bd582ccfc82b83f",
+    "tag": "v1.6.0",
+    "github_repository": "MPThLee/DisableComplianceNotification",
+    "modrinth_project_id": "vAYtksKy",
+    "curseforge_project_id": 644324,
+    "artifacts": {
+      "fabric": {
+        "filename": "disable_compliance_notification-v1.6.0+fabric-26.2.jar",
+        "github_url": "https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.6.0/disable_compliance_notification-v1.6.0+fabric-26.2.jar",
+        "sha256": "6af75d89c831c3fdd12927bcc592271845c2f1dc8e84daf13770866a3a1d1959",
+        "modrinth_version_id": "DGk6zAdg",
+        "modrinth_sha512": "8025f51771d3a2fda2005f6d5c166bf0564a2d5283ae9e447412fd39f303168c0038a09acfc9a07fab7e907df9c50c0bd62aa77dec39dc32cbda20580a9cb51a",
+        "curseforge_file_id": 8441666,
+        "curseforge_loader": "Fabric"
+      },
+      "neoforge": {
+        "filename": "disable_compliance_notification-v1.6.0+neoforge-26.2.jar",
+        "github_url": "https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.6.0/disable_compliance_notification-v1.6.0+neoforge-26.2.jar",
+        "sha256": "d81e67efa7cac1858b1451660cd10513990a4c078d6cf0ba3fc8f6f020483501",
+        "modrinth_version_id": "QskurR3v",
+        "modrinth_sha512": "77066dea89f1dbbf095968b344147634c62288c27bc0265974241d159d4f6fc5e68558504c2be6fd78e494c8887b72bd680f162df5b08a778a26abf9abedbd21",
+        "curseforge_file_id": 8441667,
+        "curseforge_loader": "NeoForge"
+      },
+      "forge": {
+        "filename": "disable_compliance_notification-v1.6.0+forge-26.2.jar",
+        "github_url": "https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.6.0/disable_compliance_notification-v1.6.0+forge-26.2.jar",
+        "sha256": "f81737ce8cf5581f872ca2c265bbccba55fdbfe2503662b1a98b022964904064",
+        "modrinth_version_id": "XCIQCPjS",
+        "modrinth_sha512": "39ac2503b94b2905e12ed73905f845dee06b9febffa469514f35d14bc4f91aaabae517867080327a501392c64fb61092f64254594d695015113e03c0793a0328",
+        "curseforge_file_id": 8441668,
+        "curseforge_loader": "Forge"
+      }
+    }
+  },
+  "runtime_verification": [
+    {
+      "minecraft_version": "26.2",
+      "verified_on": "2026-07-16",
+      "required_in_world_seconds": 120,
+      "filtered_notifications": [
+        "compliance.playtime.hours",
+        "compliance.playtime.greaterThan24Hours"
+      ],
+      "loaders": {
+        "fabric": {
+          "observed_in_world_seconds": 150.5,
+          "periodic_toast_absent": true,
+          "passed": true,
+          "artifact_sha256": "6af75d89c831c3fdd12927bcc592271845c2f1dc8e84daf13770866a3a1d1959"
+        },
+        "neoforge": {
+          "observed_in_world_seconds": 150.6,
+          "periodic_toast_absent": true,
+          "passed": true,
+          "artifact_sha256": "d81e67efa7cac1858b1451660cd10513990a4c078d6cf0ba3fc8f6f020483501"
+        },
+        "forge": {
+          "observed_in_world_seconds": 150.6,
+          "periodic_toast_absent": true,
+          "passed": true,
+          "artifact_sha256": "f81737ce8cf5581f872ca2c265bbccba55fdbfe2503662b1a98b022964904064"
+        }
+      }
+    }
+  ],
+  "desired_game_versions": [
+    "26.2"
+  ]
+}
