@@ -120,7 +120,7 @@ class ReleaseWorkflowTest(unittest.TestCase):
         for loader in ("fabric", "neoforge", "forge"):
             with self.subTest(loader=loader):
                 self.assertIn(
-                    f"name: tagged-gate-evidence-{loader}",
+                    f"name: tagged-gate-evidence-{loader}-${{{{ github.run_attempt }}}}",
                     create,
                 )
                 self.assertIn(
@@ -134,7 +134,11 @@ class ReleaseWorkflowTest(unittest.TestCase):
                     "client-gate-result.json",
                     create,
                 )
-        self.assertIn("name: pending-published-release", create)
+        self.assertIn(
+            "name: pending-published-release-${{ github.run_attempt }}",
+            create,
+        )
+        self.assertIn("${{ github.run_attempt }}", self.workflow)
         self.assertIn(
             "path: generated-publication/published-release.json",
             create,
