@@ -104,6 +104,57 @@ class CheckUpdateTest(unittest.TestCase):
         self.assertLess(candidate_tests_position, patch_position)
         self.assertLess(patch_position, artifact_position)
 
+    def test_github_actions_use_pinned_node24_releases(self):
+        expected = {
+            "actions/checkout": (
+                "9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0",
+                "v7.0.0",
+            ),
+            "actions/setup-java": (
+                "0f481fcb613427c0f801b606911222b5b6f3083a",
+                "v5.5.0",
+            ),
+            "actions/upload-artifact": (
+                "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+                "v7.0.1",
+            ),
+            "actions/download-artifact": (
+                "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+                "v8.0.1",
+            ),
+            "actions/setup-python": (
+                "ece7cb06caefa5fff74198d8649806c4678c61a1",
+                "v6.3.0",
+            ),
+            "actions/github-script": (
+                "3a2844b7e9c422d3c10d287c895573f7108da1b3",
+                "v9.0.0",
+            ),
+        }
+        workflows = PROJECT_ROOT / ".github/workflows"
+        found = set()
+        pattern = re.compile(
+            r"^\s*uses:\s*(actions/[\w-]+)@([0-9a-f]{40})\s+#\s+(v\S+)$",
+            re.MULTILINE,
+        )
+
+        for path in workflows.glob("*.yml"):
+            content = path.read_text(encoding="utf-8")
+            for action, expected_pin in expected.items():
+                if f"uses: {action}@" not in content:
+                    continue
+                found.add(action)
+                matches = [
+                    (sha, version)
+                    for matched_action, sha, version in pattern.findall(content)
+                    if matched_action == action
+                ]
+                with self.subTest(workflow=path.name, action=action):
+                    self.assertTrue(matches)
+                    self.assertTrue(all(match == expected_pin for match in matches))
+
+        self.assertEqual(set(expected), found)
+
 
 if __name__ == "__main__":
     unittest.main()
