@@ -62,49 +62,107 @@ class CheckUpdateTest(unittest.TestCase):
         ).read_text(encoding="utf-8")
 
         self.assertIn('cron: "0 */6 * * *"', workflow)
-        self.assertIn("Reject failing candidate", workflow)
+        self.assertIn("Reject failed loader verification", workflow)
         self.assertIn("persist-credentials: false", workflow)
         self.assertIn("contents: read", workflow)
         self.assertIn("contents: write", workflow)
-        self.assertIn("  probe:\n", workflow)
-        self.assertIn("  publish:\n", workflow)
         probe_position = workflow.index("  probe:\n")
+        verify_position = workflow.index("  verify:\n")
+        finalize_position = workflow.index("  finalize:\n")
         publish_position = workflow.index("  publish:\n")
-        self.assertLess(probe_position, publish_position)
-        probe = workflow[probe_position:publish_position]
+        self.assertLess(probe_position, verify_position)
+        self.assertLess(verify_position, finalize_position)
+        self.assertLess(finalize_position, publish_position)
+        probe = workflow[probe_position:verify_position]
+        verify = workflow[verify_position:finalize_position]
+        finalize = workflow[finalize_position:publish_position]
         publish = workflow[publish_position:]
-        self.assertNotIn("contents: write", probe)
-        self.assertNotIn("git push", probe)
+        for section_name, section in (
+            ("probe", probe),
+            ("verify", verify),
+            ("finalize", finalize),
+        ):
+            with self.subTest(section=section_name):
+                self.assertNotIn("contents: write", section)
+                self.assertNotIn("git push", section)
+        for section in (verify, finalize, publish):
+            self.assertIn(
+                "needs.probe.outputs.needs_publish == 'true'",
+                section,
+            )
         self.assertIn("contents: write", publish)
         self.assertIn("git push", publish)
-        self.assertIn('remote_base=$(git ls-remote --heads origin "refs/heads/$BASE_BRANCH"', publish)
+        self.assertIn(
+            'remote_base=$(git ls-remote --heads origin "refs/heads/$BASE_BRANCH"',
+            publish,
+        )
         self.assertIn('if [ "$remote_base" != "$BASE_SHA" ]', publish)
         for uses_line in re.findall(r"^\s*uses:\s*(.+)$", workflow, re.MULTILINE):
             with self.subTest(action=uses_line):
                 self.assertRegex(uses_line, r"@[0-9a-f]{40}(?:\s+#.*)?$")
-        gate_positions = []
+
+        self.assertIn("fail-fast: false", verify)
+        self.assertIn("timeout-minutes: 90", verify)
+        self.assertIn("timeout-minutes: 60", verify)
         for loader in ("fabric", "neoforge", "forge"):
             with self.subTest(loader=loader):
-                gate_positions.append(
-                    probe.index(
-                        f"./tools/test/run_client_gate.sh {loader} --xvfb"
-                    )
-                )
+                self.assertIn(f"          - {loader}\n", verify)
+        self.assertIn(
+            './tools/test/run_client_gate.sh "${{ matrix.loader }}" --xvfb',
+            verify,
+        )
+        self.assertIn("Run Fabric deterministic client gametest", verify)
+        self.assertIn("Upload passing ${{ matrix.loader }} gate evidence", verify)
+        self.assertIn('candidate-evidence/$LOADER/build', verify)
+        self.assertIn("Create candidate source patch", probe)
+        self.assertIn("Upload candidate source patch", probe)
 
-        record_position = probe.index(
+        reject_position = finalize.index("- name: Reject failed loader verification")
+        evidence_position = finalize.index("- name: Download all passing gate evidence")
+        record_position = finalize.index(
             "- name: Record passing compatibility evidence"
         )
-        candidate_tests_position = probe.index(
+        candidate_tests_position = finalize.index(
             "- name: Validate candidate tooling and metadata"
         )
-        patch_position = probe.index("- name: Create tested candidate patch")
-        artifact_position = probe.index("- name: Upload tested candidate patch")
-        self.assertTrue(all(position < record_position for position in gate_positions))
+        patch_position = finalize.index("- name: Create tested candidate patch")
+        artifact_position = finalize.index("- name: Upload tested candidate patch")
+        self.assertLess(reject_position, evidence_position)
+        self.assertLess(evidence_position, record_position)
+        for loader in ("fabric", "neoforge", "forge"):
+            self.assertIn(
+                f"--result {loader}/build/client-gate-result.json",
+                finalize,
+            )
         self.assertLess(record_position, candidate_tests_position)
         self.assertLess(candidate_tests_position, patch_position)
         self.assertLess(patch_position, artifact_position)
 
-    def test_github_actions_use_pinned_node24_releases(self):
+    def test_release_workflow_validates_tags_and_gates_every_loader(self):
+        workflow = (PROJECT_ROOT / ".github/workflows/build.yml").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("Validate release tag matches config version", workflow)
+        self.assertIn("fail-fast: false", workflow)
+        self.assertIn('expected_tag="v$MOD_VERSION"', workflow)
+        self.assertIn('if [ "$RELEASE_TAG" != "$expected_tag" ]', workflow)
+        self.assertIn(
+            "Run tagged ${{ matrix.loader }} two-minute gate",
+            workflow,
+        )
+        self.assertIn(
+            './tools/test/run_client_gate.sh "${{ matrix.loader }}" --xvfb',
+            workflow,
+        )
+        self.assertIn("Run tagged Fabric deterministic client gametest", workflow)
+        self.assertIn("timeout-minutes: 60", workflow)
+        self.assertIn("retrying once after 15 seconds", workflow)
+        self.assertIn("Expected exactly one $LOADER production jar", workflow)
+        self.assertIn("if-no-files-found: error", workflow)
+        self.assertNotIn("pierotofy/set-swap-space", workflow)
+
+    def test_workflow_actions_use_pinned_node24_releases(self):
         expected = {
             "actions/checkout": (
                 "9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0",
@@ -130,11 +188,19 @@ class CheckUpdateTest(unittest.TestCase):
                 "3a2844b7e9c422d3c10d287c895573f7108da1b3",
                 "v9.0.0",
             ),
+            "softprops/action-gh-release": (
+                "3d0d9888cb7fd7b750713d6e236d1fcb99157228",
+                "v3.0.2",
+            ),
+            "Kira-NT/mc-publish": (
+                "52307b03863581dec6b652b83e597aec02ebb075",
+                "v3.3.1",
+            ),
         }
         workflows = PROJECT_ROOT / ".github/workflows"
         found = set()
         pattern = re.compile(
-            r"^\s*uses:\s*(actions/[\w-]+)@([0-9a-f]{40})\s+#\s+(v\S+)$",
+            r"^\s*uses:\s*([\w.-]+/[\w.-]+)@([0-9a-f]{40})\s+#\s+(v\S+)$",
             re.MULTILINE,
         )
 

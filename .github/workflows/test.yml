@@ -38,18 +38,31 @@ jobs:
             fabric/gradle.properties
 
       - name: Set up swap space
-        uses: pierotofy/set-swap-space@v1.0
-        with:
-          swap-size-gb: 10
+        shell: bash
+        run: |
+          sudo fallocate -l 10G /swapfile-dcn
+          sudo chmod 600 /swapfile-dcn
+          sudo mkswap /swapfile-dcn
+          sudo swapon /swapfile-dcn
 
       - name: Install xvfb
         run: sudo apt-get update && sudo apt-get install -y xvfb
 
       - name: Build mod
         working-directory: fabric
+        timeout-minutes: 60
         run: |
           chmod +x ./gradlew
-          ./gradlew build
+          for attempt in 1 2; do
+            if ./gradlew build --console=plain; then
+              exit 0
+            fi
+            if [ "$attempt" -eq 2 ]; then
+              exit 1
+            fi
+            echo "Gradle build attempt failed; retrying once after 15 seconds" >&2
+            sleep 15
+          done
 
       - name: Run client gametest (compliance filtering)
         working-directory: fabric
@@ -98,18 +111,31 @@ jobs:
             neoforge/gradle.properties
 
       - name: Set up swap space
-        uses: pierotofy/set-swap-space@v1.0
-        with:
-          swap-size-gb: 10
+        shell: bash
+        run: |
+          sudo fallocate -l 10G /swapfile-dcn
+          sudo chmod 600 /swapfile-dcn
+          sudo mkswap /swapfile-dcn
+          sudo swapon /swapfile-dcn
 
       - name: Install xvfb
         run: sudo apt-get update && sudo apt-get install -y xvfb
 
       - name: Build mod
         working-directory: neoforge
+        timeout-minutes: 60
         run: |
           chmod +x ./gradlew
-          ./gradlew build
+          for attempt in 1 2; do
+            if ./gradlew build --console=plain; then
+              exit 0
+            fi
+            if [ "$attempt" -eq 2 ]; then
+              exit 1
+            fi
+            echo "Gradle build attempt failed; retrying once after 15 seconds" >&2
+            sleep 15
+          done
 
       - name: Run two-minute client compliance gate
         run: ./tools/test/run_client_gate.sh neoforge --xvfb
@@ -150,18 +176,31 @@ jobs:
             forge/gradle.properties
 
       - name: Set up swap space
-        uses: pierotofy/set-swap-space@v1.0
-        with:
-          swap-size-gb: 10
+        shell: bash
+        run: |
+          sudo fallocate -l 10G /swapfile-dcn
+          sudo chmod 600 /swapfile-dcn
+          sudo mkswap /swapfile-dcn
+          sudo swapon /swapfile-dcn
 
       - name: Install xvfb
         run: sudo apt-get update && sudo apt-get install -y xvfb
 
       - name: Build mod
         working-directory: forge
+        timeout-minutes: 60
         run: |
           chmod +x ./gradlew
-          ./gradlew build
+          for attempt in 1 2; do
+            if ./gradlew build --console=plain; then
+              exit 0
+            fi
+            if [ "$attempt" -eq 2 ]; then
+              exit 1
+            fi
+            echo "Gradle build attempt failed; retrying once after 15 seconds" >&2
+            sleep 15
+          done
 
       - name: Run two-minute client compliance gate
         run: ./tools/test/run_client_gate.sh forge --xvfb

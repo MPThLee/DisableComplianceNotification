@@ -16,12 +16,13 @@ concurrency:
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 15
     outputs:
       base_branch: ${{ steps.base.outputs.branch }}
       base_sha: ${{ steps.plan.outputs.base_sha }}
       candidate_mod_version: ${{ steps.plan.outputs.candidate_mod_version }}
       candidate_version: ${{ steps.plan.outputs.candidate_version }}
+      java_version: ${{ steps.config.outputs.java_version }}
       needs_publish: ${{ steps.plan.outputs.needs_work }}
       target_branch: ${{ steps.plan.outputs.target_branch }}
 
@@ -150,21 +151,117 @@ jobs:
           fi
           echo "java_version=$java_version" >> "$GITHUB_OUTPUT"
 
-      - name: Set up Java ${{ steps.config.outputs.java_version }}
+      - name: Validate prepared candidate scope
         if: steps.plan.outputs.needs_work == 'true'
+        shell: bash
+        run: |
+          while IFS= read -r path; do
+            case "$path" in
+              config.properties|README.md|DOWNLOAD.md) ;;
+              *)
+                echo "Candidate preparation changed an unexpected path: $path" >&2
+                exit 1
+                ;;
+            esac
+          done < <(git diff --name-only)
+
+      - name: Create candidate source patch
+        if: steps.plan.outputs.needs_work == 'true'
+        shell: bash
+        env:
+          HAS_UPDATE: ${{ steps.plan.outputs.has_update }}
+        run: |
+          git diff --binary -- config.properties README.md DOWNLOAD.md > candidate-source.patch
+          if [ "$HAS_UPDATE" = true ] && [ ! -s candidate-source.patch ]; then
+            echo "New Minecraft release produced no candidate source update" >&2
+            exit 1
+          fi
+          sha256sum candidate-source.patch > candidate-source.patch.sha256
+
+      - name: Upload candidate source patch
+        if: steps.plan.outputs.needs_work == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: minecraft-${{ steps.plan.outputs.candidate_version }}-candidate-source
+          if-no-files-found: error
+          retention-days: 3
+          path: |
+            candidate-source.patch
+            candidate-source.patch.sha256
+
+  verify:
+    name: Verify ${{ matrix.loader }}
+    needs: probe
+    if: >-
+      needs.probe.result == 'success' &&
+      needs.probe.outputs.needs_publish == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      actions: read
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        loader:
+          - fabric
+          - neoforge
+          - forge
+
+    steps:
+      - name: Checkout exact candidate base
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+          ref: ${{ needs.probe.outputs.base_sha }}
+
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.12"
+
+      - name: Download candidate source patch
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: minecraft-${{ needs.probe.outputs.candidate_version }}-candidate-source
+          path: candidate-source
+
+      - name: Verify and apply candidate source patch
+        shell: bash
+        env:
+          CANDIDATE_MOD_VERSION: ${{ needs.probe.outputs.candidate_mod_version }}
+          CANDIDATE_VERSION: ${{ needs.probe.outputs.candidate_version }}
+        run: |
+          cd candidate-source
+          sha256sum --check candidate-source.patch.sha256
+          cd ..
+          if [ -s candidate-source/candidate-source.patch ]; then
+            git apply --check candidate-source/candidate-source.patch
+            git apply candidate-source/candidate-source.patch
+          fi
+          actual_version=$(grep '^minecraft_version=' config.properties | cut -d'=' -f2)
+          actual_mod_version=$(grep '^mod_version=' config.properties | cut -d'=' -f2)
+          if [ "$actual_version" != "$CANDIDATE_VERSION" ]; then
+            echo "Candidate Minecraft version mismatch: $actual_version" >&2
+            exit 1
+          fi
+          if [ "$actual_mod_version" != "$CANDIDATE_MOD_VERSION" ]; then
+            echo "Candidate mod version mismatch: $actual_mod_version" >&2
+            exit 1
+          fi
+
+      - name: Set up Java ${{ needs.probe.outputs.java_version }}
         uses: actions/setup-java@0f481fcb613427c0f801b606911222b5b6f3083a # v5.5.0
         with:
           distribution: temurin
-          java-version: ${{ steps.config.outputs.java_version }}
+          java-version: ${{ needs.probe.outputs.java_version }}
           cache: gradle
           cache-dependency-path: |
             config.properties
-            fabric/*.gradle*
-            neoforge/*.gradle*
-            forge/*.gradle*
+            ${{ matrix.loader }}/*.gradle*
+            ${{ matrix.loader }}/gradle.properties
 
       - name: Set up swap space
-        if: steps.plan.outputs.needs_work == 'true'
         shell: bash
         run: |
           sudo fallocate -l 10G /swapfile-dcn
@@ -173,78 +270,151 @@ jobs:
           sudo swapon /swapfile-dcn
 
       - name: Install xvfb
-        if: steps.plan.outputs.needs_work == 'true'
         run: sudo apt-get update && sudo apt-get install -y xvfb
 
-      - name: Build Fabric candidate
-        if: steps.plan.outputs.needs_work == 'true'
-        id: build_fabric
-        continue-on-error: true
+      - name: Build ${{ matrix.loader }} candidate
+        working-directory: ${{ matrix.loader }}
+        timeout-minutes: 60
+        run: |
+          chmod +x ./gradlew
+          for attempt in 1 2; do
+            if ./gradlew clean build --console=plain; then
+              exit 0
+            fi
+            if [ "$attempt" -eq 2 ]; then
+              exit 1
+            fi
+            echo "Gradle build attempt failed; retrying once after 15 seconds" >&2
+            sleep 15
+          done
+
+      - name: Run Fabric deterministic client gametest
+        if: matrix.loader == 'fabric'
         working-directory: fabric
-        run: |
-          chmod +x ./gradlew
-          ./gradlew clean build --console=plain
+        timeout-minutes: 5
+        env:
+          _JAVA_OPTIONS: "-Duser.country=KR -Duser.language=ko"
+        run: xvfb-run -a ./gradlew runClientGameTest --console=plain
 
-      - name: Gate Fabric candidate in-world
-        if: steps.build_fabric.outcome == 'success'
-        id: gate_fabric
-        continue-on-error: true
+      - name: Gate ${{ matrix.loader }} candidate in-world
         timeout-minutes: 10
-        run: ./tools/test/run_client_gate.sh fabric --xvfb
+        run: ./tools/test/run_client_gate.sh "${{ matrix.loader }}" --xvfb
 
-      - name: Build NeoForge candidate
-        if: steps.plan.outputs.needs_work == 'true'
-        id: build_neoforge
-        continue-on-error: true
-        working-directory: neoforge
+      - name: Stage passing gate evidence
+        shell: bash
+        env:
+          LOADER: ${{ matrix.loader }}
         run: |
-          chmod +x ./gradlew
-          ./gradlew clean build --console=plain
+          mkdir -p "candidate-evidence/$LOADER/build"
+          cp "$LOADER/build/client-gate-result.json" \
+            "candidate-evidence/$LOADER/build/client-gate-result.json"
 
-      - name: Gate NeoForge candidate in-world
-        if: steps.build_neoforge.outcome == 'success'
-        id: gate_neoforge
-        continue-on-error: true
-        timeout-minutes: 10
-        run: ./tools/test/run_client_gate.sh neoforge --xvfb
+      - name: Upload passing ${{ matrix.loader }} gate evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: minecraft-${{ needs.probe.outputs.candidate_version }}-gate-evidence-${{ matrix.loader }}
+          if-no-files-found: error
+          retention-days: 3
+          path: candidate-evidence/
 
-      - name: Build Forge candidate
-        if: steps.plan.outputs.needs_work == 'true'
-        id: build_forge
+      - name: Upload ${{ matrix.loader }} candidate logs
+        if: always()
         continue-on-error: true
-        working-directory: forge
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: minecraft-${{ needs.probe.outputs.candidate_version }}-logs-${{ matrix.loader }}
+          if-no-files-found: warn
+          retention-days: 14
+          path: |
+            ${{ matrix.loader }}/build/client-gate.log
+            ${{ matrix.loader }}/build/client-gate-result.json
+            ${{ matrix.loader }}/run/logs/
+
+  finalize:
+    needs:
+      - probe
+      - verify
+    if: >-
+      !cancelled() &&
+      needs.probe.result == 'success' &&
+      needs.probe.outputs.needs_publish == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      actions: read
+      contents: read
+
+    steps:
+      - name: Reject failed loader verification
+        if: needs.verify.result != 'success'
+        shell: bash
+        env:
+          CANDIDATE_VERSION: ${{ needs.probe.outputs.candidate_version }}
         run: |
-          chmod +x ./gradlew
-          ./gradlew clean build --console=plain
+          {
+            echo "## Minecraft $CANDIDATE_VERSION candidate failed"
+            echo
+            echo "No branch or compatibility record was pushed. Inspect the per-loader artifacts."
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit 1
 
-      - name: Gate Forge candidate in-world
-        if: steps.build_forge.outcome == 'success'
-        id: gate_forge
-        continue-on-error: true
-        timeout-minutes: 10
-        run: ./tools/test/run_client_gate.sh forge --xvfb
+      - name: Checkout exact candidate base
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+          ref: ${{ needs.probe.outputs.base_sha }}
+
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.12"
+
+      - name: Download candidate source patch
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: minecraft-${{ needs.probe.outputs.candidate_version }}-candidate-source
+          path: candidate-source
+
+      - name: Verify and apply candidate source patch
+        shell: bash
+        run: |
+          cd candidate-source
+          sha256sum --check candidate-source.patch.sha256
+          cd ..
+          if [ -s candidate-source/candidate-source.patch ]; then
+            git apply --check candidate-source/candidate-source.patch
+            git apply candidate-source/candidate-source.patch
+          fi
+
+      - name: Download all passing gate evidence
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: minecraft-${{ needs.probe.outputs.candidate_version }}-gate-evidence-*
+          merge-multiple: true
+          path: .
 
       - name: Record passing compatibility evidence
-        if: >-
-          steps.gate_fabric.outcome == 'success' &&
-          steps.gate_neoforge.outcome == 'success' &&
-          steps.gate_forge.outcome == 'success'
-        id: record
-        continue-on-error: true
-        run: python3 tools/record-minecraft-compatibility.py
+        run: >-
+          python3 tools/record-minecraft-compatibility.py
+          --result fabric/build/client-gate-result.json
+          --result neoforge/build/client-gate-result.json
+          --result forge/build/client-gate-result.json
 
       - name: Validate candidate tooling and metadata
-        if: steps.record.outcome == 'success'
-        id: candidate_tests
-        continue-on-error: true
         run: python3 -m unittest discover -s tools/test -p 'test_*.py'
 
       - name: Create tested candidate patch
-        if: steps.candidate_tests.outcome == 'success'
-        id: patch
-        continue-on-error: true
         shell: bash
         run: |
+          while IFS= read -r path; do
+            case "$path" in
+              config.properties|README.md|DOWNLOAD.md|data/minecraft-compatibility.json) ;;
+              *)
+                echo "Tested candidate changed an unexpected path: $path" >&2
+                exit 1
+                ;;
+            esac
+          done < <(git diff --name-only)
           git diff --binary -- config.properties README.md DOWNLOAD.md data/minecraft-compatibility.json > candidate-update.patch
           if [ ! -s candidate-update.patch ]; then
             echo "Passing candidate produced no repository update" >&2
@@ -253,65 +423,23 @@ jobs:
           sha256sum candidate-update.patch > candidate-update.patch.sha256
 
       - name: Upload tested candidate patch
-        if: steps.patch.outcome == 'success'
-        id: candidate_artifact
-        continue-on-error: true
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: minecraft-${{ steps.plan.outputs.candidate_version }}-tested-candidate
+          name: minecraft-${{ needs.probe.outputs.candidate_version }}-tested-candidate
           if-no-files-found: error
           retention-days: 3
           path: |
             candidate-update.patch
             candidate-update.patch.sha256
 
-      - name: Upload candidate logs and evidence
-        if: steps.plan.outputs.needs_work == 'true' && always()
-        continue-on-error: true
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: minecraft-${{ steps.plan.outputs.candidate_version }}-compatibility-probe
-          if-no-files-found: warn
-          retention-days: 14
-          path: |
-            fabric/build/client-gate.log
-            fabric/build/client-gate-result.json
-            fabric/run/logs/
-            neoforge/build/client-gate.log
-            neoforge/build/client-gate-result.json
-            neoforge/run/logs/
-            forge/build/client-gate.log
-            forge/build/client-gate-result.json
-            forge/run/logs/
-
-      - name: Reject failing candidate
-        if: >-
-          always() &&
-          steps.plan.outputs.needs_work == 'true' &&
-          (steps.build_fabric.outcome != 'success' ||
-          steps.gate_fabric.outcome != 'success' ||
-          steps.build_neoforge.outcome != 'success' ||
-          steps.gate_neoforge.outcome != 'success' ||
-          steps.build_forge.outcome != 'success' ||
-          steps.gate_forge.outcome != 'success' ||
-          steps.record.outcome != 'success' ||
-          steps.candidate_tests.outcome != 'success' ||
-          steps.patch.outcome != 'success' ||
-          steps.candidate_artifact.outcome != 'success')
-        shell: bash
-        env:
-          CANDIDATE_VERSION: ${{ steps.plan.outputs.candidate_version }}
-        run: |
-          {
-            echo "## Minecraft $CANDIDATE_VERSION candidate failed"
-            echo
-            echo "No branch or compatibility record was pushed. Inspect the uploaded loader logs and failed steps."
-          } >> "$GITHUB_STEP_SUMMARY"
-          exit 1
-
   publish:
-    needs: probe
-    if: needs.probe.result == 'success' && needs.probe.outputs.needs_publish == 'true'
+    needs:
+      - probe
+      - finalize
+    if: >-
+      needs.probe.result == 'success' &&
+      needs.finalize.result == 'success' &&
+      needs.probe.outputs.needs_publish == 'true'
     runs-on: ubuntu-latest
     permissions:
       actions: read
