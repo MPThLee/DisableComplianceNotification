@@ -113,57 +113,69 @@ def insert_version_in_download(
     original_md: str, major_h: str, sub_h: str, new_block: str
 ) -> str:
     """
-    Insert/replace '### sub_h' under '## major_h' at the TOP of that block.
+    Insert/replace '### sub_h' under '## major_h', then move that major
+    section above older Minecraft sections.
 
     Steps:
-      1) Look for '## major_h'. If not found, create it at end of file.
+      1) Look for '## major_h'. If not found, create it.
       2) Inside that block, see if '### sub_h' exists -> if yes, replace.
       3) If no, prepend new_block right after '## major_h'.
+      4) Put the updated major section immediately after the document intro.
     """
 
     # Regex to find exactly "## 1.20.x" line
-    pattern_major = re.compile(rf"^(##\s+{re.escape(major_h)}\s*)$", re.MULTILINE)
+    pattern_major = re.compile(
+        rf"^##[ \t]+{re.escape(major_h)}[ \t]*\r?$", re.MULTILINE
+    )
     match_major = pattern_major.search(original_md)
 
-    if not match_major:
-        # No major heading => append at end
-        return original_md.rstrip() + f"\n\n## {major_h}\n\n{new_block}\n"
+    if match_major:
+        major_start = match_major.start()
+        pattern_next_major = re.compile(r"^##[ \t]+", re.MULTILINE)
+        match_next = pattern_next_major.search(original_md, pos=match_major.end())
+        major_end = match_next.start() if match_next else len(original_md)
+        major_block = original_md[major_start:major_end]
 
-    major_start = match_major.start()
-    # find next '## ' or end of file
-    pattern_next_major = re.compile(r"^##\s+", re.MULTILINE)
-    match_next = pattern_next_major.search(original_md, pos=match_major.end())
-    major_end = match_next.start() if match_next else len(original_md)
-
-    major_block = original_md[major_start:major_end]
-
-    # Check if sub_h block exists
-    pattern_sub = re.compile(
-        rf"(^###\s+{re.escape(sub_h)}\s*([\s\S]*?))(?=^###\s+|^##\s+|$)", re.MULTILINE
-    )
-    m_sub = pattern_sub.search(major_block)
-
-    if m_sub:
-        # Replace existing sub-block
-        start_sub, end_sub = m_sub.span()
-        new_major_block = (
-            major_block[:start_sub] + new_block + "\n" + major_block[end_sub:]
+        pattern_sub = re.compile(
+            rf"(^###[ \t]+{re.escape(sub_h)}[ \t]*(?:\r?\n[\s\S]*?)?)"
+            rf"(?=^###[ \t]+|^##[ \t]+|\Z)",
+            re.MULTILINE,
         )
-    else:
-        # Insert at top (just after "## 1.20.x" line)
-        lines = major_block.splitlines()
-        if len(lines) <= 1:
-            # There's nothing but the heading line
-            new_major_block = major_block.rstrip() + "\n\n" + new_block + "\n"
-        else:
-            heading_line = lines[0]
-            rest_lines = lines[1:]
-            new_major_block = (
-                heading_line + "\n\n" + new_block + "\n" + "\n".join(rest_lines) + "\n"
-            )
+        m_sub = pattern_sub.search(major_block)
 
-    updated_md = original_md[:major_start] + new_major_block + original_md[major_end:]
-    return updated_md
+        if m_sub:
+            start_sub, end_sub = m_sub.span()
+            new_major_block = (
+                major_block[:start_sub]
+                + new_block
+                + "\n\n"
+                + major_block[end_sub:].lstrip("\r\n")
+            )
+        else:
+            heading_end = major_block.find("\n")
+            if heading_end == -1:
+                new_major_block = major_block.rstrip() + "\n\n" + new_block
+            else:
+                new_major_block = (
+                    major_block[:heading_end].rstrip()
+                    + "\n\n"
+                    + new_block
+                    + "\n\n"
+                    + major_block[heading_end:].strip()
+                )
+        remaining_md = original_md[:major_start] + original_md[major_end:]
+    else:
+        new_major_block = f"## {major_h}\n\n{new_block}"
+        remaining_md = original_md
+
+    first_remaining_major = re.search(r"^##[ \t]+", remaining_md, re.MULTILINE)
+    insertion_point = (
+        first_remaining_major.start() if first_remaining_major else len(remaining_md)
+    )
+    intro = remaining_md[:insertion_point].rstrip()
+    older_sections = remaining_md[insertion_point:].strip()
+    sections = (intro, new_major_block.strip(), older_sections)
+    return "\n\n".join(section for section in sections if section) + "\n"
 
 
 # --------------------------------------------------------------
