@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import importlib.util
+import re
 import sys
 import unittest
 from pathlib import Path
@@ -65,18 +66,43 @@ class CheckUpdateTest(unittest.TestCase):
         self.assertIn("persist-credentials: false", workflow)
         self.assertIn("contents: read", workflow)
         self.assertIn("contents: write", workflow)
+        self.assertIn("  probe:\n", workflow)
+        self.assertIn("  publish:\n", workflow)
+        probe_position = workflow.index("  probe:\n")
+        publish_position = workflow.index("  publish:\n")
+        self.assertLess(probe_position, publish_position)
+        probe = workflow[probe_position:publish_position]
+        publish = workflow[publish_position:]
+        self.assertNotIn("contents: write", probe)
+        self.assertNotIn("git push", probe)
+        self.assertIn("contents: write", publish)
+        self.assertIn("git push", publish)
+        self.assertIn('remote_base=$(git ls-remote --heads origin "refs/heads/$BASE_BRANCH"', publish)
+        self.assertIn('if [ "$remote_base" != "$BASE_SHA" ]', publish)
+        for uses_line in re.findall(r"^\s*uses:\s*(.+)$", workflow, re.MULTILINE):
+            with self.subTest(action=uses_line):
+                self.assertRegex(uses_line, r"@[0-9a-f]{40}(?:\s+#.*)?$")
+        gate_positions = []
         for loader in ("fabric", "neoforge", "forge"):
             with self.subTest(loader=loader):
-                self.assertIn(
-                    f"./tools/test/run_client_gate.sh {loader} --xvfb",
-                    workflow,
+                gate_positions.append(
+                    probe.index(
+                        f"./tools/test/run_client_gate.sh {loader} --xvfb"
+                    )
                 )
 
-        record_position = workflow.index("tools/record-minecraft-compatibility.py")
-        push_position = workflow.index(
-            'git push -u origin "HEAD:refs/heads/$TARGET_BRANCH"'
+        record_position = probe.index(
+            "- name: Record passing compatibility evidence"
         )
-        self.assertLess(record_position, push_position)
+        candidate_tests_position = probe.index(
+            "- name: Validate candidate tooling and metadata"
+        )
+        patch_position = probe.index("- name: Create tested candidate patch")
+        artifact_position = probe.index("- name: Upload tested candidate patch")
+        self.assertTrue(all(position < record_position for position in gate_positions))
+        self.assertLess(record_position, candidate_tests_position)
+        self.assertLess(candidate_tests_position, patch_position)
+        self.assertLess(patch_position, artifact_position)
 
 
 if __name__ == "__main__":
