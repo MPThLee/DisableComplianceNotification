@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "release_version": "1.6.0",
+  "build_minecraft_version": "26.2",
+  "metadata_compatibility": {
+    "minimum_version": "26.2",
+    "accepted_examples": [
+      "26.2",
+      "26.2.1",
+      "26.3",
+      "27.0",
+      "30.4"
+    ],
+    "rejected_examples": [
+      "26.1.2",
+      "26.1",
+      "25.5"
+    ]
+  },
+  "runtime_verification": [
+    {
+      "minecraft_version": "26.2",
+      "verified_on": "2026-07-16",
+      "required_in_world_seconds": 120,
+      "filtered_notifications": [
+        "compliance.playtime.hours",
+        "compliance.playtime.greaterThan24Hours"
+      ],
+      "loaders": {
+        "fabric": {
+          "observed_in_world_seconds": 150.6,
+          "passed": true
+        },
+        "neoforge": {
+          "observed_in_world_seconds": 150.6,
+          "passed": true
+        },
+        "forge": {
+          "observed_in_world_seconds": 150.7,
+          "passed": true
+        }
+      }
+    }
+  ]
+}

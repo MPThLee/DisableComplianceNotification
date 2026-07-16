@@ -626,18 +626,24 @@ and [Quilt Standard Libraries](https://modrinth.com/mod/qsl)
 
 ### 26.2
 
-[GitHub Release](https://github.com/MPThLee/DisableComplianceNotification/releases/tag/v1.5.9) or Modrinth.
+[GitHub Release](https://github.com/MPThLee/DisableComplianceNotification/releases/tag/v1.6.0) or Modrinth.
 
 [Nightly.link for 26.2](https://nightly.link/MPThLee/DisableComplianceNotification/workflows/build/mc26.2)
 
 #### Fabric
 
-[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.5.9/disable_compliance_notification-v1.5.9+fabric-26.2.jar)
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.6.0/disable_compliance_notification-v1.6.0+fabric-26.2.jar)
 
 Recommended with [YACL](https://modrinth.com/mod/yacl) and [Mod Menu](https://modrinth.com/mod/modmenu).
 
 #### NeoForge
 
-[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.5.9/disable_compliance_notification-v1.5.9+neoforge-26.2.jar)
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.6.0/disable_compliance_notification-v1.6.0+neoforge-26.2.jar)
 
 Recommended with [YACL](https://modrinth.com/mod/yacl).
+
+#### Forge
+
+[Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.6.0/disable_compliance_notification-v1.6.0+forge-26.2.jar)
+
+Uses Forge's built-in client config.
