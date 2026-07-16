@@ -25,6 +25,28 @@ HASHES = {
     "neoforge": "2" * 64,
     "forge": "3" * 64,
 }
+SOURCE_COMMIT = "a" * 40
+
+
+def resolved_config(version: str = "26.3") -> dict[str, str]:
+    return {
+        "archives_base_name": "disable_compliance_notification",
+        "java_version": "26",
+        "minecraft_version": version,
+        "mod_version": "1.6.0",
+    }
+
+
+def target_plan(version: str = "26.3") -> dict[str, object]:
+    config = resolved_config(version)
+    return {
+        "schema_version": 1,
+        "publication_id": "v1.6.0",
+        "source_commit": SOURCE_COMMIT,
+        "minecraft_version": version,
+        "dependency_fingerprint": record.dependency_fingerprint(config),
+        "resolved_config": config,
+    }
 
 
 def published_data() -> dict[str, object]:
@@ -34,6 +56,7 @@ def published_data() -> dict[str, object]:
             "id": "v1.6.0",
             "release_version": "1.6.0",
             "build_minecraft_version": "26.2",
+            "source_commit": SOURCE_COMMIT,
             "artifacts": {
                 loader: {
                     "filename": (
@@ -91,7 +114,7 @@ def write_documents(
     directory: Path,
     *,
     target_version: str = "26.3",
-) -> tuple[Path, list[Path], list[Path]]:
+) -> tuple[Path, list[Path], list[Path], Path]:
     data_path = directory / "published-release.json"
     data_path.write_text(json.dumps(published_data()), encoding="utf-8")
     result_paths = []
@@ -108,7 +131,12 @@ def write_documents(
             encoding="utf-8",
         )
         artifact_paths.append(artifact_path)
-    return data_path, result_paths, artifact_paths
+    target_plan_path = directory / "target-plan.json"
+    target_plan_path.write_text(
+        json.dumps(target_plan(target_version)),
+        encoding="utf-8",
+    )
+    return data_path, result_paths, artifact_paths, target_plan_path
 
 
 class RecordPublishedCompatibilityTest(unittest.TestCase):
@@ -129,6 +157,10 @@ class RecordPublishedCompatibilityTest(unittest.TestCase):
             artifacts,
             target_minecraft_version="26.3",
             published_hashes=HASHES,
+            dependency_fingerprint_value=record.dependency_fingerprint(
+                resolved_config()
+            ),
+            resolved_config=resolved_config(),
             verified_on="2026-08-01",
         )
 
@@ -147,6 +179,11 @@ class RecordPublishedCompatibilityTest(unittest.TestCase):
             150.5,
             candidate["loaders"]["forge"]["observed_in_world_seconds"],
         )
+        self.assertEqual(
+            record.dependency_fingerprint(resolved_config()),
+            candidate["dependency_fingerprint"],
+        )
+        self.assertEqual(resolved_config(), candidate["resolved_config"])
 
     def test_replaces_same_version_and_sorts_versions_numerically(self):
         data = published_data()
@@ -171,6 +208,10 @@ class RecordPublishedCompatibilityTest(unittest.TestCase):
             artifacts,
             target_minecraft_version="26.3",
             published_hashes=HASHES,
+            dependency_fingerprint_value=record.dependency_fingerprint(
+                resolved_config()
+            ),
+            resolved_config=resolved_config(),
             verified_on="2026-08-01",
         )
 
@@ -242,6 +283,10 @@ class RecordPublishedCompatibilityTest(unittest.TestCase):
                         artifacts,
                         target_minecraft_version=loaded_target,
                         published_hashes=hashes,
+                        dependency_fingerprint_value=record.dependency_fingerprint(
+                            resolved_config(loaded_target)
+                        ),
+                        resolved_config=resolved_config(loaded_target),
                         verified_on="2026-08-01",
                     )
 
@@ -383,11 +428,61 @@ class RecordPublishedCompatibilityTest(unittest.TestCase):
                     published_hashes=HASHES,
                 )
 
+    def test_target_plan_binds_publication_source_version_and_fingerprint(self):
+        publication, _ = record.validate_publication(published_data())
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            path = Path(temporary_directory) / "target-plan.json"
+            valid = target_plan()
+            path.write_text(json.dumps(valid), encoding="utf-8")
+
+            fingerprint, config = record.load_target_plan(
+                path,
+                publication=publication,
+                target_minecraft_version="26.3",
+            )
+
+            self.assertEqual(
+                record.dependency_fingerprint(resolved_config()),
+                fingerprint,
+            )
+            self.assertEqual(resolved_config(), config)
+
+            for field, value, message in (
+                ("publication_id", "v1.6.1", "wrong publication"),
+                ("source_commit", "b" * 40, "wrong source commit"),
+                ("minecraft_version", "27.0", "does not target"),
+                ("dependency_fingerprint", "0" * 64, "does not match"),
+            ):
+                with self.subTest(field=field):
+                    invalid = copy.deepcopy(valid)
+                    invalid[field] = value
+                    path.write_text(json.dumps(invalid), encoding="utf-8")
+                    with self.assertRaisesRegex(
+                        record.PublishedCompatibilityError, message
+                    ):
+                        record.load_target_plan(
+                            path,
+                            publication=publication,
+                            target_minecraft_version="26.3",
+                        )
+
     def test_cli_accepts_repeated_results_and_artifacts(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
             directory = Path(temporary_directory)
-            data_path, result_paths, artifact_paths = write_documents(directory)
-            arguments = ["--data", str(data_path), "--verified-on", "2026-08-01"]
+            (
+                data_path,
+                result_paths,
+                artifact_paths,
+                target_plan_path,
+            ) = write_documents(directory)
+            arguments = [
+                "--data",
+                str(data_path),
+                "--target-plan",
+                str(target_plan_path),
+                "--verified-on",
+                "2026-08-01",
+            ]
             for path in result_paths:
                 arguments.extend(["--result", str(path)])
             for path in artifact_paths:

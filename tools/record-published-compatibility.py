@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+import hashlib
 import json
 import math
 import re
@@ -20,6 +21,7 @@ EXPECTED_NOTIFICATIONS = {
 MINIMUM_GATE_SECONDS = 120
 SHA256_PATTERN = re.compile(r"[0-9a-fA-F]{64}")
 VERSION_PATTERN = re.compile(r"\d+(?:\.\d+)*")
+COMMIT_PATTERN = re.compile(r"[0-9a-f]{40}")
 
 
 class PublishedCompatibilityError(RuntimeError):
@@ -44,6 +46,30 @@ def version_key(version: str) -> tuple[int, ...]:
             f"unsupported Minecraft release version: {version}"
         )
     return tuple(int(part) for part in version.split("."))
+
+
+def dependency_fingerprint(properties: dict[str, str]) -> str:
+    normalized: dict[str, str] = {}
+    for key, value in properties.items():
+        if not isinstance(key, str) or not key:
+            raise PublishedCompatibilityError(
+                "resolved config contains an invalid property name"
+            )
+        if not isinstance(value, str):
+            raise PublishedCompatibilityError(
+                f"resolved config property {key} must be a string"
+            )
+        normalized[key] = value
+    canonical = json.dumps(
+        {
+            "schema_version": 1,
+            "resolved_config": dict(sorted(normalized.items())),
+        },
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(canonical).hexdigest()
 
 
 def _is_finite_number(value: object) -> bool:
@@ -77,6 +103,7 @@ def validate_publication(
     publication_id = publication.get("id")
     release_version = publication.get("release_version")
     build_minecraft_version = publication.get("build_minecraft_version")
+    source_commit = publication.get("source_commit")
     if not isinstance(publication_id, str) or not publication_id:
         raise PublishedCompatibilityError("publication.id must be a non-empty string")
     if not isinstance(release_version, str) or not release_version:
@@ -88,6 +115,17 @@ def validate_publication(
             "publication.build_minecraft_version must be a string"
         )
     version_key(build_minecraft_version)
+    if (
+        not isinstance(source_commit, str)
+        or COMMIT_PATTERN.fullmatch(source_commit) is None
+    ):
+        raise PublishedCompatibilityError(
+            "publication.source_commit must be a full Git commit"
+        )
+    if publication_id != f"v{release_version}":
+        raise PublishedCompatibilityError(
+            "publication.id must be v followed by publication.release_version"
+        )
 
     artifacts = publication.get("artifacts")
     if not isinstance(artifacts, dict):
@@ -113,6 +151,67 @@ def validate_publication(
         hashes[loader] = digest.lower()
 
     return publication, hashes
+
+
+def load_target_plan(
+    path: Path,
+    *,
+    publication: dict[str, object],
+    target_minecraft_version: str,
+) -> tuple[str, dict[str, str]]:
+    plan = read_json(path)
+    if plan.get("schema_version") != 1:
+        raise PublishedCompatibilityError(
+            f"unsupported target-plan schema: {path}"
+        )
+    publication_id = publication["id"]
+    source_commit = publication["source_commit"]
+    release_version = publication["release_version"]
+    if plan.get("publication_id") != publication_id:
+        raise PublishedCompatibilityError(
+            f"target plan has the wrong publication: {path}"
+        )
+    if plan.get("source_commit") != source_commit:
+        raise PublishedCompatibilityError(
+            f"target plan has the wrong source commit: {path}"
+        )
+    if plan.get("minecraft_version") != target_minecraft_version:
+        raise PublishedCompatibilityError(
+            f"target plan does not target Minecraft "
+            f"{target_minecraft_version}: {path}"
+        )
+
+    raw_config = plan.get("resolved_config")
+    if not isinstance(raw_config, dict) or not raw_config:
+        raise PublishedCompatibilityError(
+            f"target plan resolved_config must be a non-empty object: {path}"
+        )
+    resolved_config: dict[str, str] = {}
+    for key, value in raw_config.items():
+        if not isinstance(key, str) or not key or not isinstance(value, str):
+            raise PublishedCompatibilityError(
+                f"target plan resolved_config must contain string properties: {path}"
+            )
+        resolved_config[key] = value
+    if resolved_config.get("minecraft_version") != target_minecraft_version:
+        raise PublishedCompatibilityError(
+            f"target plan config has the wrong Minecraft version: {path}"
+        )
+    if resolved_config.get("mod_version") != release_version:
+        raise PublishedCompatibilityError(
+            f"target plan config has the wrong mod version: {path}"
+        )
+
+    fingerprint = plan.get("dependency_fingerprint")
+    if (
+        not isinstance(fingerprint, str)
+        or SHA256_PATTERN.fullmatch(fingerprint) is None
+        or fingerprint.lower() != dependency_fingerprint(resolved_config)
+    ):
+        raise PublishedCompatibilityError(
+            f"target plan dependency fingerprint does not match its config: {path}"
+        )
+    return fingerprint.lower(), dict(sorted(resolved_config.items()))
 
 
 def load_gate_results(
@@ -296,6 +395,8 @@ def update_published_compatibility(
     *,
     target_minecraft_version: str,
     published_hashes: dict[str, str],
+    dependency_fingerprint_value: str,
+    resolved_config: dict[str, str],
     verified_on: str,
 ) -> dict[str, object]:
     publication_before = copy.deepcopy(data.get("publication"))
@@ -320,6 +421,25 @@ def update_published_compatibility(
         raise PublishedCompatibilityError(
             "published hashes must cover exactly every loader"
         )
+    if (
+        SHA256_PATTERN.fullmatch(dependency_fingerprint_value) is None
+        or dependency_fingerprint(resolved_config)
+        != dependency_fingerprint_value.lower()
+    ):
+        raise PublishedCompatibilityError(
+            "dependency fingerprint does not match the resolved config"
+        )
+    if resolved_config.get("minecraft_version") != target_minecraft_version:
+        raise PublishedCompatibilityError(
+            "resolved config targets the wrong Minecraft version"
+        )
+    if (
+        resolved_config.get("mod_version")
+        != publication_before.get("release_version")
+    ):
+        raise PublishedCompatibilityError(
+            "resolved config targets the wrong mod version"
+        )
 
     records = data.get("runtime_verification", [])
     if not isinstance(records, list):
@@ -339,6 +459,10 @@ def update_published_compatibility(
     new_record = {
         "minecraft_version": target_minecraft_version,
         "verified_on": verified_on,
+        "publication": publication_before["id"],
+        "source_commit": publication_before["source_commit"],
+        "dependency_fingerprint": dependency_fingerprint_value.lower(),
+        "resolved_config": dict(sorted(resolved_config.items())),
         "required_in_world_seconds": MINIMUM_GATE_SECONDS,
         "filtered_notifications": sorted(EXPECTED_NOTIFICATIONS),
         "loaders": {
@@ -387,6 +511,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--data", type=Path)
     parser.add_argument("--result", action="append", type=Path, default=[])
     parser.add_argument("--artifact", action="append", type=Path, default=[])
+    parser.add_argument("--target-plan", type=Path, required=True)
     parser.add_argument("--verified-on")
     return parser.parse_args(argv)
 
@@ -411,6 +536,11 @@ def main(argv: list[str] | None = None) -> int:
         data = read_json(data_path)
         publication, published_hashes = validate_publication(data)
         target_version, gate_results = load_gate_results(result_paths)
+        fingerprint, resolved_config = load_target_plan(
+            args.target_plan,
+            publication=publication,
+            target_minecraft_version=target_version,
+        )
         artifact_verifications = load_artifact_verifications(
             artifact_paths,
             publication_id=str(publication["id"]),
@@ -423,6 +553,8 @@ def main(argv: list[str] | None = None) -> int:
             artifact_verifications,
             target_minecraft_version=target_version,
             published_hashes=published_hashes,
+            dependency_fingerprint_value=fingerprint,
+            resolved_config=resolved_config,
             verified_on=verified_on,
         )
         write_json(data_path, data)

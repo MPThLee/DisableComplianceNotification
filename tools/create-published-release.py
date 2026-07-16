@@ -9,6 +9,7 @@ version whose production artifacts passed every release gate.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import os
@@ -182,6 +183,30 @@ def read_config(path: Path) -> dict[str, str]:
             f"config archives_base_name must be {ARCHIVE_BASE_NAME}"
         )
     return properties
+
+
+def dependency_fingerprint(properties: dict[str, str]) -> str:
+    normalized: dict[str, str] = {}
+    for key, value in properties.items():
+        if not isinstance(key, str) or not key:
+            raise PublicationCreationError(
+                "resolved config contains an invalid property name"
+            )
+        if not isinstance(value, str):
+            raise PublicationCreationError(
+                f"resolved config property {key} must be a string"
+            )
+        normalized[key] = value
+    canonical = json.dumps(
+        {
+            "schema_version": 1,
+            "resolved_config": dict(sorted(normalized.items())),
+        },
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(canonical).hexdigest()
 
 
 def require_string(
@@ -445,6 +470,7 @@ def create_document(
         }
         for loader in LOADERS
     }
+    resolved_config = dict(sorted(properties.items()))
     return {
         "schema_version": 1,
         "publication": {
@@ -462,6 +488,12 @@ def create_document(
             {
                 "minecraft_version": minecraft_version,
                 "verified_on": verified_on,
+                "publication": tag,
+                "source_commit": source_commit,
+                "dependency_fingerprint": dependency_fingerprint(
+                    resolved_config
+                ),
+                "resolved_config": resolved_config,
                 "required_in_world_seconds": MINIMUM_GATE_SECONDS,
                 "filtered_notifications": sorted(EXPECTED_NOTIFICATIONS),
                 "loaders": runtime_loaders,

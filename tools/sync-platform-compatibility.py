@@ -10,6 +10,7 @@ versions that may be advertised.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import os
@@ -38,12 +39,14 @@ MINIMUM_GATE_SECONDS = 120
 ARCHIVE_BASE_NAME = "disable_compliance_notification"
 MODRINTH_PROJECT_ID = "vAYtksKy"
 CURSEFORGE_PROJECT_ID = "644324"
+GITHUB_REPOSITORY = "MPThLee/DisableComplianceNotification"
 MODRINTH_BASE_URL = "https://api.modrinth.com/v2"
 CURSEFORGE_BASE_URL = "https://minecraft.curseforge.com"
 USER_AGENT = "DisableComplianceNotification/platform-compatibility-sync"
 VERSION_PATTERN = re.compile(r"\d+(?:\.\d+)*")
 SHA256_PATTERN = re.compile(r"[0-9a-fA-F]{64}")
 SHA512_PATTERN = re.compile(r"[0-9a-fA-F]{128}")
+COMMIT_PATTERN = re.compile(r"[0-9a-f]{40}")
 
 
 class PlatformSyncError(RuntimeError):
@@ -205,6 +208,30 @@ def require_exact_notifications(value: object, description: str) -> None:
         )
 
 
+def dependency_fingerprint(properties: dict[str, str]) -> str:
+    normalized: dict[str, str] = {}
+    for key, value in properties.items():
+        if not isinstance(key, str) or not key:
+            raise PlatformSyncError(
+                "resolved config contains an invalid property name"
+            )
+        if not isinstance(value, str):
+            raise PlatformSyncError(
+                f"resolved config property {key} must be a string"
+            )
+        normalized[key] = value
+    canonical = json.dumps(
+        {
+            "schema_version": 1,
+            "resolved_config": dict(sorted(normalized.items())),
+        },
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(canonical).hexdigest()
+
+
 def parse_positive_integer(value: object, description: str) -> int:
     if isinstance(value, bool):
         raise PlatformSyncError(f"{description} must be a positive integer")
@@ -308,6 +335,22 @@ def parse_release_data(value: object) -> PublishedRelease:
             "publication.id and publication.tag must equal "
             "v followed by publication.release_version"
         )
+    source_commit = require_string(
+        publication_data.get("source_commit"),
+        "publication.source_commit",
+    )
+    if COMMIT_PATTERN.fullmatch(source_commit) is None:
+        raise PlatformSyncError(
+            "publication.source_commit must be a full Git commit"
+        )
+    github_repository = require_string(
+        publication_data.get("github_repository"),
+        "publication.github_repository",
+    )
+    if github_repository != GITHUB_REPOSITORY:
+        raise PlatformSyncError(
+            f"publication.github_repository must be {GITHUB_REPOSITORY}"
+        )
     modrinth_project_id = require_string(
         publication_data.get("modrinth_project_id"),
         "publication.modrinth_project_id",
@@ -379,6 +422,52 @@ def parse_release_data(value: object) -> PublishedRelease:
             record.get("minecraft_version"),
             f"runtime_verification[{index}].minecraft_version",
         )
+        if record.get("publication") != publication_id:
+            raise PlatformSyncError(
+                f"runtime_verification[{index}] belongs to the wrong publication"
+            )
+        if record.get("source_commit") != source_commit:
+            raise PlatformSyncError(
+                f"runtime_verification[{index}] belongs to the wrong source commit"
+            )
+        raw_config = require_object(
+            record.get("resolved_config"),
+            f"runtime_verification[{index}].resolved_config",
+        )
+        resolved_config: dict[str, str] = {}
+        for key, config_value in raw_config.items():
+            if (
+                not isinstance(key, str)
+                or not key
+                or not isinstance(config_value, str)
+            ):
+                raise PlatformSyncError(
+                    f"runtime_verification[{index}].resolved_config must "
+                    "contain string properties"
+                )
+            resolved_config[key] = config_value
+        if resolved_config.get("minecraft_version") != minecraft_version:
+            raise PlatformSyncError(
+                f"runtime_verification[{index}] resolved config targets the "
+                "wrong Minecraft version"
+            )
+        if resolved_config.get("mod_version") != release_version:
+            raise PlatformSyncError(
+                f"runtime_verification[{index}] resolved config targets the "
+                "wrong mod version"
+            )
+        fingerprint = require_string(
+            record.get("dependency_fingerprint"),
+            f"runtime_verification[{index}].dependency_fingerprint",
+        ).lower()
+        if (
+            SHA256_PATTERN.fullmatch(fingerprint) is None
+            or fingerprint != dependency_fingerprint(resolved_config)
+        ):
+            raise PlatformSyncError(
+                f"runtime_verification[{index}] dependency fingerprint "
+                "does not match its resolved config"
+            )
         loaders = require_object(
             record.get("loaders"),
             f"runtime_verification[{index}].loaders",

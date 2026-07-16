@@ -330,6 +330,16 @@ class CreatePublishedReleaseTest(unittest.TestCase):
         self.assertEqual(1, len(document["runtime_verification"]))
         runtime = document["runtime_verification"][0]
         self.assertEqual("26.2", runtime["minecraft_version"])
+        self.assertEqual("v1.6.1", runtime["publication"])
+        self.assertEqual(SOURCE_COMMIT, runtime["source_commit"])
+        self.assertEqual(
+            dict(sorted(properties().items())),
+            runtime["resolved_config"],
+        )
+        self.assertEqual(
+            creator.dependency_fingerprint(properties()),
+            runtime["dependency_fingerprint"],
+        )
         self.assertEqual(
             HASHES["forge"][0],
             runtime["loaders"]["forge"]["artifact_sha256"],

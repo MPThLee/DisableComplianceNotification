@@ -26,6 +26,19 @@ TEST_HASHES = {
     "neoforge": "b" * 64,
     "forge": "c" * 64,
 }
+SOURCE_COMMIT = "a" * 40
+
+
+def resolved_config(
+    minecraft_version: str,
+    release_version: str = "1.6.0",
+) -> dict[str, str]:
+    return {
+        "archives_base_name": "disable_compliance_notification",
+        "java_version": "26",
+        "minecraft_version": minecraft_version,
+        "mod_version": release_version,
+    }
 
 
 def loader_results(
@@ -49,9 +62,17 @@ def runtime_record(
     minecraft_version: str,
     *,
     hashes: dict[str, str] = TEST_HASHES,
+    publication_id: str = "v1.6.0",
+    release_version: str = "1.6.0",
+    source_commit: str = SOURCE_COMMIT,
 ) -> dict[str, object]:
+    config = resolved_config(minecraft_version, release_version)
     return {
         "minecraft_version": minecraft_version,
+        "publication": publication_id,
+        "source_commit": source_commit,
+        "dependency_fingerprint": sync.dependency_fingerprint(config),
+        "resolved_config": config,
         "required_in_world_seconds": 120,
         "filtered_notifications": sorted(sync.EXPECTED_NOTIFICATIONS),
         "loaders": loader_results(hashes=hashes),
@@ -66,6 +87,8 @@ def release_document() -> dict[str, object]:
             "tag": "v1.6.0",
             "release_version": "1.6.0",
             "build_minecraft_version": "26.2",
+            "source_commit": SOURCE_COMMIT,
+            "github_repository": "MPThLee/DisableComplianceNotification",
             "modrinth_project_id": "vAYtksKy",
             "curseforge_project_id": 644324,
             "artifacts": {
@@ -125,8 +148,17 @@ def release_document_with_versions(
         loader: document["publication"]["artifacts"][loader]["sha256"]
         for loader in sync.EXPECTED_LOADERS
     }
+    publication_id = document["publication"]["id"]
+    release_version = document["publication"]["release_version"]
+    source_commit = document["publication"]["source_commit"]
     document["runtime_verification"] = [
-        runtime_record(version, hashes=hashes)
+        runtime_record(
+            version,
+            hashes=hashes,
+            publication_id=publication_id,
+            release_version=release_version,
+            source_commit=source_commit,
+        )
         for version in versions
     ]
     document["desired_game_versions"] = sorted(
@@ -143,6 +175,7 @@ def rollover_release_document(
     publication["id"] = "v1.6.1"
     publication["tag"] = "v1.6.1"
     publication["release_version"] = "1.6.1"
+    publication["source_commit"] = "b" * 40
     new_hashes = {
         "fabric": "d" * 64,
         "neoforge": "e" * 64,
@@ -413,10 +446,26 @@ class PublishedReleaseDataTest(unittest.TestCase):
 
         duplicate = release_document()
         duplicate["runtime_verification"][2]["minecraft_version"] = "26.3"
+        duplicate["runtime_verification"][2]["resolved_config"][
+            "minecraft_version"
+        ] = "26.3"
+        duplicate["runtime_verification"][2][
+            "dependency_fingerprint"
+        ] = sync.dependency_fingerprint(
+            duplicate["runtime_verification"][2]["resolved_config"]
+        )
         invalid_documents.append((duplicate, "duplicate Minecraft versions"))
 
         older = release_document()
         older["runtime_verification"][2]["minecraft_version"] = "26.1"
+        older["runtime_verification"][2]["resolved_config"][
+            "minecraft_version"
+        ] = "26.1"
+        older["runtime_verification"][2][
+            "dependency_fingerprint"
+        ] = sync.dependency_fingerprint(
+            older["runtime_verification"][2]["resolved_config"]
+        )
         invalid_documents.append((older, "older than the publication build"))
 
         missing_build = release_document()
@@ -505,6 +554,30 @@ class PublishedReleaseDataTest(unittest.TestCase):
         ] = "0" * 64
         invalid_documents.append(
             (wrong_artifact, "wrong published artifact hash")
+        )
+
+        wrong_publication = release_document()
+        wrong_publication["runtime_verification"][0][
+            "publication"
+        ] = "v1.6.1"
+        invalid_documents.append(
+            (wrong_publication, "wrong publication")
+        )
+
+        wrong_source = release_document()
+        wrong_source["runtime_verification"][0][
+            "source_commit"
+        ] = "b" * 40
+        invalid_documents.append(
+            (wrong_source, "wrong source commit")
+        )
+
+        wrong_fingerprint = release_document()
+        wrong_fingerprint["runtime_verification"][0][
+            "dependency_fingerprint"
+        ] = "0" * 64
+        invalid_documents.append(
+            (wrong_fingerprint, "dependency fingerprint")
         )
 
         for document, message in invalid_documents:

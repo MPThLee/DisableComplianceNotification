@@ -43,6 +43,25 @@
     {
       "minecraft_version": "26.2",
       "verified_on": "2026-07-16",
+      "publication": "v1.6.0",
+      "source_commit": "0484b2f7249e30dd834d30f11bd582ccfc82b83f",
+      "dependency_fingerprint": "2b2a2f3c764ec7df19c9cd6caef3e4349753f32cd21b81dc966e830a52133a9e",
+      "resolved_config": {
+        "archives_base_name": "disable_compliance_notification",
+        "fabric_api_version": "0.145.4",
+        "fabric_loader_version": "0.19.3",
+        "fabric_mixin_processor_version": "0.17.1",
+        "forge_version": "65.0.0",
+        "java_version": "25",
+        "maven_group": "dev.mpthlee.minecraft.disable_compliance_notification",
+        "minecraft_version": "26.2",
+        "mixin_processor_version": "0.8.7",
+        "mod_version": "1.6.0",
+        "modmenu_version": "20.0.1",
+        "neoforge_version": "26.2.0.0-beta",
+        "pack_format": "88.0",
+        "yacl_version": "3.9.5+26.2"
+      },
       "required_in_world_seconds": 120,
       "filtered_notifications": [
         "compliance.playtime.hours",
