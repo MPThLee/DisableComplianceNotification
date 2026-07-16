@@ -63,12 +63,12 @@ def parse_major_minor(game_ver: str) -> tuple[str, str]:
     Determines:
       - major_heading: e.g. '1.20.x' from '1.20.4'
       - sub_heading:   e.g. '1.20.4'
-    If someone gives '1.20', treat as '1.20.0'.
+    Two-component versions such as '26.2' are preserved exactly.
     """
     parts = game_ver.split(".")
-    if len(parts) == 2:  # e.g. '1.20'
-        major = f"{parts[0]}.{parts[1]}.x"  # -> '1.20.x'
-        sub = f"{parts[0]}.{parts[1]}.0"  # -> '1.20.0'
+    if len(parts) == 2:  # e.g. '26.2'
+        major = f"{parts[0]}.{parts[1]}.x"  # -> '26.2.x'
+        sub = game_ver
     elif len(parts) >= 3:  # e.g. '1.20.4'
         major = f"{parts[0]}.{parts[1]}.x"
         sub = game_ver
