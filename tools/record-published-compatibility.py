@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import copy
 import json
+import math
 import re
 import sys
 from datetime import date, datetime, timezone
@@ -45,8 +46,22 @@ def version_key(version: str) -> tuple[int, ...]:
     return tuple(int(part) for part in version.split("."))
 
 
-def _is_number(value: object) -> bool:
-    return isinstance(value, (int, float)) and not isinstance(value, bool)
+def _is_finite_number(value: object) -> bool:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return False
+    try:
+        return math.isfinite(value)
+    except OverflowError:
+        return False
+
+
+def _has_exact_notifications(value: object) -> bool:
+    return (
+        isinstance(value, list)
+        and len(value) == len(EXPECTED_NOTIFICATIONS)
+        and all(isinstance(notification, str) for notification in value)
+        and set(value) == EXPECTED_NOTIFICATIONS
+    )
 
 
 def validate_publication(
@@ -140,22 +155,23 @@ def load_gate_results(
         minimum = result.get("minimum_in_world_seconds")
         requested = result.get("requested_in_world_seconds")
         observed = result.get("observed_in_world_seconds")
-        if not _is_number(minimum) or minimum < MINIMUM_GATE_SECONDS:
+        if not _is_finite_number(minimum) or minimum < MINIMUM_GATE_SECONDS:
             raise PublishedCompatibilityError(
                 f"gate minimum is shorter than two minutes: {path}"
             )
-        if not _is_number(requested) or requested < minimum:
+        if not _is_finite_number(requested) or requested < minimum:
             raise PublishedCompatibilityError(
                 f"gate request is shorter than its minimum: {path}"
             )
-        if not _is_number(observed) or observed < minimum:
+        if not _is_finite_number(observed) or observed < minimum:
             raise PublishedCompatibilityError(
                 f"gate observation is shorter than two minutes: {path}"
             )
         filtered = result.get("filtered_notifications")
-        if not isinstance(filtered, list) or set(filtered) != EXPECTED_NOTIFICATIONS:
+        if not _has_exact_notifications(filtered):
             raise PublishedCompatibilityError(
-                f"gate result does not contain both compliance notifications: {path}"
+                f"gate result must contain exactly both compliance notifications: "
+                f"{path}"
             )
         if result.get("periodic_toast_absent") is not True:
             raise PublishedCompatibilityError(

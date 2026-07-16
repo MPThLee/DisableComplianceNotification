@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import re
 import sys
 from datetime import date, datetime, timezone
@@ -20,6 +21,24 @@ MINIMUM_GATE_SECONDS = 120
 
 class CompatibilityRecordError(RuntimeError):
     pass
+
+
+def is_finite_number(value: object) -> bool:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return False
+    try:
+        return math.isfinite(value)
+    except OverflowError:
+        return False
+
+
+def has_exact_notifications(value: object) -> bool:
+    return (
+        isinstance(value, list)
+        and len(value) == len(EXPECTED_NOTIFICATIONS)
+        and all(isinstance(notification, str) for notification in value)
+        and set(value) == EXPECTED_NOTIFICATIONS
+    )
 
 
 def read_properties(path: Path) -> dict[str, str]:
@@ -68,15 +87,15 @@ def load_gate_results(
         minimum = result.get("minimum_in_world_seconds")
         requested = result.get("requested_in_world_seconds")
         observed = result.get("observed_in_world_seconds")
-        if not isinstance(minimum, (int, float)) or minimum < MINIMUM_GATE_SECONDS:
+        if not is_finite_number(minimum) or minimum < MINIMUM_GATE_SECONDS:
             raise CompatibilityRecordError(f"gate minimum is shorter than two minutes: {path}")
-        if not isinstance(requested, (int, float)) or requested < minimum:
+        if not is_finite_number(requested) or requested < minimum:
             raise CompatibilityRecordError(f"gate request is shorter than its minimum: {path}")
-        if not isinstance(observed, (int, float)) or observed < minimum:
+        if not is_finite_number(observed) or observed < minimum:
             raise CompatibilityRecordError(f"gate observation is shorter than two minutes: {path}")
-        if set(result.get("filtered_notifications", [])) != EXPECTED_NOTIFICATIONS:
+        if not has_exact_notifications(result.get("filtered_notifications")):
             raise CompatibilityRecordError(
-                f"gate result does not contain both compliance notifications: {path}"
+                f"gate result must contain exactly both compliance notifications: {path}"
             )
         if result.get("periodic_toast_absent") is not True:
             raise CompatibilityRecordError(
@@ -135,10 +154,9 @@ def current_version_is_verified(
     filtered_notifications = record.get("filtered_notifications")
     loaders = record.get("loaders")
     if (
-        not isinstance(required, (int, float))
+        not is_finite_number(required)
         or required < MINIMUM_GATE_SECONDS
-        or not isinstance(filtered_notifications, list)
-        or set(filtered_notifications) != EXPECTED_NOTIFICATIONS
+        or not has_exact_notifications(filtered_notifications)
         or not isinstance(loaders, dict)
         or set(loaders) != EXPECTED_LOADERS
     ):
@@ -148,7 +166,7 @@ def current_version_is_verified(
             not isinstance(result, dict)
             or result.get("passed") is not True
             or result.get("periodic_toast_absent") is not True
-            or not isinstance(result.get("observed_in_world_seconds"), (int, float))
+            or not is_finite_number(result.get("observed_in_world_seconds"))
             or result["observed_in_world_seconds"] < required
         ):
             return False

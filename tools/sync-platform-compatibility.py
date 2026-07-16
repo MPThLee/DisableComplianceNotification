@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 import re
 import secrets
@@ -34,6 +35,9 @@ EXPECTED_NOTIFICATIONS = {
     "compliance.playtime.greaterThan24Hours",
 }
 MINIMUM_GATE_SECONDS = 120
+ARCHIVE_BASE_NAME = "disable_compliance_notification"
+MODRINTH_PROJECT_ID = "vAYtksKy"
+CURSEFORGE_PROJECT_ID = "644324"
 MODRINTH_BASE_URL = "https://api.modrinth.com/v2"
 CURSEFORGE_BASE_URL = "https://minecraft.curseforge.com"
 USER_AGENT = "DisableComplianceNotification/platform-compatibility-sync"
@@ -180,7 +184,25 @@ def compare_versions(left: str, right: str) -> int:
 def require_number(value: object, description: str) -> float:
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise PlatformSyncError(f"{description} must be a number")
-    return float(value)
+    try:
+        result = float(value)
+    except OverflowError as exc:
+        raise PlatformSyncError(f"{description} must be finite") from exc
+    if not math.isfinite(result):
+        raise PlatformSyncError(f"{description} must be finite")
+    return result
+
+
+def require_exact_notifications(value: object, description: str) -> None:
+    if (
+        not isinstance(value, list)
+        or len(value) != len(EXPECTED_NOTIFICATIONS)
+        or any(not isinstance(notification, str) for notification in value)
+        or set(value) != EXPECTED_NOTIFICATIONS
+    ):
+        raise PlatformSyncError(
+            f"{description} must contain exactly both compliance notifications"
+        )
 
 
 def parse_positive_integer(value: object, description: str) -> int:
@@ -197,11 +219,35 @@ def parse_positive_integer(value: object, description: str) -> int:
     return result
 
 
-def parse_artifact(loader: str, value: object) -> Artifact:
+def expected_artifact_filename(
+    release_version: str,
+    loader: str,
+    build_minecraft_version: str,
+) -> str:
+    return (
+        f"{ARCHIVE_BASE_NAME}-v{release_version}+{loader}-"
+        f"{build_minecraft_version}.jar"
+    )
+
+
+def parse_artifact(
+    loader: str,
+    value: object,
+    *,
+    release_version: str,
+    build_minecraft_version: str,
+) -> Artifact:
     data = require_object(value, f"publication.artifacts.{loader}")
     filename = require_string(data.get("filename"), f"{loader} filename")
     if Path(filename).name != filename:
         raise PlatformSyncError(f"{loader} filename must not contain a path")
+    expected_filename = expected_artifact_filename(
+        release_version, loader, build_minecraft_version
+    )
+    if filename != expected_filename:
+        raise PlatformSyncError(
+            f"{loader} filename must be exactly {expected_filename}"
+        )
 
     sha256 = require_string(data.get("sha256"), f"{loader} sha256")
     if not SHA256_PATTERN.fullmatch(sha256):
@@ -244,6 +290,43 @@ def parse_release_data(value: object) -> PublishedRelease:
         raise PlatformSyncError("unsupported published-release schema")
 
     publication_data = require_object(root.get("publication"), "publication")
+    release_version = require_version(
+        publication_data.get("release_version"),
+        "publication.release_version",
+    )
+    build_minecraft_version = require_version(
+        publication_data.get("build_minecraft_version"),
+        "publication.build_minecraft_version",
+    )
+    expected_publication_id = f"v{release_version}"
+    publication_id = require_string(
+        publication_data.get("id"), "publication.id"
+    )
+    tag = require_string(publication_data.get("tag"), "publication.tag")
+    if publication_id != expected_publication_id or tag != expected_publication_id:
+        raise PlatformSyncError(
+            "publication.id and publication.tag must equal "
+            "v followed by publication.release_version"
+        )
+    modrinth_project_id = require_string(
+        publication_data.get("modrinth_project_id"),
+        "publication.modrinth_project_id",
+    )
+    if modrinth_project_id != MODRINTH_PROJECT_ID:
+        raise PlatformSyncError(
+            f"publication.modrinth_project_id must be {MODRINTH_PROJECT_ID}"
+        )
+    curseforge_project_id = str(
+        parse_positive_integer(
+            publication_data.get("curseforge_project_id"),
+            "publication.curseforge_project_id",
+        )
+    )
+    if curseforge_project_id != CURSEFORGE_PROJECT_ID:
+        raise PlatformSyncError(
+            f"publication.curseforge_project_id must be {CURSEFORGE_PROJECT_ID}"
+        )
+
     artifact_data = require_object(
         publication_data.get("artifacts"), "publication.artifacts"
     )
@@ -252,7 +335,12 @@ def parse_release_data(value: object) -> PublishedRelease:
             "publication artifacts must contain exactly fabric, neoforge, and forge"
         )
     artifacts = {
-        loader: parse_artifact(loader, artifact_data[loader])
+        loader: parse_artifact(
+            loader,
+            artifact_data[loader],
+            release_version=release_version,
+            build_minecraft_version=build_minecraft_version,
+        )
         for loader in EXPECTED_LOADERS
     }
 
@@ -272,27 +360,11 @@ def parse_release_data(value: object) -> PublishedRelease:
             raise PlatformSyncError(f"{description} must be unique")
 
     publication = Publication(
-        publication_id=require_string(
-            publication_data.get("id"), "publication.id"
-        ),
-        release_version=require_version(
-            publication_data.get("release_version"),
-            "publication.release_version",
-        ),
-        build_minecraft_version=require_version(
-            publication_data.get("build_minecraft_version"),
-            "publication.build_minecraft_version",
-        ),
-        modrinth_project_id=require_string(
-            publication_data.get("modrinth_project_id"),
-            "publication.modrinth_project_id",
-        ),
-        curseforge_project_id=str(
-            parse_positive_integer(
-                publication_data.get("curseforge_project_id"),
-                "publication.curseforge_project_id",
-            )
-        ),
+        publication_id=publication_id,
+        release_version=release_version,
+        build_minecraft_version=build_minecraft_version,
+        modrinth_project_id=modrinth_project_id,
+        curseforge_project_id=curseforge_project_id,
         artifacts=artifacts,
     )
 
@@ -324,15 +396,10 @@ def parse_release_data(value: object) -> PublishedRelease:
                 f"runtime_verification[{index}] is shorter than two minutes"
             )
         filtered_notifications = record.get("filtered_notifications")
-        if (
-            not isinstance(filtered_notifications, list)
-            or len(filtered_notifications) != len(EXPECTED_NOTIFICATIONS)
-            or set(filtered_notifications) != EXPECTED_NOTIFICATIONS
-        ):
-            raise PlatformSyncError(
-                f"runtime_verification[{index}] must contain exactly both "
-                "compliance notifications"
-            )
+        require_exact_notifications(
+            filtered_notifications,
+            f"runtime_verification[{index}]",
+        )
         for loader in EXPECTED_LOADERS:
             loader_result = require_object(
                 loaders[loader],

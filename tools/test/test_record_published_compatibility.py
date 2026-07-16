@@ -285,6 +285,58 @@ class RecordPublishedCompatibilityTest(unittest.TestCase):
             ):
                 record.load_gate_results([*paths, forge_path])
 
+    def test_gate_loading_rejects_nonfinite_durations_and_ambiguous_notifications(
+        self,
+    ):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            directory = Path(temporary_directory)
+            paths = []
+            paths_by_loader = {}
+            for loader in sorted(record.EXPECTED_LOADERS):
+                path = directory / f"{loader}.json"
+                path.write_text(
+                    json.dumps(gate_result(loader)), encoding="utf-8"
+                )
+                paths.append(path)
+                paths_by_loader[loader] = path
+
+            for field, value in (
+                ("minimum_in_world_seconds", float("nan")),
+                ("requested_in_world_seconds", float("inf")),
+                ("observed_in_world_seconds", float("-inf")),
+            ):
+                with self.subTest(field=field):
+                    invalid = gate_result("forge")
+                    invalid[field] = value
+                    paths_by_loader["forge"].write_text(
+                        json.dumps(invalid), encoding="utf-8"
+                    )
+                    with self.assertRaises(record.PublishedCompatibilityError):
+                        record.load_gate_results(paths)
+
+            for notifications in (
+                [
+                    "compliance.playtime.hours",
+                    "compliance.playtime.greaterThan24Hours",
+                    "compliance.playtime.hours",
+                ],
+                [
+                    "compliance.playtime.hours",
+                    {"unexpected": "value"},
+                ],
+            ):
+                with self.subTest(notifications=notifications):
+                    invalid = gate_result("forge")
+                    invalid["filtered_notifications"] = notifications
+                    paths_by_loader["forge"].write_text(
+                        json.dumps(invalid), encoding="utf-8"
+                    )
+                    with self.assertRaisesRegex(
+                        record.PublishedCompatibilityError,
+                        "exactly both compliance notifications",
+                    ):
+                        record.load_gate_results(paths)
+
     def test_artifact_loading_rejects_hash_and_publication_mismatch(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
             directory = Path(temporary_directory)

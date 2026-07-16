@@ -63,6 +63,7 @@ def release_document() -> dict[str, object]:
         "schema_version": 1,
         "publication": {
             "id": "v1.6.0",
+            "tag": "v1.6.0",
             "release_version": "1.6.0",
             "build_minecraft_version": "26.2",
             "modrinth_project_id": "vAYtksKy",
@@ -140,6 +141,7 @@ def rollover_release_document(
     document = release_document()
     publication = document["publication"]
     publication["id"] = "v1.6.1"
+    publication["tag"] = "v1.6.1"
     publication["release_version"] = "1.6.1"
     new_hashes = {
         "fabric": "d" * 64,
@@ -458,6 +460,29 @@ class PublishedReleaseDataTest(unittest.TestCase):
             (duplicate_notification, "exactly both compliance notifications")
         )
 
+        non_string_notification = release_document()
+        non_string_notification["runtime_verification"][0][
+            "filtered_notifications"
+        ] = [
+            "compliance.playtime.hours",
+            {"unexpected": "value"},
+        ]
+        invalid_documents.append(
+            (non_string_notification, "exactly both compliance notifications")
+        )
+
+        nonfinite_required = release_document()
+        nonfinite_required["runtime_verification"][0][
+            "required_in_world_seconds"
+        ] = float("nan")
+        invalid_documents.append((nonfinite_required, "must be finite"))
+
+        nonfinite_observation = release_document()
+        nonfinite_observation["runtime_verification"][0]["loaders"]["forge"][
+            "observed_in_world_seconds"
+        ] = float("inf")
+        invalid_documents.append((nonfinite_observation, "must be finite"))
+
         toast_not_checked = release_document()
         toast_not_checked["runtime_verification"][0]["loaders"]["fabric"][
             "periodic_toast_absent"
@@ -535,6 +560,50 @@ class PublishedReleaseDataTest(unittest.TestCase):
             "modrinth_version_id"
         ] = "fabric-version-id"
         invalid_documents.append((duplicate_id, "version IDs must be unique"))
+
+        wrong_filename = release_document()
+        wrong_filename["publication"]["artifacts"]["fabric"][
+            "filename"
+        ] = "disable_compliance_notification-v1.6.0+fabric-26.3.jar"
+        invalid_documents.append((wrong_filename, "filename must be exactly"))
+
+        for document, message in invalid_documents:
+            with self.subTest(message=message):
+                with self.assertRaisesRegex(sync.PlatformSyncError, message):
+                    sync.parse_release_data(document)
+
+    def test_rejects_publication_or_marketplace_identity_drift(self):
+        invalid_documents = []
+
+        wrong_id = release_document()
+        wrong_id["publication"]["id"] = "v1.6.1"
+        invalid_documents.append(
+            (wrong_id, "publication.id and publication.tag must equal")
+        )
+
+        wrong_tag = release_document()
+        wrong_tag["publication"]["tag"] = "v1.6.1"
+        invalid_documents.append(
+            (wrong_tag, "publication.id and publication.tag must equal")
+        )
+
+        missing_tag = release_document()
+        del missing_tag["publication"]["tag"]
+        invalid_documents.append((missing_tag, "publication.tag"))
+
+        wrong_modrinth_project = release_document()
+        wrong_modrinth_project["publication"][
+            "modrinth_project_id"
+        ] = "different-project"
+        invalid_documents.append(
+            (wrong_modrinth_project, "modrinth_project_id must be vAYtksKy")
+        )
+
+        wrong_curseforge_project = release_document()
+        wrong_curseforge_project["publication"]["curseforge_project_id"] = 1
+        invalid_documents.append(
+            (wrong_curseforge_project, "curseforge_project_id must be 644324")
+        )
 
         for document, message in invalid_documents:
             with self.subTest(message=message):
