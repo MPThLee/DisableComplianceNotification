@@ -1,0 +1,24 @@
+{
+  "latest": {
+    "release": "26.3",
+    "snapshot": "26.4-snapshot-1"
+  },
+  "versions": [
+    {
+      "id": "26.4-snapshot-1",
+      "type": "snapshot"
+    },
+    {
+      "id": "26.3",
+      "type": "release"
+    },
+    {
+      "id": "26.2",
+      "type": "release"
+    },
+    {
+      "id": "26.1.2",
+      "type": "release"
+    }
+  ]
+}

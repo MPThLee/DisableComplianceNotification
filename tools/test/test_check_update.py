@@ -1,0 +1,70 @@
+#!/usr/bin/env python3
+
+import importlib.util
+import sys
+import unittest
+from pathlib import Path
+
+
+PROJECT_ROOT = Path(__file__).parents[2]
+MODULE_PATH = PROJECT_ROOT / "tools/check-update.py"
+FIXTURE_PATH = PROJECT_ROOT / "tools/test/fixtures/minecraft/version_manifest_v2.json"
+SPEC = importlib.util.spec_from_file_location("check_update", MODULE_PATH)
+assert SPEC is not None and SPEC.loader is not None
+check_update = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = check_update
+SPEC.loader.exec_module(check_update)
+
+
+class CheckUpdateTest(unittest.TestCase):
+    def setUp(self):
+        self.manifest = check_update.load_manifest(FIXTURE_PATH, timeout=1)
+
+    def test_repository_fixture_selects_release_and_snapshot(self):
+        self.assertEqual("26.3", check_update.select_target(self.manifest, False))
+        self.assertEqual(
+            "26.4-snapshot-1",
+            check_update.select_target(self.manifest, True),
+        )
+
+    def test_manifest_order_detects_upgrade_without_downgrade(self):
+        self.assertTrue(check_update.is_newer("26.3", "26.2", self.manifest))
+        self.assertFalse(check_update.is_newer("26.2", "26.3", self.manifest))
+        self.assertFalse(check_update.is_newer("26.3", "26.3", self.manifest))
+
+    def test_numeric_fallback_handles_unlisted_calendar_releases(self):
+        self.assertTrue(check_update.is_newer("27.0", "26.3", {}))
+        self.assertFalse(check_update.is_newer("26.2", "26.2.1", {}))
+
+    def test_mod_release_patch_is_bumped_for_a_candidate_branch(self):
+        self.assertEqual("1.6.1", check_update.bump_patch("1.6.0"))
+        with self.assertRaises(check_update.UpdateCheckError):
+            check_update.bump_patch("1.6.0-beta")
+
+    def test_malformed_manifest_is_rejected(self):
+        with self.assertRaisesRegex(
+            check_update.UpdateCheckError, "missing latest versions"
+        ):
+            check_update.select_target({}, False)
+
+    def test_periodic_workflow_tests_every_loader_before_pushing(self):
+        workflow = (
+            PROJECT_ROOT / ".github/workflows/check-update.yml"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn('cron: "0 */6 * * *"', workflow)
+        self.assertIn("Reject failing candidate", workflow)
+        for loader in ("fabric", "neoforge", "forge"):
+            with self.subTest(loader=loader):
+                self.assertIn(
+                    f"./tools/test/run_client_gate.sh {loader} --xvfb",
+                    workflow,
+                )
+
+        record_position = workflow.index("tools/record-minecraft-compatibility.py")
+        push_position = workflow.index('git push -u origin "$BRANCH"')
+        self.assertLess(record_position, push_position)
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -91,6 +91,14 @@ python3 -m unittest discover -s tools/test -p 'test_*.py'
 
 The Fabric deterministic test normally finishes a few seconds after Minecraft starts. The separate production gates exercise the regional timer on all three loaders. CI retains client logs even when a task fails.
 
+## Minecraft Compatibility Evidence
+
+[`data/minecraft-compatibility.json`](../data/minecraft-compatibility.json) is the canonical, machine-readable compatibility record. It separates the open loader-metadata range from versions that have actually completed the runtime gates. The tooling tests require its release and Minecraft versions to match `config.properties`, require evidence for Fabric, NeoForge, and Forge, and reject gate records shorter than two minutes.
+
+The scheduled Minecraft update workflow checks Mojang's release manifest but does not create a branch immediately. For a new release it first resolves candidate dependencies, builds all three loaders, runs every two-minute in-world gate, and validates the updated compatibility data. Only a fully passing candidate is committed to a new `mc<version>` branch. A failed dependency lookup, build, or gate fails the workflow and uploads the available client logs without changing repository branches.
+
+GitHub runs scheduled workflows from the repository's default branch. When promoting a new maintained Minecraft branch, make that branch the default or apply the workflow update to the existing default branch before relying on the schedule.
+
 ## Legacy Resource-Pack Fixture
 
 `misc/compliance.zip` remains as a legacy manual fixture. Automated gates use the source fixture under `tools/test/fixtures/compliance_gate` and generate `pack.mcmeta` from the current `pack_format` in `config.properties`, avoiding a stale binary pack when the Minecraft target changes.
