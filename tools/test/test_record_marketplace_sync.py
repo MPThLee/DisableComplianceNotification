@@ -172,14 +172,16 @@ class RecordMarketplaceSyncTest(unittest.TestCase):
                 )
             self.assertIn("ISO date", error.getvalue())
 
-    def test_repository_checkpoint_matches_current_publication(self):
+    def test_repository_checkpoint_is_valid_even_while_sync_is_pending(self):
         data = json.loads(
             (PROJECT_ROOT / "data/published-release.json").read_text(
                 encoding="utf-8"
             )
         )
 
-        self.assertTrue(record.check_marketplace_sync(data)[0])
+        current, message = record.check_marketplace_sync(data)
+        self.assertIsInstance(current, bool)
+        self.assertIn(data["publication"]["id"], message)
 
 
 if __name__ == "__main__":

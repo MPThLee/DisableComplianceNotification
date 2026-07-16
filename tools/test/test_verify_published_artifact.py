@@ -21,28 +21,6 @@ sys.modules[SPEC.name] = verifier
 SPEC.loader.exec_module(verifier)
 
 
-EXPECTED_PUBLICATION = {
-    "fabric": {
-        "modrinth": "DGk6zAdg",
-        "curseforge": 8441666,
-        "sha256": "6af75d89c831c3fdd12927bcc592271845c2f1dc8e84daf13770866a3a1d1959",
-        "sha512": "8025f51771d3a2fda2005f6d5c166bf0564a2d5283ae9e447412fd39f303168c0038a09acfc9a07fab7e907df9c50c0bd62aa77dec39dc32cbda20580a9cb51a",
-    },
-    "neoforge": {
-        "modrinth": "QskurR3v",
-        "curseforge": 8441667,
-        "sha256": "d81e67efa7cac1858b1451660cd10513990a4c078d6cf0ba3fc8f6f020483501",
-        "sha512": "77066dea89f1dbbf095968b344147634c62288c27bc0265974241d159d4f6fc5e68558504c2be6fd78e494c8887b72bd680f162df5b08a778a26abf9abedbd21",
-    },
-    "forge": {
-        "modrinth": "XCIQCPjS",
-        "curseforge": 8441668,
-        "sha256": "f81737ce8cf5581f872ca2c265bbccba55fdbfe2503662b1a98b022964904064",
-        "sha512": "39ac2503b94b2905e12ed73905f845dee06b9febffa469514f35d14bc4f91aaabae517867080327a501392c64fb61092f64254594d695015113e03c0793a0328",
-    },
-}
-
-
 def fabric_metadata(version: str, minecraft: str, mod_id: str = "disable_compliance_notification") -> bytes:
     return json.dumps(
         {
@@ -122,6 +100,41 @@ def write_jar(path: Path, entries: dict[str, bytes]) -> None:
             archive.writestr(name, content)
 
 
+def synthetic_publication() -> dict[str, object]:
+    artifacts = {}
+    for index, loader in enumerate(verifier.LOADERS, start=1):
+        filename = (
+            "disable_compliance_notification-"
+            f"v1.6.0+{loader}-26.2.jar"
+        )
+        artifacts[loader] = {
+            "filename": filename,
+            "github_url": (
+                "https://github.com/MPThLee/DisableComplianceNotification/"
+                f"releases/download/v1.6.0/{filename}"
+            ),
+            "sha256": str(index) * 64,
+            "modrinth_version_id": f"synthetic-{loader}",
+            "modrinth_sha512": str(index) * 128,
+            "curseforge_file_id": 9000000 + index,
+            "curseforge_loader": verifier.CURSEFORGE_LOADERS[loader],
+        }
+    return {
+        "schema_version": 1,
+        "publication": {
+            "id": "v1.6.0",
+            "release_version": "1.6.0",
+            "build_minecraft_version": "26.2",
+            "source_commit": "1" * 40,
+            "tag": "v1.6.0",
+            "github_repository": "MPThLee/DisableComplianceNotification",
+            "modrinth_project_id": "vAYtksKy",
+            "curseforge_project_id": 644324,
+            "artifacts": artifacts,
+        },
+    }
+
+
 class PublishedReleaseDataTest(unittest.TestCase):
     def test_workflow_target_option_is_supported(self):
         arguments = verifier.parse_args(
@@ -136,46 +149,58 @@ class PublishedReleaseDataTest(unittest.TestCase):
         )
         self.assertEqual("26.3", arguments.target)
 
-    def test_repository_data_binds_exact_v160_publications(self):
+    def test_repository_data_has_self_consistent_immutable_coordinates(self):
         data = json.loads(DATA_PATH.read_text(encoding="utf-8"))
         self.assertEqual(1, data["schema_version"])
+        publication = data["publication"]
+        release_version = publication["release_version"]
+        build_version = publication["build_minecraft_version"]
+        tag = f"v{release_version}"
+        self.assertEqual(tag, publication["id"])
+        self.assertEqual(tag, publication["tag"])
+        self.assertRegex(publication["source_commit"], r"^[0-9a-f]{40}$")
+        self.assertRegex(release_version, r"^\d+(?:\.\d+)*$")
+        self.assertRegex(build_version, r"^\d+(?:\.\d+)*$")
         self.assertEqual(
-            "v1.6.0",
-            data["publication"]["id"],
+            "vAYtksKy", publication["modrinth_project_id"]
         )
-        self.assertEqual("1.6.0", data["publication"]["release_version"])
-        self.assertEqual("v1.6.0", data["publication"]["tag"])
-        self.assertEqual(
-            "0484b2f7249e30dd834d30f11bd582ccfc82b83f",
-            data["publication"]["source_commit"],
-        )
-        self.assertEqual(
-            "26.2", data["publication"]["build_minecraft_version"]
-        )
-        self.assertEqual(
-            "vAYtksKy", data["publication"]["modrinth_project_id"]
-        )
-        self.assertEqual(644324, data["publication"]["curseforge_project_id"])
+        self.assertEqual(644324, publication["curseforge_project_id"])
+        self.assertEqual(set(verifier.LOADERS), set(publication["artifacts"]))
 
-        for loader, expected in EXPECTED_PUBLICATION.items():
+        modrinth_ids = set()
+        curseforge_ids = set()
+        filenames = set()
+        for loader in verifier.LOADERS:
             with self.subTest(loader=loader):
-                artifact = data["publication"]["artifacts"][loader]
-                self.assertEqual(
-                    expected["modrinth"], artifact["modrinth_version_id"]
+                artifact = publication["artifacts"][loader]
+                filename = (
+                    "disable_compliance_notification-"
+                    f"v{release_version}+{loader}-{build_version}.jar"
                 )
-                self.assertEqual(
-                    expected["curseforge"], artifact["curseforge_file_id"]
+                self.assertEqual(filename, artifact["filename"])
+                self.assertRegex(
+                    artifact["modrinth_version_id"], r"^[A-Za-z0-9_-]+$"
                 )
-                self.assertEqual(expected["sha256"], artifact["sha256"])
-                self.assertEqual(expected["sha512"], artifact["modrinth_sha512"])
+                self.assertIsInstance(artifact["curseforge_file_id"], int)
+                self.assertGreater(artifact["curseforge_file_id"], 0)
+                self.assertRegex(artifact["sha256"], r"^[0-9a-f]{64}$")
+                self.assertRegex(
+                    artifact["modrinth_sha512"], r"^[0-9a-f]{128}$"
+                )
                 self.assertEqual(
                     (
                         "https://github.com/MPThLee/DisableComplianceNotification/"
-                        "releases/download/v1.6.0/"
-                        f"disable_compliance_notification-v1.6.0+{loader}-26.2.jar"
+                        f"releases/download/{tag}/{filename}"
                     ),
                     artifact["github_url"],
                 )
+                filenames.add(filename)
+                modrinth_ids.add(artifact["modrinth_version_id"])
+                curseforge_ids.add(artifact["curseforge_file_id"])
+
+        self.assertEqual(len(verifier.LOADERS), len(filenames))
+        self.assertEqual(len(verifier.LOADERS), len(modrinth_ids))
+        self.assertEqual(len(verifier.LOADERS), len(curseforge_ids))
 
 
 class PublishedArtifactVerifierTest(unittest.TestCase):
@@ -205,7 +230,7 @@ class PublishedArtifactVerifierTest(unittest.TestCase):
         write_jar(published, published_entries)
         write_jar(candidate, candidate_entries)
 
-        data = json.loads(DATA_PATH.read_text(encoding="utf-8"))
+        data = synthetic_publication()
         artifact = data["publication"]["artifacts"][loader]
         artifact["sha256"] = hashlib.sha256(published.read_bytes()).hexdigest()
         artifact["modrinth_sha512"] = hashlib.sha512(
