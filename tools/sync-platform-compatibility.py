@@ -29,6 +29,11 @@ EXPECTED_CURSEFORGE_LOADERS = {
     "neoforge": "NeoForge",
     "forge": "Forge",
 }
+EXPECTED_NOTIFICATIONS = {
+    "compliance.playtime.hours",
+    "compliance.playtime.greaterThan24Hours",
+}
+MINIMUM_GATE_SECONDS = 120
 MODRINTH_BASE_URL = "https://api.modrinth.com/v2"
 CURSEFORGE_BASE_URL = "https://minecraft.curseforge.com"
 USER_AGENT = "DisableComplianceNotification/platform-compatibility-sync"
@@ -172,6 +177,12 @@ def compare_versions(left: str, right: str) -> int:
     return (padded_left > padded_right) - (padded_left < padded_right)
 
 
+def require_number(value: object, description: str) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise PlatformSyncError(f"{description} must be a number")
+    return float(value)
+
+
 def parse_positive_integer(value: object, description: str) -> int:
     if isinstance(value, bool):
         raise PlatformSyncError(f"{description} must be a positive integer")
@@ -304,6 +315,24 @@ def parse_release_data(value: object) -> PublishedRelease:
             raise PlatformSyncError(
                 f"runtime_verification[{index}] must cover every loader"
             )
+        required_seconds = require_number(
+            record.get("required_in_world_seconds"),
+            f"runtime_verification[{index}].required_in_world_seconds",
+        )
+        if required_seconds < MINIMUM_GATE_SECONDS:
+            raise PlatformSyncError(
+                f"runtime_verification[{index}] is shorter than two minutes"
+            )
+        filtered_notifications = record.get("filtered_notifications")
+        if (
+            not isinstance(filtered_notifications, list)
+            or len(filtered_notifications) != len(EXPECTED_NOTIFICATIONS)
+            or set(filtered_notifications) != EXPECTED_NOTIFICATIONS
+        ):
+            raise PlatformSyncError(
+                f"runtime_verification[{index}] must contain exactly both "
+                "compliance notifications"
+            )
         for loader in EXPECTED_LOADERS:
             loader_result = require_object(
                 loaders[loader],
@@ -312,6 +341,33 @@ def parse_release_data(value: object) -> PublishedRelease:
             if loader_result.get("passed") is not True:
                 raise PlatformSyncError(
                     f"Minecraft {minecraft_version} is not verified for {loader}"
+                )
+            if loader_result.get("periodic_toast_absent") is not True:
+                raise PlatformSyncError(
+                    f"Minecraft {minecraft_version} did not verify periodic "
+                    f"toast absence for {loader}"
+                )
+            observed_seconds = require_number(
+                loader_result.get("observed_in_world_seconds"),
+                (
+                    f"runtime_verification[{index}].loaders.{loader}."
+                    "observed_in_world_seconds"
+                ),
+            )
+            if observed_seconds < required_seconds:
+                raise PlatformSyncError(
+                    f"Minecraft {minecraft_version} observation is shorter "
+                    f"than required for {loader}"
+                )
+            artifact_sha256 = loader_result.get("artifact_sha256")
+            if (
+                not isinstance(artifact_sha256, str)
+                or artifact_sha256.lower()
+                != publication.artifacts[loader].sha256
+            ):
+                raise PlatformSyncError(
+                    f"Minecraft {minecraft_version} evidence has the wrong "
+                    f"published artifact hash for {loader}"
                 )
         if compare_versions(
             minecraft_version, publication.build_minecraft_version
@@ -332,6 +388,20 @@ def parse_release_data(value: object) -> PublishedRelease:
         )
 
     verified_versions.sort(key=version_key)
+    desired_game_versions = root.get("desired_game_versions")
+    if desired_game_versions is not None:
+        if (
+            not isinstance(desired_game_versions, list)
+            or any(
+                not isinstance(version, str)
+                for version in desired_game_versions
+            )
+            or desired_game_versions != verified_versions
+        ):
+            raise PlatformSyncError(
+                "desired_game_versions must exactly match the sorted runtime "
+                "verification versions"
+            )
     return PublishedRelease(publication, tuple(verified_versions))
 
 

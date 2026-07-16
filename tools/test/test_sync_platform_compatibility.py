@@ -21,18 +21,45 @@ sys.modules[SPEC.name] = sync
 SPEC.loader.exec_module(sync)
 
 
-def loader_results(passed: bool = True) -> dict[str, object]:
+TEST_HASHES = {
+    "fabric": "a" * 64,
+    "neoforge": "b" * 64,
+    "forge": "c" * 64,
+}
+
+
+def loader_results(
+    passed: bool = True,
+    *,
+    hashes: dict[str, str] = TEST_HASHES,
+    observed_seconds: float = 150.5,
+) -> dict[str, object]:
     return {
         loader: {
             "passed": passed,
             "periodic_toast_absent": passed,
+            "observed_in_world_seconds": observed_seconds,
+            "artifact_sha256": hashes[loader],
         }
         for loader in sync.EXPECTED_LOADERS
     }
 
 
-def release_document() -> dict[str, object]:
+def runtime_record(
+    minecraft_version: str,
+    *,
+    hashes: dict[str, str] = TEST_HASHES,
+) -> dict[str, object]:
     return {
+        "minecraft_version": minecraft_version,
+        "required_in_world_seconds": 120,
+        "filtered_notifications": sorted(sync.EXPECTED_NOTIFICATIONS),
+        "loaders": loader_results(hashes=hashes),
+    }
+
+
+def release_document() -> dict[str, object]:
+    document = {
         "schema_version": 1,
         "publication": {
             "id": "v1.6.0",
@@ -45,7 +72,7 @@ def release_document() -> dict[str, object]:
                     "filename": (
                         "disable_compliance_notification-v1.6.0+fabric-26.2.jar"
                     ),
-                    "sha256": "a" * 64,
+                    "sha256": TEST_HASHES["fabric"],
                     "modrinth_version_id": "fabric-version-id",
                     "modrinth_sha512": "1" * 128,
                     "curseforge_file_id": 710001,
@@ -55,7 +82,7 @@ def release_document() -> dict[str, object]:
                     "filename": (
                         "disable_compliance_notification-v1.6.0+neoforge-26.2.jar"
                     ),
-                    "sha256": "b" * 64,
+                    "sha256": TEST_HASHES["neoforge"],
                     "modrinth_version_id": "neoforge-version-id",
                     "modrinth_sha512": "2" * 128,
                     "curseforge_file_id": 710002,
@@ -65,7 +92,7 @@ def release_document() -> dict[str, object]:
                     "filename": (
                         "disable_compliance_notification-v1.6.0+forge-26.2.jar"
                     ),
-                    "sha256": "c" * 64,
+                    "sha256": TEST_HASHES["forge"],
                     "modrinth_version_id": "forge-version-id",
                     "modrinth_sha512": "3" * 128,
                     "curseforge_file_id": 710003,
@@ -74,20 +101,13 @@ def release_document() -> dict[str, object]:
             },
         },
         "runtime_verification": [
-            {
-                "minecraft_version": "26.3",
-                "loaders": loader_results(),
-            },
-            {
-                "minecraft_version": "26.2",
-                "loaders": loader_results(),
-            },
-            {
-                "minecraft_version": "27.0",
-                "loaders": loader_results(),
-            },
+            runtime_record("26.3"),
+            runtime_record("26.2"),
+            runtime_record("27.0"),
         ],
     }
+    document["desired_game_versions"] = ["26.2", "26.3", "27.0"]
+    return document
 
 
 def parsed_release() -> object:
@@ -96,16 +116,46 @@ def parsed_release() -> object:
 
 def release_document_with_versions(
     versions: list[str],
+    *,
+    document: dict[str, object] | None = None,
 ) -> dict[str, object]:
-    document = release_document()
+    document = copy.deepcopy(document or release_document())
+    hashes = {
+        loader: document["publication"]["artifacts"][loader]["sha256"]
+        for loader in sync.EXPECTED_LOADERS
+    }
     document["runtime_verification"] = [
-        {
-            "minecraft_version": version,
-            "loaders": loader_results(),
-        }
+        runtime_record(version, hashes=hashes)
         for version in versions
     ]
+    document["desired_game_versions"] = sorted(
+        versions, key=sync.version_key
+    )
     return document
+
+
+def rollover_release_document(
+    versions: list[str],
+) -> dict[str, object]:
+    document = release_document()
+    publication = document["publication"]
+    publication["id"] = "v1.6.1"
+    publication["release_version"] = "1.6.1"
+    new_hashes = {
+        "fabric": "d" * 64,
+        "neoforge": "e" * 64,
+        "forge": "f" * 64,
+    }
+    for index, loader in enumerate(sync.EXPECTED_LOADERS, start=1):
+        artifact = publication["artifacts"][loader]
+        artifact["filename"] = artifact["filename"].replace(
+            "v1.6.0", "v1.6.1"
+        )
+        artifact["sha256"] = new_hashes[loader]
+        artifact["modrinth_version_id"] = f"v1.6.1-{loader}-version-id"
+        artifact["modrinth_sha512"] = str(index + 3) * 128
+        artifact["curseforge_file_id"] += 100
+    return release_document_with_versions(versions, document=document)
 
 
 def modrinth_version(
@@ -379,6 +429,87 @@ class PublishedReleaseDataTest(unittest.TestCase):
             with self.subTest(message=message):
                 with self.assertRaisesRegex(sync.PlatformSyncError, message):
                     sync.parse_release_data(document)
+
+    def test_rejects_incomplete_or_unbound_runtime_evidence(self):
+        invalid_documents = []
+
+        short_gate = release_document()
+        short_gate["runtime_verification"][0][
+            "required_in_world_seconds"
+        ] = 119.9
+        invalid_documents.append((short_gate, "shorter than two minutes"))
+
+        wrong_notifications = release_document()
+        wrong_notifications["runtime_verification"][0][
+            "filtered_notifications"
+        ] = ["compliance.playtime.hours"]
+        invalid_documents.append(
+            (wrong_notifications, "exactly both compliance notifications")
+        )
+
+        duplicate_notification = release_document()
+        duplicate_notification["runtime_verification"][0][
+            "filtered_notifications"
+        ] = [
+            "compliance.playtime.hours",
+            "compliance.playtime.hours",
+        ]
+        invalid_documents.append(
+            (duplicate_notification, "exactly both compliance notifications")
+        )
+
+        toast_not_checked = release_document()
+        toast_not_checked["runtime_verification"][0]["loaders"]["fabric"][
+            "periodic_toast_absent"
+        ] = False
+        invalid_documents.append(
+            (toast_not_checked, "did not verify periodic toast absence")
+        )
+
+        short_observation = release_document()
+        short_observation["runtime_verification"][0]["loaders"]["forge"][
+            "observed_in_world_seconds"
+        ] = 119.9
+        invalid_documents.append(
+            (short_observation, "observation is shorter than required")
+        )
+
+        wrong_artifact = release_document()
+        wrong_artifact["runtime_verification"][0]["loaders"]["neoforge"][
+            "artifact_sha256"
+        ] = "0" * 64
+        invalid_documents.append(
+            (wrong_artifact, "wrong published artifact hash")
+        )
+
+        for document, message in invalid_documents:
+            with self.subTest(message=message):
+                with self.assertRaisesRegex(sync.PlatformSyncError, message):
+                    sync.parse_release_data(document)
+
+    def test_desired_game_versions_must_equal_derived_runtime_versions(self):
+        invalid_values = [
+            ["26.2", "27.0"],
+            ["27.0", "26.3", "26.2"],
+            ["26.2", "26.3", "26.3", "27.0"],
+            "26.2,26.3,27.0",
+        ]
+        for invalid in invalid_values:
+            document = release_document()
+            document["desired_game_versions"] = invalid
+            with self.subTest(invalid=invalid):
+                with self.assertRaisesRegex(
+                    sync.PlatformSyncError,
+                    "must exactly match the sorted runtime",
+                ):
+                    sync.parse_release_data(document)
+
+        document = release_document()
+        del document["desired_game_versions"]
+        self.assertEqual(
+            ("26.2", "26.3", "27.0"),
+            sync.parse_release_data(document).verified_minecraft_versions,
+        )
 
     def test_rejects_mutable_or_ambiguous_artifact_coordinates(self):
         invalid_documents = []
@@ -857,6 +988,125 @@ class SequentialCompatibilitySimulationTest(unittest.TestCase):
                     )
 
         self.assertEqual([], marketplace.calls)
+
+    def test_release_rollover_never_inherits_older_publication_evidence(self):
+        modrinth_base_url = "https://modrinth.test/v2"
+        curseforge_base_url = "https://curseforge.test"
+
+        old_release = sync.parse_release_data(
+            release_document_with_versions(["26.2", "26.2.1", "26.3"])
+        )
+        old_modrinth = StatefulModrinthClient(
+            old_release, modrinth_base_url
+        )
+        old_curseforge = StatefulCurseForgeClient(
+            old_release, curseforge_base_url
+        )
+        sync.sync_modrinth(
+            old_release,
+            "dummy-token",
+            old_modrinth,
+            base_url=modrinth_base_url,
+        )
+        sync.sync_curseforge(
+            old_release,
+            "dummy-token",
+            old_curseforge,
+            base_url=curseforge_base_url,
+            boundary_factory=lambda: "RolloverBoundary",
+        )
+
+        new_release = sync.parse_release_data(
+            rollover_release_document(["26.2"])
+        )
+        new_modrinth = StatefulModrinthClient(
+            new_release, modrinth_base_url
+        )
+        new_curseforge = StatefulCurseForgeClient(
+            new_release, curseforge_base_url
+        )
+        sync.sync_modrinth(
+            new_release,
+            "dummy-token",
+            new_modrinth,
+            base_url=modrinth_base_url,
+        )
+        sync.sync_curseforge(
+            new_release,
+            "dummy-token",
+            new_curseforge,
+            base_url=curseforge_base_url,
+            boundary_factory=lambda: "RolloverBoundary",
+        )
+
+        new_modrinth_ids = {
+            new_release.publication.artifacts[
+                loader
+            ].modrinth_version_id
+            for loader in sync.EXPECTED_LOADERS
+        }
+        old_modrinth_ids = {
+            old_release.publication.artifacts[
+                loader
+            ].modrinth_version_id
+            for loader in sync.EXPECTED_LOADERS
+        }
+        requested_ids = {
+            str(call["url"]).rsplit("/", 1)[1]
+            for call in new_modrinth.calls
+        }
+        self.assertEqual(new_modrinth_ids, requested_ids)
+        self.assertTrue(requested_ids.isdisjoint(old_modrinth_ids))
+        for loader in sync.EXPECTED_LOADERS:
+            self.assertEqual(
+                ["26.2"], new_modrinth.game_versions[loader]
+            )
+            self.assertEqual(
+                [
+                    new_release.publication.artifacts[
+                        loader
+                    ].curseforge_loader,
+                    "26.2",
+                ],
+                new_curseforge.game_version_names[loader],
+            )
+
+        extended_new_release = sync.parse_release_data(
+            rollover_release_document(["26.2", "26.3"])
+        )
+        sync.sync_modrinth(
+            extended_new_release,
+            "dummy-token",
+            new_modrinth,
+            base_url=modrinth_base_url,
+        )
+        sync.sync_curseforge(
+            extended_new_release,
+            "dummy-token",
+            new_curseforge,
+            base_url=curseforge_base_url,
+            boundary_factory=lambda: "RolloverBoundary",
+        )
+
+        for loader in sync.EXPECTED_LOADERS:
+            self.assertEqual(
+                ["26.2", "26.3"],
+                new_modrinth.game_versions[loader],
+            )
+            self.assertEqual(
+                [
+                    new_release.publication.artifacts[
+                        loader
+                    ].curseforge_loader,
+                    "26.2",
+                    "26.3",
+                ],
+                new_curseforge.game_version_names[loader],
+            )
+            self.assertEqual(
+                ["26.2", "26.2.1", "26.3"],
+                old_modrinth.game_versions[loader],
+            )
 
 
 if __name__ == "__main__":
