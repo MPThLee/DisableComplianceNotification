@@ -21,13 +21,9 @@ Image and quote reference: https://minecraft.wiki/w/Java_Edition_1.18.2#General
 
 Older changelog is available on [CHANGELOG.md](./CHANGELOG.md).
 
-### v1.6.0 (Minecraft 26.2+)
+### v1.6.0 (Minecraft 26.2 and later)
 
-- Fixed the Minecraft 26.2 build after the client toast-manager API changed.
-- Restored Forge (LexForge) with a native Forge client config.
-- Moved filtering to the unobfuscated `SystemToast.add` API so the same artifact can remain usable on later Minecraft releases while that API stays compatible.
-- Added deterministic toast assertions and 150-second in-world compliance gates for Fabric, NeoForge, and Forge, including an independent check that no periodic toast reaches Minecraft's `ToastManager`.
-- Replaced automatic Minecraft-version branch creation with repository-backed compatibility data and tests.
+- Updated for Minecraft 26.2, with experimental compatibility for later Minecraft versions.
 
 ### v1.5.6+
 
@@ -39,9 +35,9 @@ Older changelog is available on [CHANGELOG.md](./CHANGELOG.md).
 | -------------------- | ---------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------- |
 | **Fabric**           | :white_check_mark: Supported | :white_check_mark: YACL        | Recommended with [YACL](https://modrinth.com/mod/yacl) and [Mod Menu](https://modrinth.com/mod/modmenu) |
 | **NeoForge**         | :white_check_mark: Supported | :white_check_mark: YACL        | Recommended with [YACL](https://modrinth.com/mod/yacl)                                                  |
-| **Forge (LexForge)** | :white_check_mark: Supported | :white_check_mark: ForgeConfig | Uses Forge's built-in client config; restored for Minecraft 26.2+                                      |
+| **Forge (LexForge)** | :white_check_mark: Supported | :white_check_mark: ForgeConfig |                                                                                                         |
 
-The v1.6.0 artifacts are built and runtime-tested on Minecraft 26.2. Their loader metadata accepts 26.2 and later, so the same artifacts may remain usable on 26.3, 27.x, and later releases while the intercepted toast API stays compatible. Later versions are not considered verified until all three loader gates pass and the result is recorded in [`data/minecraft-compatibility.json`](./data/minecraft-compatibility.json).
+Version 1.6.0 supports Minecraft 26.2. It may also work on later Minecraft versions, but this compatibility is experimental and not guaranteed.
 
 ## Download
 
@@ -50,7 +46,7 @@ The v1.6.0 artifacts are built and runtime-tested on Minecraft 26.2. Their loade
 
 Older releases links are on [DOWNLOAD.md](./DOWNLOAD.md).
 
-### Latest (v1.6.0 for Minecraft 26.2)
+### Latest (v1.6.0 for Minecraft 26.2 and later)
 
 [GitHub Release](https://github.com/MPThLee/DisableComplianceNotification/releases/tag/v1.6.0) or Modrinth.
 
@@ -71,5 +67,3 @@ Recommended with [YACL](https://modrinth.com/mod/yacl).
 #### Forge
 
 [Download Directly via GitHub](https://github.com/MPThLee/DisableComplianceNotification/releases/download/v1.6.0/disable_compliance_notification-v1.6.0+forge-26.2.jar)
-
-Uses Forge's built-in client config.
