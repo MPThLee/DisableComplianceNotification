@@ -79,7 +79,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: test-logs-fabric
+          name: test-logs-fabric-${{ github.run_attempt }}
           path: |
             fabric/build/run/clientGameTest/logs/
             fabric/run/logs/
@@ -145,7 +145,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: test-logs-neoforge
+          name: test-logs-neoforge-${{ github.run_attempt }}
           path: |
             neoforge/run/logs/
             neoforge/build/client-gate.log
@@ -210,7 +210,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: test-logs-forge
+          name: test-logs-forge-${{ github.run_attempt }}
           path: |
             forge/run/logs/
             forge/build/client-gate.log

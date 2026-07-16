@@ -340,6 +340,10 @@ class ClientGateTest(unittest.TestCase):
                     f"./tools/test/run_client_gate.sh {loader} --xvfb",
                     workflow,
                 )
+                self.assertIn(
+                    f"name: test-logs-{loader}-${{{{ github.run_attempt }}}}",
+                    workflow,
+                )
         self.assertNotIn("run_client_smoke.sh", workflow)
 
 
