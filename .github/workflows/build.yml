@@ -71,7 +71,7 @@ jobs:
 
       - name: Remove gametest jar
         run: |
-          rm -f *-gametest.jar
+          rm -f -- ./*-gametest.jar
 
       - name: Release
         uses: softprops/action-gh-release@v2

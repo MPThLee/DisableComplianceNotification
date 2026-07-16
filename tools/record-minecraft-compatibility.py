@@ -94,6 +94,62 @@ def version_key(version: str) -> tuple[int, ...]:
     return tuple(int(part) for part in version.split("."))
 
 
+def current_version_is_verified(
+    data: dict[str, object], properties: dict[str, str]
+) -> bool:
+    minecraft_version = properties.get("minecraft_version")
+    release_version = properties.get("mod_version")
+    metadata = data.get("metadata_compatibility")
+    records = data.get("runtime_verification")
+    if (
+        data.get("schema_version") != 1
+        or not minecraft_version
+        or not release_version
+        or data.get("release_version") != release_version
+        or data.get("build_minecraft_version") != minecraft_version
+        or not isinstance(metadata, dict)
+        or metadata.get("minimum_version") != minecraft_version
+        or metadata.get("range_kind") != "minimum_inclusive"
+        or not isinstance(records, list)
+    ):
+        return False
+
+    matching = [
+        record
+        for record in records
+        if isinstance(record, dict)
+        and record.get("minecraft_version") == minecraft_version
+    ]
+    if len(matching) != 1:
+        return False
+    record = matching[0]
+    try:
+        date.fromisoformat(str(record["verified_on"]))
+    except (KeyError, ValueError):
+        return False
+    required = record.get("required_in_world_seconds")
+    filtered_notifications = record.get("filtered_notifications")
+    loaders = record.get("loaders")
+    if (
+        not isinstance(required, (int, float))
+        or required < MINIMUM_GATE_SECONDS
+        or not isinstance(filtered_notifications, list)
+        or set(filtered_notifications) != EXPECTED_NOTIFICATIONS
+        or not isinstance(loaders, dict)
+        or set(loaders) != EXPECTED_LOADERS
+    ):
+        return False
+    for result in loaders.values():
+        if (
+            not isinstance(result, dict)
+            or result.get("passed") is not True
+            or not isinstance(result.get("observed_in_world_seconds"), (int, float))
+            or result["observed_in_world_seconds"] < required
+        ):
+            return False
+    return True
+
+
 def update_compatibility_data(
     data: dict[str, object],
     properties: dict[str, str],
@@ -169,6 +225,11 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--data", type=Path)
     parser.add_argument("--result", action="append", type=Path, default=[])
     parser.add_argument("--verified-on")
+    parser.add_argument(
+        "--check-current",
+        action="store_true",
+        help="exit successfully only when the configured version has full stored evidence",
+    )
     return parser.parse_args(argv)
 
 
@@ -186,9 +247,19 @@ def main(argv: list[str] | None = None) -> int:
     try:
         properties = read_properties(config_path)
         minecraft_version = properties["minecraft_version"]
+        data = read_json(data_path)
+        if args.check_current:
+            if current_version_is_verified(data, properties):
+                print(f"Minecraft {minecraft_version} has complete stored gate evidence")
+                return 0
+            print(
+                f"Minecraft {minecraft_version} does not have complete stored gate evidence",
+                file=sys.stderr,
+            )
+            return 1
         gate_results = load_gate_results(result_paths, minecraft_version)
         data = update_compatibility_data(
-            read_json(data_path), properties, gate_results, verified_on
+            data, properties, gate_results, verified_on
         )
         write_json(data_path, data)
     except (CompatibilityRecordError, KeyError, OSError) as exc:

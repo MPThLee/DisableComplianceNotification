@@ -47,6 +47,14 @@ class CheckUpdateTest(unittest.TestCase):
         ):
             check_update.select_target({}, False)
 
+        with self.assertRaisesRegex(
+            check_update.UpdateCheckError, "invalid Minecraft release version"
+        ):
+            check_update.select_target(
+                {"latest": {"release": "$(unsafe)", "snapshot": "26w01a"}},
+                False,
+            )
+
     def test_periodic_workflow_tests_every_loader_before_pushing(self):
         workflow = (
             PROJECT_ROOT / ".github/workflows/check-update.yml"
@@ -54,6 +62,9 @@ class CheckUpdateTest(unittest.TestCase):
 
         self.assertIn('cron: "0 */6 * * *"', workflow)
         self.assertIn("Reject failing candidate", workflow)
+        self.assertIn("persist-credentials: false", workflow)
+        self.assertIn("contents: read", workflow)
+        self.assertIn("contents: write", workflow)
         for loader in ("fabric", "neoforge", "forge"):
             with self.subTest(loader=loader):
                 self.assertIn(
@@ -62,7 +73,9 @@ class CheckUpdateTest(unittest.TestCase):
                 )
 
         record_position = workflow.index("tools/record-minecraft-compatibility.py")
-        push_position = workflow.index('git push -u origin "$BRANCH"')
+        push_position = workflow.index(
+            'git push -u origin "HEAD:refs/heads/$TARGET_BRANCH"'
+        )
         self.assertLess(record_position, push_position)
 
 

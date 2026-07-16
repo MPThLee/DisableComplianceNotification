@@ -20,8 +20,8 @@ jobs:
       - name: Read config.properties
         id: config
         run: |
-          echo "mc_version=$(grep '^minecraft_version=' config.properties | cut -d'=' -f2)" >> $GITHUB_OUTPUT
-          echo "java_version=$(grep '^java_version=' config.properties | cut -d'=' -f2)" >> $GITHUB_OUTPUT
+          echo "mc_version=$(grep '^minecraft_version=' config.properties | cut -d'=' -f2)" >> "$GITHUB_OUTPUT"
+          echo "java_version=$(grep '^java_version=' config.properties | cut -d'=' -f2)" >> "$GITHUB_OUTPUT"
 
       - name: Test build tooling
         run: python3 -m unittest discover -s tools/test -p 'test_*.py'
@@ -84,7 +84,7 @@ jobs:
       - name: Read config.properties
         id: config
         run: |
-          echo "java_version=$(grep '^java_version=' config.properties | cut -d'=' -f2)" >> $GITHUB_OUTPUT
+          echo "java_version=$(grep '^java_version=' config.properties | cut -d'=' -f2)" >> "$GITHUB_OUTPUT"
 
       - name: Setup Java ${{ steps.config.outputs.java_version }}
         uses: actions/setup-java@v4
@@ -136,7 +136,7 @@ jobs:
       - name: Read config.properties
         id: config
         run: |
-          echo "java_version=$(grep '^java_version=' config.properties | cut -d'=' -f2)" >> $GITHUB_OUTPUT
+          echo "java_version=$(grep '^java_version=' config.properties | cut -d'=' -f2)" >> "$GITHUB_OUTPUT"
 
       - name: Setup Java ${{ steps.config.outputs.java_version }}
         uses: actions/setup-java@v4

@@ -127,8 +127,15 @@ class ClientGateTest(unittest.TestCase):
                     archive.read("assets/minecraft/regional_compliancies.json")
                 )
 
-        self.assertEqual([88, 0], metadata["pack"]["min_format"])
-        self.assertEqual(88, metadata["pack"]["max_format"])
+        pack_parts = [
+            int(part)
+            for part in gate.read_properties(PROJECT_ROOT / "config.properties")[
+                "pack_format"
+            ].split(".")
+        ]
+        expected_minor = pack_parts[1] if len(pack_parts) > 1 else 0
+        self.assertEqual([pack_parts[0], expected_minor], metadata["pack"]["min_format"])
+        self.assertEqual(pack_parts[0], metadata["pack"]["max_format"])
         self.assertEqual(2, fixture["KOR"][0]["delay"])
         self.assertEqual(1, fixture["KOR"][1]["period"])
 

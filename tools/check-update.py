@@ -97,7 +97,15 @@ def select_target(manifest: dict[str, object], snapshot: bool) -> str:
     target = latest.get(version_type)
     if not isinstance(target, str) or not target:
         raise UpdateCheckError(f"latest {version_type} not found in manifest")
+    if not snapshot:
+        validate_release_version(target)
     return target
+
+
+def validate_release_version(version: str) -> str:
+    if not re.fullmatch(r"\d+(?:\.\d+)*", version):
+        raise UpdateCheckError(f"invalid Minecraft release version: {version}")
+    return version
 
 
 def numeric_version(version: str) -> tuple[int, ...] | None:
@@ -218,7 +226,7 @@ def main(argv: list[str] | None = None) -> int:
             if not args.apply:
                 raise UpdateCheckError("--target-version requires --apply")
             manifest: dict[str, object] = {}
-            target = args.target_version
+            target = validate_release_version(args.target_version)
         else:
             manifest = load_manifest(args.manifest_file, args.timeout)
             target = select_target(manifest, args.snapshot)
@@ -228,6 +236,8 @@ def main(argv: list[str] | None = None) -> int:
             raise UpdateCheckError(
                 "config must contain minecraft_version and mod_version"
             )
+        set_output("current_version", current)
+        set_output("current_mod_version", mod_version)
 
         if not is_newer(target, current, manifest):
             message = (

@@ -6,39 +6,56 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  actions: read
+  contents: read
 
 concurrency:
   group: minecraft-update-check
   cancel-in-progress: false
 
 jobs:
-  test-candidate:
+  probe:
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    outputs:
+      base_sha: ${{ steps.plan.outputs.base_sha }}
+      candidate_mod_version: ${{ steps.plan.outputs.candidate_mod_version }}
+      candidate_version: ${{ steps.plan.outputs.candidate_version }}
+      needs_publish: ${{ steps.plan.outputs.needs_work }}
+      target_branch: ${{ steps.plan.outputs.target_branch }}
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Checkout repository without write credentials
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           fetch-depth: 0
+          persist-credentials: false
 
-      - name: Find latest Minecraft branch
+      - name: Find latest maintained Minecraft branch
         id: base
         shell: bash
+        env:
+          FALLBACK_BRANCH: ${{ github.ref_name }}
         run: |
-          LATEST=$(git branch -r --sort=-version:refname --list 'origin/mc*' | head -1 | sed 's|^ *origin/||')
-          if [ -z "$LATEST" ]; then
-            LATEST="${{ github.ref_name }}"
+          latest=$(git branch -r --sort=-version:refname --list 'origin/mc*' | head -1 | sed 's|^ *origin/||')
+          if [ -z "$latest" ]; then
+            latest="$FALLBACK_BRANCH"
           fi
-          echo "branch=$LATEST" >> "$GITHUB_OUTPUT"
-          echo "Testing from $LATEST"
+          if [[ ! "$latest" =~ ^mc[0-9]+(\.[0-9]+)*$ ]]; then
+            echo "Unsafe Minecraft branch name: $latest" >&2
+            exit 1
+          fi
+          echo "branch=$latest" >> "$GITHUB_OUTPUT"
+          echo "Testing from $latest"
 
-      - name: Checkout latest Minecraft branch
-        run: git switch --detach "origin/${{ steps.base.outputs.branch }}"
+      - name: Checkout latest maintained Minecraft branch
+        shell: bash
+        env:
+          BASE_BRANCH: ${{ steps.base.outputs.branch }}
+        run: git switch --detach "origin/$BASE_BRANCH"
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.12"
 
@@ -46,34 +63,95 @@ jobs:
         id: check
         run: python3 tools/check-update.py
 
-      - name: Check whether candidate branch already passed
-        if: steps.check.outputs.has_update == 'true'
-        id: existing
+      - name: Check stored evidence for the current branch
+        id: evidence
         shell: bash
         run: |
-          BRANCH="mc${{ steps.check.outputs.new_version }}"
-          if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-            echo "$BRANCH already exists; no candidate work is needed"
+          if python3 tools/record-minecraft-compatibility.py --check-current; then
+            echo "verified=true" >> "$GITHUB_OUTPUT"
           else
-            echo "skip=false" >> "$GITHUB_OUTPUT"
+            echo "verified=false" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Plan candidate verification
+        id: plan
+        shell: bash
+        env:
+          BASE_BRANCH: ${{ steps.base.outputs.branch }}
+          CURRENT_MOD_VERSION: ${{ steps.check.outputs.current_mod_version }}
+          CURRENT_VERSION: ${{ steps.check.outputs.current_version }}
+          HAS_UPDATE: ${{ steps.check.outputs.has_update }}
+          NEW_MOD_VERSION: ${{ steps.check.outputs.mod_version }}
+          NEW_VERSION: ${{ steps.check.outputs.new_version }}
+          VERIFIED_CURRENT: ${{ steps.evidence.outputs.verified }}
+        run: |
+          case "$HAS_UPDATE" in
+            true)
+              candidate_version="$NEW_VERSION"
+              candidate_mod_version="$NEW_MOD_VERSION"
+              needs_work=true
+              ;;
+            false)
+              candidate_version="$CURRENT_VERSION"
+              candidate_mod_version="$CURRENT_MOD_VERSION"
+              if [ "$VERIFIED_CURRENT" = true ]; then
+                needs_work=false
+              else
+                needs_work=true
+              fi
+              ;;
+            *)
+              echo "Invalid update status: $HAS_UPDATE" >&2
+              exit 1
+              ;;
+          esac
+
+          if [[ ! "$BASE_BRANCH" =~ ^mc[0-9]+(\.[0-9]+)*$ ]]; then
+            echo "Unsafe base branch: $BASE_BRANCH" >&2
+            exit 1
+          fi
+          if [[ ! "$candidate_version" =~ ^[0-9]+(\.[0-9]+)*$ ]]; then
+            echo "Unsafe candidate version: $candidate_version" >&2
+            exit 1
+          fi
+          if [[ ! "$candidate_mod_version" =~ ^[0-9]+(\.[0-9]+)*$ ]]; then
+            echo "Unsafe candidate mod version: $candidate_mod_version" >&2
+            exit 1
+          fi
+
+          {
+            echo "base_sha=$(git rev-parse HEAD)"
+            echo "candidate_mod_version=$candidate_mod_version"
+            echo "candidate_version=$candidate_version"
+            echo "has_update=$HAS_UPDATE"
+            echo "needs_work=$needs_work"
+            echo "target_branch=mc$candidate_version"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Prepare candidate dependency versions
-        if: steps.check.outputs.has_update == 'true' && steps.existing.outputs.skip == 'false'
+        if: steps.plan.outputs.has_update == 'true'
+        shell: bash
+        env:
+          CANDIDATE_VERSION: ${{ steps.plan.outputs.candidate_version }}
         run: >-
           python3 tools/check-update.py --apply
-          --target-version "${{ steps.check.outputs.new_version }}"
+          --target-version "$CANDIDATE_VERSION"
 
       - name: Read candidate Java version
-        if: steps.check.outputs.has_update == 'true' && steps.existing.outputs.skip == 'false'
+        if: steps.plan.outputs.needs_work == 'true'
         id: config
         shell: bash
-        run: echo "java_version=$(grep '^java_version=' config.properties | cut -d'=' -f2)" >> "$GITHUB_OUTPUT"
+        run: |
+          java_version=$(grep '^java_version=' config.properties | cut -d'=' -f2)
+          if [[ ! "$java_version" =~ ^[0-9]+$ ]]; then
+            echo "Invalid Java version: $java_version" >&2
+            exit 1
+          fi
+          echo "java_version=$java_version" >> "$GITHUB_OUTPUT"
 
       - name: Set up Java ${{ steps.config.outputs.java_version }}
-        if: steps.check.outputs.has_update == 'true' && steps.existing.outputs.skip == 'false'
-        uses: actions/setup-java@v4
+        if: steps.plan.outputs.needs_work == 'true'
+        uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9 # v4
         with:
           distribution: temurin
           java-version: ${{ steps.config.outputs.java_version }}
@@ -85,17 +163,20 @@ jobs:
             forge/*.gradle*
 
       - name: Set up swap space
-        if: steps.check.outputs.has_update == 'true' && steps.existing.outputs.skip == 'false'
-        uses: pierotofy/set-swap-space@v1.0
-        with:
-          swap-size-gb: 10
+        if: steps.plan.outputs.needs_work == 'true'
+        shell: bash
+        run: |
+          sudo fallocate -l 10G /swapfile-dcn
+          sudo chmod 600 /swapfile-dcn
+          sudo mkswap /swapfile-dcn
+          sudo swapon /swapfile-dcn
 
       - name: Install xvfb
-        if: steps.check.outputs.has_update == 'true' && steps.existing.outputs.skip == 'false'
+        if: steps.plan.outputs.needs_work == 'true'
         run: sudo apt-get update && sudo apt-get install -y xvfb
 
       - name: Build Fabric candidate
-        if: steps.check.outputs.has_update == 'true' && steps.existing.outputs.skip == 'false'
+        if: steps.plan.outputs.needs_work == 'true'
         id: build_fabric
         continue-on-error: true
         working-directory: fabric
@@ -111,7 +192,7 @@ jobs:
         run: ./tools/test/run_client_gate.sh fabric --xvfb
 
       - name: Build NeoForge candidate
-        if: steps.check.outputs.has_update == 'true' && steps.existing.outputs.skip == 'false'
+        if: steps.plan.outputs.needs_work == 'true'
         id: build_neoforge
         continue-on-error: true
         working-directory: neoforge
@@ -127,7 +208,7 @@ jobs:
         run: ./tools/test/run_client_gate.sh neoforge --xvfb
 
       - name: Build Forge candidate
-        if: steps.check.outputs.has_update == 'true' && steps.existing.outputs.skip == 'false'
+        if: steps.plan.outputs.needs_work == 'true'
         id: build_forge
         continue-on-error: true
         working-directory: forge
@@ -157,14 +238,38 @@ jobs:
         continue-on-error: true
         run: python3 -m unittest discover -s tools/test -p 'test_*.py'
 
-      - name: Upload candidate logs and evidence
-        if: >-
-          always() &&
-          steps.check.outputs.has_update == 'true' &&
-          steps.existing.outputs.skip == 'false'
-        uses: actions/upload-artifact@v4
+      - name: Create tested candidate patch
+        if: steps.candidate_tests.outcome == 'success'
+        id: patch
+        continue-on-error: true
+        shell: bash
+        run: |
+          git diff --binary -- config.properties README.md DOWNLOAD.md data/minecraft-compatibility.json > candidate-update.patch
+          if [ ! -s candidate-update.patch ]; then
+            echo "Passing candidate produced no repository update" >&2
+            exit 1
+          fi
+          sha256sum candidate-update.patch > candidate-update.patch.sha256
+
+      - name: Upload tested candidate patch
+        if: steps.patch.outcome == 'success'
+        id: candidate_artifact
+        continue-on-error: true
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: minecraft-${{ steps.check.outputs.new_version }}-compatibility-probe
+          name: minecraft-${{ steps.plan.outputs.candidate_version }}-tested-candidate
+          if-no-files-found: error
+          retention-days: 3
+          path: |
+            candidate-update.patch
+            candidate-update.patch.sha256
+
+      - name: Upload candidate logs and evidence
+        if: steps.plan.outputs.needs_work == 'true' && always()
+        continue-on-error: true
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: minecraft-${{ steps.plan.outputs.candidate_version }}-compatibility-probe
           if-no-files-found: warn
           retention-days: 14
           path: |
@@ -181,8 +286,7 @@ jobs:
       - name: Reject failing candidate
         if: >-
           always() &&
-          steps.check.outputs.has_update == 'true' &&
-          steps.existing.outputs.skip == 'false' &&
+          steps.plan.outputs.needs_work == 'true' &&
           (steps.build_fabric.outcome != 'success' ||
           steps.gate_fabric.outcome != 'success' ||
           steps.build_neoforge.outcome != 'success' ||
@@ -190,34 +294,105 @@ jobs:
           steps.build_forge.outcome != 'success' ||
           steps.gate_forge.outcome != 'success' ||
           steps.record.outcome != 'success' ||
-          steps.candidate_tests.outcome != 'success')
+          steps.candidate_tests.outcome != 'success' ||
+          steps.patch.outcome != 'success' ||
+          steps.candidate_artifact.outcome != 'success')
         shell: bash
+        env:
+          CANDIDATE_VERSION: ${{ steps.plan.outputs.candidate_version }}
         run: |
           {
-            echo "## Minecraft ${{ steps.check.outputs.new_version }} candidate failed"
+            echo "## Minecraft $CANDIDATE_VERSION candidate failed"
             echo
             echo "No branch or compatibility record was pushed. Inspect the uploaded loader logs and failed steps."
           } >> "$GITHUB_STEP_SUMMARY"
           exit 1
 
-      - name: Create tested Minecraft branch
-        if: >-
-          steps.check.outputs.has_update == 'true' &&
-          steps.existing.outputs.skip == 'false' &&
-          steps.candidate_tests.outcome == 'success'
-        env:
-          MC_VERSION: ${{ steps.check.outputs.new_version }}
-          MOD_VERSION: ${{ steps.check.outputs.mod_version }}
+  publish:
+    needs: probe
+    if: needs.probe.result == 'success' && needs.probe.outputs.needs_publish == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: write
+
+    steps:
+      - name: Checkout exact tested base with publish credentials
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.probe.outputs.base_sha }}
+
+      - name: Download tested candidate patch
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: minecraft-${{ needs.probe.outputs.candidate_version }}-tested-candidate
+          path: candidate-artifact
+
+      - name: Verify, commit, and push tested candidate
         shell: bash
+        env:
+          BASE_SHA: ${{ needs.probe.outputs.base_sha }}
+          CANDIDATE_MOD_VERSION: ${{ needs.probe.outputs.candidate_mod_version }}
+          CANDIDATE_VERSION: ${{ needs.probe.outputs.candidate_version }}
+          TARGET_BRANCH: ${{ needs.probe.outputs.target_branch }}
         run: |
-          BRANCH="mc${MC_VERSION}"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git switch -c "$BRANCH"
-          git add config.properties README.md DOWNLOAD.md data/minecraft-compatibility.json
-          if git diff --cached --quiet; then
-            echo "Candidate produced no repository update" >&2
+          if [[ ! "$BASE_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "Unsafe base SHA: $BASE_SHA" >&2
             exit 1
           fi
-          git commit -m "feat: update to v${MOD_VERSION} for minecraft ${MC_VERSION}"
-          git push -u origin "$BRANCH"
+          if [[ ! "$CANDIDATE_VERSION" =~ ^[0-9]+(\.[0-9]+)*$ ]]; then
+            echo "Unsafe candidate version: $CANDIDATE_VERSION" >&2
+            exit 1
+          fi
+          if [[ ! "$CANDIDATE_MOD_VERSION" =~ ^[0-9]+(\.[0-9]+)*$ ]]; then
+            echo "Unsafe candidate mod version: $CANDIDATE_MOD_VERSION" >&2
+            exit 1
+          fi
+          if [ "$TARGET_BRANCH" != "mc$CANDIDATE_VERSION" ]; then
+            echo "Unsafe target branch: $TARGET_BRANCH" >&2
+            exit 1
+          fi
+          if [ "$(git rev-parse HEAD)" != "$BASE_SHA" ]; then
+            echo "Publish checkout does not match tested base" >&2
+            exit 1
+          fi
+
+          cd candidate-artifact
+          sha256sum --check candidate-update.patch.sha256
+          cd ..
+
+          remote_target=$(git ls-remote --heads origin "refs/heads/$TARGET_BRANCH" | awk '{print $1}')
+          if [ -n "$remote_target" ] && [ "$remote_target" != "$BASE_SHA" ]; then
+            echo "Target branch changed or was not the tested base: $remote_target" >&2
+            exit 1
+          fi
+
+          git switch -c "$TARGET_BRANCH"
+          git apply --check candidate-artifact/candidate-update.patch
+          git apply --index candidate-artifact/candidate-update.patch
+
+          while IFS= read -r path; do
+            case "$path" in
+              config.properties|README.md|DOWNLOAD.md|data/minecraft-compatibility.json) ;;
+              *)
+                echo "Candidate patch contains an unexpected path: $path" >&2
+                exit 1
+                ;;
+            esac
+          done < <(git diff --cached --name-only)
+
+          if git diff --cached --quiet; then
+            echo "Candidate patch contains no repository update" >&2
+            exit 1
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "feat: update to v$CANDIDATE_MOD_VERSION for minecraft $CANDIDATE_VERSION"
+          git push -u origin "HEAD:refs/heads/$TARGET_BRANCH"
+
+          {
+            echo "## Minecraft $CANDIDATE_VERSION passed"
+            echo
+            echo "All Fabric, NeoForge, and Forge gates passed; pushed $TARGET_BRANCH."
+          } >> "$GITHUB_STEP_SUMMARY"

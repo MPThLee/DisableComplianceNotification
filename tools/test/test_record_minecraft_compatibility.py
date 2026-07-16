@@ -74,6 +74,18 @@ class RecordMinecraftCompatibilityTest(unittest.TestCase):
         self.assertEqual(record.EXPECTED_LOADERS, set(candidate["loaders"]))
         self.assertEqual(150.5, candidate["loaders"]["fabric"]["observed_in_world_seconds"])
 
+    def test_current_attestation_requires_matching_complete_evidence(self):
+        data = json.loads(
+            (PROJECT_ROOT / "data/minecraft-compatibility.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        properties = record.read_properties(PROJECT_ROOT / "config.properties")
+
+        self.assertTrue(record.current_version_is_verified(data, properties))
+        data["runtime_verification"][0]["loaders"].pop("forge")
+        self.assertFalse(record.current_version_is_verified(data, properties))
+
     def test_result_loading_requires_every_loader_and_two_minutes(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
             paths = []
