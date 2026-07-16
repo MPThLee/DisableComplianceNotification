@@ -57,7 +57,7 @@ compliance.playtime.hours
 compliance.playtime.greaterThan24Hours
 ```
 
-The first notification repeats every minute and the second has a two-minute delay. The gate also requires the exact `KOR` initialization marker, positive proof that Minecraft reloaded `file/dcn-compliance-gate.zip`, and an explicit `DCN compliance gate entered world` marker. A client crash, startup timeout, early exit, main-menu-only run, incompatible test pack, missing mixin, or unfiltered notification therefore fails the gate. Full console output is retained at `<loader>/build/client-gate.log`.
+The first notification repeats every minute and the second has a two-minute delay. The gate also requires the exact `KOR` initialization marker, positive proof that Minecraft reloaded `file/dcn-compliance-gate.zip`, and an explicit `DCN compliance gate entered world` marker. Independently of the mod's filter log, the dev-only bootstrap polls Minecraft's real `ToastManager` throughout the interval and fails if a periodic toast is ever present. A client crash, startup timeout, early exit, main-menu-only run, incompatible test pack, missing mixin, unfiltered notification, or actual periodic-toast enqueue therefore fails the gate. Full console output and machine-readable evidence are retained at `<loader>/build/client-gate.log` and `<loader>/build/client-gate-result.json`.
 
 ## Other Checks
 
@@ -88,6 +88,7 @@ python3 -m unittest discover -s tools/test -p 'test_*.py'
 | Deterministic non-periodic, filtered, unfiltered, and enqueue assertions | Yes | No | No |
 | Run at least two minutes inside a singleplayer world | Yes | Yes | Yes |
 | Require both real compliance notifications to be filtered | Yes | Yes | Yes |
+| Independently require no periodic toast in `ToastManager` | Yes | Yes | Yes |
 
 The Fabric deterministic test normally finishes a few seconds after Minecraft starts. The separate production gates exercise the regional timer on all three loaders. CI retains client logs even when a task fails.
 

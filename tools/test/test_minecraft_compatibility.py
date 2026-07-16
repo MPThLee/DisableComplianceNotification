@@ -63,6 +63,7 @@ class MinecraftCompatibilityDataTest(unittest.TestCase):
                 for loader, result in record["loaders"].items():
                     with self.subTest(minecraft_version=version, loader=loader):
                         self.assertIs(result["passed"], True)
+                        self.assertIs(result["periodic_toast_absent"], True)
                         self.assertGreaterEqual(
                             result["observed_in_world_seconds"],
                             record["required_in_world_seconds"],

@@ -26,7 +26,7 @@ Older changelog is available on [CHANGELOG.md](./CHANGELOG.md).
 - Fixed the Minecraft 26.2 build after the client toast-manager API changed.
 - Restored Forge (LexForge) with a native Forge client config.
 - Moved filtering to the unobfuscated `SystemToast.add` API so the same artifact can remain usable on later Minecraft releases while that API stays compatible.
-- Added deterministic toast assertions and 150-second in-world compliance gates for Fabric, NeoForge, and Forge.
+- Added deterministic toast assertions and 150-second in-world compliance gates for Fabric, NeoForge, and Forge, including an independent check that no periodic toast reaches Minecraft's `ToastManager`.
 - Replaced automatic Minecraft-version branch creation with repository-backed compatibility data and tests.
 
 ### v1.5.6+

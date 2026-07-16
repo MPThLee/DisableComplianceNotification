@@ -26,6 +26,12 @@ INTEGRATED_SERVER_MARKER = "Starting integrated minecraft server version"
 PLAYER_JOINED_MARKER = " joined the game"
 WORLD_JOINED_MARKER = "DCN compliance gate entered world:"
 WORLD_START_FAILED_MARKER = "DCN compliance gate failed to enter a singleplayer world"
+PERIODIC_TOAST_OBSERVED_MARKER = (
+    "DCN compliance gate observed a periodic toast in ToastManager"
+)
+NO_PERIODIC_TOAST_MARKER = (
+    "DCN compliance gate verified no periodic toast was present in ToastManager"
+)
 FILTERED_NOTIFICATION_MARKERS = {
     "hourly": (
         "title='compliance.playtime.hours', "
@@ -45,6 +51,7 @@ FILTERED_NOTIFICATION_TRANSLATION_KEYS = {
 MINIMUM_GATE_RUNTIME_SECONDS = 120
 DEFAULT_GATE_RUNTIME_SECONDS = 150
 DEFAULT_STARTUP_TIMEOUT_SECONDS = 300
+TOAST_EVIDENCE_GRACE_SECONDS = 10
 GATE_PACK_FILENAME = "dcn-compliance-gate.zip"
 GATE_PACK_ID = f"file/{GATE_PACK_FILENAME}"
 GATE_RESULT_FILENAME = "client-gate-result.json"
@@ -140,6 +147,25 @@ def create_gate_pack(project_root: Path, destination: Path) -> None:
     temporary.replace(destination)
 
 
+def remove_generated_world(
+    world_path: Path,
+    stable_absence_seconds: float = 2.0,
+    timeout_seconds: float = 15.0,
+) -> None:
+    deadline = time.monotonic() + timeout_seconds
+    absent_since: float | None = None
+    while time.monotonic() < deadline:
+        if world_path.exists():
+            shutil.rmtree(world_path)
+            absent_since = None
+        elif absent_since is None:
+            absent_since = time.monotonic()
+        elif time.monotonic() - absent_since >= stable_absence_seconds:
+            return
+        time.sleep(0.05)
+    raise RuntimeError(f"generated gate world kept reappearing: {world_path}")
+
+
 @contextmanager
 def prepared_gate_workspace(
     project_root: Path, loader_dir: Path, world_name: str
@@ -188,8 +214,7 @@ def prepared_gate_workspace(
             else:
                 config_path.parent.mkdir(parents=True, exist_ok=True)
                 config_path.write_bytes(original_config)
-        if world_path.exists():
-            shutil.rmtree(world_path)
+        remove_generated_world(world_path)
 
 
 @dataclass
@@ -200,6 +225,8 @@ class GateState:
     player_joined: bool = False
     world_joined_at: float | None = None
     world_start_failed: bool = False
+    periodic_toast_observed: bool = False
+    no_periodic_toast_verified: bool = False
     filtered_notifications: set[str] = field(default_factory=set)
     lock: threading.Lock = field(default_factory=threading.Lock, repr=False)
 
@@ -229,6 +256,18 @@ class GateState:
             if not self.world_start_failed and WORLD_START_FAILED_MARKER in line:
                 self.world_start_failed = True
                 milestone = True
+            if (
+                not self.periodic_toast_observed
+                and PERIODIC_TOAST_OBSERVED_MARKER in line
+            ):
+                self.periodic_toast_observed = True
+                milestone = True
+            if (
+                not self.no_periodic_toast_verified
+                and NO_PERIODIC_TOAST_MARKER in line
+            ):
+                self.no_periodic_toast_verified = True
+                milestone = True
             if self.world_joined_at is not None:
                 for name, marker in FILTERED_NOTIFICATION_MARKERS.items():
                     if marker in line and name not in self.filtered_notifications:
@@ -238,7 +277,17 @@ class GateState:
 
     def snapshot(
         self,
-    ) -> tuple[float | None, bool, bool, bool, float | None, bool, set[str]]:
+    ) -> tuple[
+        float | None,
+        bool,
+        bool,
+        bool,
+        float | None,
+        bool,
+        bool,
+        bool,
+        set[str],
+    ]:
         with self.lock:
             return (
                 self.initialized_at,
@@ -247,14 +296,56 @@ class GateState:
                 self.player_joined,
                 self.world_joined_at,
                 self.world_start_failed,
+                self.periodic_toast_observed,
+                self.no_periodic_toast_verified,
                 set(self.filtered_notifications),
             )
 
 
-def _terminate_process_group(process: subprocess.Popen[str]) -> None:
-    process_group_id = process.pid
+def _process_groups_from_table(root_pid: int, process_table: str) -> set[int]:
+    processes: dict[int, tuple[int, int]] = {}
+    for line in process_table.splitlines():
+        fields = line.split()
+        if len(fields) != 3:
+            continue
+        try:
+            pid, parent_pid, process_group_id = (int(field) for field in fields)
+        except ValueError:
+            continue
+        processes[pid] = (parent_pid, process_group_id)
 
-    def group_exists() -> bool:
+    descendants = {root_pid}
+    changed = True
+    while changed:
+        changed = False
+        for pid, (parent_pid, _) in processes.items():
+            if parent_pid in descendants and pid not in descendants:
+                descendants.add(pid)
+                changed = True
+    return {
+        process_group_id
+        for pid, (_, process_group_id) in processes.items()
+        if pid in descendants and process_group_id > 0
+    } | {root_pid}
+
+
+def _descendant_process_groups(root_pid: int) -> set[int]:
+    try:
+        result = subprocess.run(
+            ["ps", "-axo", "pid=,ppid=,pgid="],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except (OSError, subprocess.CalledProcessError):
+        return {root_pid}
+    return _process_groups_from_table(root_pid, result.stdout)
+
+
+def _terminate_process_group(process: subprocess.Popen[str]) -> None:
+    process_group_ids = _descendant_process_groups(process.pid)
+
+    def group_exists(process_group_id: int) -> bool:
         process.poll()
         try:
             os.killpg(process_group_id, 0)
@@ -269,14 +360,24 @@ def _terminate_process_group(process: subprocess.Popen[str]) -> None:
         (signal.SIGTERM, 5),
         (signal.SIGKILL, 5),
     ):
-        if not group_exists():
+        process_group_ids.update(_descendant_process_groups(process.pid))
+        active_groups = {
+            process_group_id
+            for process_group_id in process_group_ids
+            if group_exists(process_group_id)
+        }
+        if not active_groups:
             break
-        try:
-            os.killpg(process_group_id, sent_signal)
-        except ProcessLookupError:
-            break
+        for process_group_id in sorted(active_groups, reverse=True):
+            try:
+                os.killpg(process_group_id, sent_signal)
+            except ProcessLookupError:
+                continue
         deadline = time.monotonic() + timeout
-        while group_exists() and time.monotonic() < deadline:
+        while (
+            any(group_exists(group_id) for group_id in active_groups)
+            and time.monotonic() < deadline
+        ):
             time.sleep(0.1)
 
     try:
@@ -298,6 +399,7 @@ def write_gate_result(
     requested_runtime_seconds: int,
     observed_runtime_seconds: float,
     filtered: set[str],
+    periodic_toast_absent: bool,
 ) -> dict[str, object]:
     result = {
         "schema_version": 1,
@@ -309,6 +411,7 @@ def write_gate_result(
         "filtered_notifications": sorted(
             FILTERED_NOTIFICATION_TRANSLATION_KEYS[name] for name in filtered
         ),
+        "periodic_toast_absent": periodic_toast_absent,
         "passed": True,
     }
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -355,7 +458,8 @@ def run_gate(
     world_name = f"dcn_compliance_gate_{os.getpid()}_{int(time.time())}"
     environment["_JAVA_OPTIONS"] = (
         f"{environment['_JAVA_OPTIONS']} -Ddcn.client.gate=true "
-        f"-Ddcn.client.gate.worldName={world_name}"
+        f"-Ddcn.client.gate.worldName={world_name} "
+        f"-Ddcn.client.gate.runtimeSeconds={runtime_seconds}"
     )
 
     state = GateState()
@@ -406,6 +510,8 @@ def run_gate(
                         player_joined,
                         world_joined_at,
                         world_start_failed,
+                        periodic_toast_observed,
+                        no_periodic_toast_verified,
                         filtered,
                     ) = state.snapshot()
                     return_code = process.poll()
@@ -416,6 +522,9 @@ def run_gate(
                         break
                     if world_start_failed:
                         failure = "dev bootstrap failed to enter a singleplayer world"
+                        break
+                    if periodic_toast_observed:
+                        failure = "ToastManager contained a periodic toast after world entry"
                         break
                     if world_joined_at is None:
                         if now - started_at >= startup_timeout_seconds:
@@ -432,7 +541,13 @@ def run_gate(
                             break
                     else:
                         world_runtime = now - world_joined_at
-                        if world_runtime >= runtime_seconds:
+                        toast_evidence_timed_out = (
+                            world_runtime
+                            >= runtime_seconds + TOAST_EVIDENCE_GRACE_SECONDS
+                        )
+                        if world_runtime >= runtime_seconds and (
+                            no_periodic_toast_verified or toast_evidence_timed_out
+                        ):
                             missing = set(FILTERED_NOTIFICATION_MARKERS) - filtered
                             if initialized_at is None:
                                 failure = "exact KOR mod-initialization marker was not observed"
@@ -442,6 +557,10 @@ def run_gate(
                                 failure = "integrated server start was not observed"
                             elif not player_joined:
                                 failure = "player join was not observed"
+                            elif not no_periodic_toast_verified:
+                                failure = (
+                                    "independent ToastManager absence marker was not observed"
+                                )
                             elif missing:
                                 failure = "missing filtered notifications: " + ", ".join(
                                     sorted(missing)
@@ -456,6 +575,7 @@ def run_gate(
                             f"server_started={integrated_server_started}, "
                             f"player_joined={player_joined}, "
                             f"world_joined={world_joined_at is not None}, "
+                            f"toast_absent={no_periodic_toast_verified}, "
                             f"runtime={runtime}/{runtime_seconds}s, "
                             f"filtered={len(filtered)}/{len(FILTERED_NOTIFICATION_MARKERS)}",
                             flush=True,
@@ -473,6 +593,8 @@ def run_gate(
                     player_joined,
                     world_joined_at,
                     world_start_failed,
+                    periodic_toast_observed,
+                    no_periodic_toast_verified,
                     filtered,
                 ) = state.snapshot()
                 world_runtime = (
@@ -496,6 +618,7 @@ def run_gate(
                     runtime_seconds,
                     world_runtime,
                     filtered,
+                    no_periodic_toast_verified and not periodic_toast_observed,
                 )
         finally:
             if process is not None:

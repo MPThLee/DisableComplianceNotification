@@ -26,6 +26,7 @@ def gate_result(loader: str, version: str = "26.3") -> dict[str, object]:
         "requested_in_world_seconds": 150,
         "observed_in_world_seconds": 150.5,
         "filtered_notifications": sorted(record.EXPECTED_NOTIFICATIONS),
+        "periodic_toast_absent": True,
         "passed": True,
     }
 
@@ -73,6 +74,7 @@ class RecordMinecraftCompatibilityTest(unittest.TestCase):
         candidate = updated["runtime_verification"][-1]
         self.assertEqual(record.EXPECTED_LOADERS, set(candidate["loaders"]))
         self.assertEqual(150.5, candidate["loaders"]["fabric"]["observed_in_world_seconds"])
+        self.assertIs(candidate["loaders"]["fabric"]["periodic_toast_absent"], True)
 
     def test_current_attestation_requires_matching_complete_evidence(self):
         data = json.loads(

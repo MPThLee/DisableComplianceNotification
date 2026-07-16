@@ -4,6 +4,8 @@ import importlib.util
 import json
 import sys
 import tempfile
+import threading
+import time
 import unittest
 import zipfile
 from pathlib import Path
@@ -73,6 +75,8 @@ class ClientGateTest(unittest.TestCase):
             player_joined,
             world_joined_at,
             world_start_failed,
+            periodic_toast_observed,
+            no_periodic_toast_verified,
             filtered,
         ) = state.snapshot()
         self.assertEqual(10.0, initialized_at)
@@ -81,6 +85,8 @@ class ClientGateTest(unittest.TestCase):
         self.assertTrue(player_joined)
         self.assertEqual(11.0, world_joined_at)
         self.assertFalse(world_start_failed)
+        self.assertFalse(periodic_toast_observed)
+        self.assertFalse(no_periodic_toast_verified)
         self.assertEqual({"hourly"}, filtered)
 
         self.assertTrue(
@@ -88,8 +94,11 @@ class ClientGateTest(unittest.TestCase):
         )
         self.assertEqual(
             {"hourly", "delayed"},
-            state.snapshot()[6],
+            state.snapshot()[8],
         )
+
+        self.assertTrue(state.observe(gate.NO_PERIODIC_TOAST_MARKER, observed_at=161.0))
+        self.assertTrue(state.snapshot()[7])
 
     def test_gate_rejects_the_wrong_locale_and_missing_pack(self):
         state = gate.GateState()
@@ -107,7 +116,7 @@ class ClientGateTest(unittest.TestCase):
             )
         )
         self.assertEqual(
-            (None, False, False, False, None, False, set()),
+            (None, False, False, False, None, False, False, False, set()),
             state.snapshot(),
         )
 
@@ -115,6 +124,14 @@ class ClientGateTest(unittest.TestCase):
         state = gate.GateState()
         self.assertTrue(state.observe(gate.WORLD_START_FAILED_MARKER, observed_at=10.0))
         self.assertTrue(state.snapshot()[5])
+
+    def test_gate_detects_a_periodic_toast_in_the_real_manager(self):
+        state = gate.GateState()
+        self.assertTrue(state.observe(gate.WORLD_JOINED_MARKER, observed_at=10.0))
+        self.assertTrue(
+            state.observe(gate.PERIODIC_TOAST_OBSERVED_MARKER, observed_at=20.0)
+        )
+        self.assertTrue(state.snapshot()[6])
 
     def test_generated_pack_uses_the_configured_pack_format_and_fixture(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -160,6 +177,7 @@ class ClientGateTest(unittest.TestCase):
                 150,
                 150.64,
                 {"hourly", "delayed"},
+                True,
             )
 
             self.assertEqual(result, json.loads(result_path.read_text(encoding="utf-8")))
@@ -173,6 +191,7 @@ class ClientGateTest(unittest.TestCase):
                 ],
                 result["filtered_notifications"],
             )
+            self.assertIs(result["periodic_toast_absent"], True)
             self.assertIs(result["passed"], True)
 
     def test_workspace_restores_files_and_removes_the_disposable_world(self):
@@ -202,6 +221,42 @@ class ClientGateTest(unittest.TestCase):
                 (game_dir / "resourcepacks" / gate.GATE_PACK_FILENAME).exists()
             )
 
+    def test_world_cleanup_removes_a_late_shutdown_save(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            world_path = Path(temporary_directory) / "late_save"
+            world_path.mkdir()
+
+            def recreate_after_first_removal() -> None:
+                while world_path.exists():
+                    time.sleep(0.01)
+                world_path.mkdir()
+                (world_path / "level.dat").write_bytes(b"late shutdown save")
+
+            writer = threading.Thread(target=recreate_after_first_removal)
+            writer.start()
+            gate.remove_generated_world(
+                world_path,
+                stable_absence_seconds=0.1,
+                timeout_seconds=2,
+            )
+            writer.join(timeout=1)
+
+            self.assertFalse(writer.is_alive())
+            self.assertFalse(world_path.exists())
+
+    def test_process_tree_finds_detached_gradle_daemon_group(self):
+        process_table = """
+          100     1   100
+          110   100   110
+          120   110   110
+          999     1   999
+        """
+
+        self.assertEqual(
+            {100, 110},
+            gate._process_groups_from_table(100, process_table),
+        )
+
     def test_dev_bootstrap_is_excluded_from_every_production_jar(self):
         exclusion = (
             "exclude 'dev/mpthlee/minecraft/disable_compliance_notification/test/**'"
@@ -213,6 +268,15 @@ class ClientGateTest(unittest.TestCase):
                 )
                 self.assertIn("../src/clientgate/java", build_script)
                 self.assertIn(exclusion, build_script)
+
+        bootstrap = (
+            PROJECT_ROOT
+            / "src/clientgate/java/dev/mpthlee/minecraft/disable_compliance_notification"
+            / "test/ClientGateBootstrap.java"
+        ).read_text(encoding="utf-8")
+        self.assertIn("toastManager().getToast", bootstrap)
+        self.assertIn("dcn.client.gate.runtimeSeconds", bootstrap)
+        self.assertIn(gate.NO_PERIODIC_TOAST_MARKER, bootstrap)
 
     def test_ci_runs_the_gate_for_every_loader(self):
         workflow = (PROJECT_ROOT / ".github/workflows/test.yml").read_text(

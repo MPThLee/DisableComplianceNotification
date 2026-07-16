@@ -78,6 +78,10 @@ def load_gate_results(
             raise CompatibilityRecordError(
                 f"gate result does not contain both compliance notifications: {path}"
             )
+        if result.get("periodic_toast_absent") is not True:
+            raise CompatibilityRecordError(
+                f"gate result did not independently verify toast absence: {path}"
+            )
         results[str(loader)] = result
 
     missing = EXPECTED_LOADERS - set(results)
@@ -143,6 +147,7 @@ def current_version_is_verified(
         if (
             not isinstance(result, dict)
             or result.get("passed") is not True
+            or result.get("periodic_toast_absent") is not True
             or not isinstance(result.get("observed_in_world_seconds"), (int, float))
             or result["observed_in_world_seconds"] < required
         ):
@@ -186,6 +191,7 @@ def update_compatibility_data(
                 "observed_in_world_seconds": gate_results[loader][
                     "observed_in_world_seconds"
                 ],
+                "periodic_toast_absent": True,
                 "passed": True,
             }
             for loader in sorted(EXPECTED_LOADERS)

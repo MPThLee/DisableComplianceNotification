@@ -17,15 +17,18 @@
       ],
       "loaders": {
         "fabric": {
-          "observed_in_world_seconds": 150.6,
+          "observed_in_world_seconds": 150.5,
+          "periodic_toast_absent": true,
           "passed": true
         },
         "neoforge": {
           "observed_in_world_seconds": 150.6,
+          "periodic_toast_absent": true,
           "passed": true
         },
         "forge": {
-          "observed_in_world_seconds": 150.7,
+          "observed_in_world_seconds": 150.6,
+          "periodic_toast_absent": true,
           "passed": true
         }
       }

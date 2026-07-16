@@ -7,7 +7,7 @@
 - Restored Forge (LexForge) support with its native client configuration, alongside Fabric and NeoForge.
 - Declared an open Minecraft compatibility range starting at 26.2 for all three loaders. Minecraft 26.2 is runtime-verified; later releases remain provisional until their gates pass.
 - Added deterministic Fabric toast-enqueue assertions and 150-second integrated singleplayer gates for Fabric, NeoForge, and Forge.
-- Added generated compliance-resource-pack fixtures, exact post-world timer checks, and cleanup/restoration checks for client gate runs.
+- Added generated compliance-resource-pack fixtures, exact post-world timer checks, independent `ToastManager` absence verification, and cleanup/restoration checks for client gate runs.
 - Added Forge build, test, artifact, release, and publishing coverage to GitHub Actions.
 - Replaced scheduled Minecraft-version branch creation with repository-backed compatibility evidence and deterministic CI validation.
 

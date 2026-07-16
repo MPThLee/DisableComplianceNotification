@@ -2,6 +2,7 @@ package dev.mpthlee.minecraft.disable_compliance_notification.test;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.toasts.SystemToast;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.gui.screens.worldselection.CreateWorldScreen;
 import net.minecraft.network.chat.contents.TranslatableContents;
@@ -17,6 +18,12 @@ public final class ClientGateBootstrap {
     private static final Logger LOGGER = LogManager.getLogger("ClientGateBootstrap");
     private static final AtomicBoolean STARTED = new AtomicBoolean();
     private static final long WORLD_START_TIMEOUT_SECONDS = 180;
+    private static final long MINIMUM_GATE_RUNTIME_SECONDS = 120;
+    private static final long DEFAULT_GATE_RUNTIME_SECONDS = 150;
+    private static final String TOAST_OBSERVED_MARKER =
+            "DCN compliance gate observed a periodic toast in ToastManager";
+    private static final String NO_TOAST_MARKER =
+            "DCN compliance gate verified no periodic toast was present in ToastManager";
 
     private ClientGateBootstrap() {
     }
@@ -72,13 +79,47 @@ public final class ClientGateBootstrap {
             });
 
             waitFor(client, () -> client.level != null && client.player != null);
+            runOnClient(client, () -> {
+                client.gui.toastManager().clear();
+                return null;
+            });
             LOGGER.info(
                     "DCN compliance gate entered world: {}",
                     System.getProperty("dcn.client.gate.worldName")
             );
+            verifyNoPeriodicToast(client);
         } catch (Throwable throwable) {
             LOGGER.error("DCN compliance gate failed to enter a singleplayer world", throwable);
         }
+    }
+
+    private static void verifyNoPeriodicToast(Minecraft client) throws Exception {
+        long runtimeSeconds = Long.getLong(
+                "dcn.client.gate.runtimeSeconds",
+                DEFAULT_GATE_RUNTIME_SECONDS
+        );
+        if (runtimeSeconds < MINIMUM_GATE_RUNTIME_SECONDS) {
+            throw new IllegalStateException(
+                    "dcn.client.gate.runtimeSeconds must be at least "
+                            + MINIMUM_GATE_RUNTIME_SECONDS
+            );
+        }
+
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(runtimeSeconds);
+        while (System.nanoTime() < deadline) {
+            boolean periodicToastPresent = runOnClient(client, () ->
+                    client.gui.toastManager().getToast(
+                            SystemToast.class,
+                            SystemToast.SystemToastId.PERIODIC_NOTIFICATION
+                    ) != null
+            );
+            if (periodicToastPresent) {
+                LOGGER.error(TOAST_OBSERVED_MARKER);
+                return;
+            }
+            Thread.sleep(50);
+        }
+        LOGGER.info(NO_TOAST_MARKER);
     }
 
     private static boolean isCreateWorldButton(Button button) {
