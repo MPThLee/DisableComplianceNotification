@@ -73,6 +73,8 @@ def record(preparation, gate, outcome, run_url, log=""):
         result["reason"] = "Runtime check failed" if result["status"] == "failed" else "Runtime setup incomplete"
         if re.search(r"\bbuild/resources/main is not a valid mod file", log):
             result.update(status="error", reason="Test harness resources were rejected")
+        if "Failed to create backend OpenGL" in log and "Failed to create backend Vulkan" in log:
+            result.update(status="error", reason="Runner graphics initialization failed")
         if outcome == "success" and gate:
             valid = (
                 gate.get("passed") is True and gate.get("periodic_toast_absent") is True

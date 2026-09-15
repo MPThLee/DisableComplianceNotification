@@ -92,13 +92,16 @@ jobs:
           sudo chmod 600 /swapfile-dcn
           sudo mkswap /swapfile-dcn
           sudo swapon /swapfile-dcn
-          sudo apt-get update && sudo apt-get install -y xvfb
+          sudo apt-get update
+          sudo apt-get install -y xvfb libgl1-mesa-dri libglx-mesa0 libegl-mesa0 mesa-vulkan-drivers
       - name: Check real notifications and supported config integration
         id: gate
         timeout-minutes: 20
         env:
           LOADER: ${{ matrix.loader }}
           MODE: ${{ matrix.mode }}
+          LIBGL_ALWAYS_SOFTWARE: "1"
+          SDL_VIDEO_FORCE_EGL: "1"
         run: |
           chmod +x "$LOADER/gradlew"
           args=()

@@ -9,6 +9,10 @@ on:
       - mc*
   workflow_dispatch:
 
+env:
+  LIBGL_ALWAYS_SOFTWARE: "1"
+  SDL_VIDEO_FORCE_EGL: "1"
+
 jobs:
   test-fabric:
     runs-on: ubuntu-latest
@@ -45,8 +49,8 @@ jobs:
           sudo mkswap /swapfile-dcn
           sudo swapon /swapfile-dcn
 
-      - name: Install xvfb
-        run: sudo apt-get update && sudo apt-get install -y xvfb
+      - name: Install graphics libraries
+        run: sudo apt-get update && sudo apt-get install -y xvfb libgl1-mesa-dri libglx-mesa0 libegl-mesa0 mesa-vulkan-drivers
 
       - name: Build mod
         working-directory: fabric
@@ -118,8 +122,8 @@ jobs:
           sudo mkswap /swapfile-dcn
           sudo swapon /swapfile-dcn
 
-      - name: Install xvfb
-        run: sudo apt-get update && sudo apt-get install -y xvfb
+      - name: Install graphics libraries
+        run: sudo apt-get update && sudo apt-get install -y xvfb libgl1-mesa-dri libglx-mesa0 libegl-mesa0 mesa-vulkan-drivers
 
       - name: Build mod
         working-directory: neoforge
@@ -183,8 +187,8 @@ jobs:
           sudo mkswap /swapfile-dcn
           sudo swapon /swapfile-dcn
 
-      - name: Install xvfb
-        run: sudo apt-get update && sudo apt-get install -y xvfb
+      - name: Install graphics libraries
+        run: sudo apt-get update && sudo apt-get install -y xvfb libgl1-mesa-dri libglx-mesa0 libegl-mesa0 mesa-vulkan-drivers
 
       - name: Build mod
         working-directory: forge

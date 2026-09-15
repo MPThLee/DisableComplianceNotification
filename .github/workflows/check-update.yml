@@ -154,6 +154,9 @@ jobs:
 
   verify:
     name: Verify ${{ matrix.minecraft_version }} / ${{ matrix.loader }}
+    env:
+      LIBGL_ALWAYS_SOFTWARE: "1"
+      SDL_VIDEO_FORCE_EGL: "1"
     needs: probe
     if: >-
       needs.probe.result == 'success' &&
@@ -244,8 +247,8 @@ jobs:
           sudo mkswap /swapfile-dcn
           sudo swapon /swapfile-dcn
 
-      - name: Install xvfb
-        run: sudo apt-get update && sudo apt-get install -y xvfb
+      - name: Install graphics libraries
+        run: sudo apt-get update && sudo apt-get install -y xvfb libgl1-mesa-dri libglx-mesa0 libegl-mesa0 mesa-vulkan-drivers
 
       - name: Build ${{ matrix.loader }} for Minecraft ${{ matrix.minecraft_version }}
         working-directory: candidate/${{ matrix.loader }}
