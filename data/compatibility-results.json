@@ -80,15 +80,33 @@
                     "sha512": "eeaa16bc7abc6e059aad2094d2e27ceb37a9d529ed5f30a2a731bf162f164dcf5b8729316d251314e90358b46ceb178358f1600b27b9392fcb6423678f148d60"
                   }
                 },
-                "status": "error",
+                "status": "failed",
                 "channel": "stable",
                 "released_at": "2026-06-16T12:03:33+00:00",
                 "runtime": {
                   "minecraft_version": "26.2",
                   "neoforge_version": "26.2.0.88"
                 },
-                "run_url": "",
-                "reason": "NeoForge setup failed: neoFormRecompile"
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/34929353555",
+                "reason": "Runtime check failed"
+              },
+              "core": {
+                "publication": "1.6.0",
+                "build_minecraft_version": "26.2",
+                "artifact_sha256": "d81e67efa7cac1858b1451660cd10513990a4c078d6cf0ba3fc8f6f020483501",
+                "minecraft_version": "26.2",
+                "loader": "neoforge",
+                "mode": "core",
+                "dependencies": {},
+                "status": "failed",
+                "channel": "stable",
+                "released_at": "2026-06-16T12:03:33+00:00",
+                "runtime": {
+                  "minecraft_version": "26.2",
+                  "neoforge_version": "26.2.0.88"
+                },
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/34929353555",
+                "reason": "Runtime check failed"
               }
             },
             "forge": {
@@ -100,15 +118,15 @@
                 "loader": "forge",
                 "mode": "core",
                 "dependencies": {},
-                "status": "failed",
+                "status": "passed",
                 "channel": "stable",
                 "released_at": "2026-06-16T12:03:33+00:00",
                 "runtime": {
                   "minecraft_version": "26.2",
                   "forge_version": "65.1.3"
                 },
-                "run_url": "",
-                "reason": "Runtime crash: Forge LootModifierManager was not initialized"
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/34929353555",
+                "observed_seconds": 150.6
               }
             }
           }
