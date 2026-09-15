@@ -922,6 +922,10 @@ def sync_curseforge(
                 for name in (artifact.curseforge_loader, *release.versions_for(loader))
             ],
         }
+        print(f"CurseForge {loader}: " + ", ".join(
+            f"{name}={available_versions[name]}"
+            for name in (artifact.curseforge_loader, *release.versions_for(loader))
+        ), flush=True)
         boundary = boundary_factory()
         response = client.request_json(
             "POST",
