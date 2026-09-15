@@ -88,7 +88,6 @@ class CheckUpdateTest(unittest.TestCase):
             re.MULTILINE,
         )
         expected_jobs = (
-            "try_version",
             "probe",
             "verify",
             "aggregate",
@@ -96,6 +95,7 @@ class CheckUpdateTest(unittest.TestCase):
             "sync_modrinth",
             "sync_curseforge",
             "record_marketplace_sync",
+            "compatibility_report",
         )
         self.assertEqual(list(expected_jobs), names)
 
@@ -163,7 +163,7 @@ class CheckUpdateTest(unittest.TestCase):
         self.assertNotIn("check-update.py --apply", workflow)
 
         for uses_line in re.findall(r"^\s*uses:\s*(.+)$", workflow, re.MULTILINE):
-            if uses_line == "./.github/workflows/test.yml":
+            if uses_line == "./.github/workflows/compatibility.yml":
                 continue
             with self.subTest(action=uses_line):
                 self.assertRegex(uses_line, r"@[0-9a-f]{40}(?:\s+#.*)?$")

@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       minecraft_version:
-        description: "Optional exact Minecraft version to test the published JAR against"
+        description: "Exact Minecraft version(s), comma-separated; blank checks stable releases"
         required: false
         default: ""
         type: string
@@ -18,14 +18,8 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  try_version:
-    if: inputs.minecraft_version != ''
-    uses: ./.github/workflows/test.yml
-    with:
-      minecraft_version: ${{ inputs.minecraft_version }}
-
   probe:
-    if: inputs.minecraft_version == ''
+    if: inputs.minecraft_version == '' && github.ref_name == github.event.repository.default_branch
     runs-on: ubuntu-latest
     timeout-minutes: 20
     outputs:
@@ -160,6 +154,9 @@ jobs:
 
   verify:
     name: Verify ${{ matrix.minecraft_version }} / ${{ matrix.loader }}
+    env:
+      LIBGL_ALWAYS_SOFTWARE: "1"
+      SDL_VIDEO_FORCE_EGL: "1"
     needs: probe
     if: >-
       needs.probe.result == 'success' &&
@@ -250,8 +247,8 @@ jobs:
           sudo mkswap /swapfile-dcn
           sudo swapon /swapfile-dcn
 
-      - name: Install xvfb
-        run: sudo apt-get update && sudo apt-get install -y xvfb
+      - name: Install graphics libraries
+        run: sudo apt-get update && sudo apt-get install -y xvfb libgl1-mesa-dri libglx-mesa0 libegl1 libegl-mesa0 mesa-vulkan-drivers
 
       - name: Build ${{ matrix.loader }} for Minecraft ${{ matrix.minecraft_version }}
         working-directory: candidate/${{ matrix.loader }}
@@ -673,3 +670,13 @@ jobs:
             echo
             echo "Modrinth and CurseForge now advertise every verified Minecraft version."
           } >> "$GITHUB_STEP_SUMMARY"
+
+  compatibility_report:
+    needs: record_marketplace_sync
+    if: ${{ !cancelled() }}
+    permissions:
+      actions: read
+      contents: write
+    uses: ./.github/workflows/compatibility.yml
+    with:
+      minecraft_version: ${{ inputs.minecraft_version }}

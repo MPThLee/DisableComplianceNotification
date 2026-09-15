@@ -1,0 +1,885 @@
+{
+  "schema_version": 1,
+  "releases": {
+    "1.6.0": {
+      "build_minecraft_version": "26.2",
+      "targets": {
+        "26.2": {
+          "channel": "stable",
+          "released_at": "2026-06-16T12:03:33+00:00",
+          "loaders": {
+            "fabric": {
+              "deps": {
+                "publication": "1.6.0",
+                "build_minecraft_version": "26.2",
+                "artifact_sha256": "6af75d89c831c3fdd12927bcc592271845c2f1dc8e84daf13770866a3a1d1959",
+                "minecraft_version": "26.2",
+                "loader": "fabric",
+                "mode": "deps",
+                "dependencies": {
+                  "modmenu": {
+                    "version": "20.0.2",
+                    "id": "WdLLrOzD",
+                    "sha512": "9baebd229ff5a0a377a0269f2a8783dd9bde682b0773d9ce380dedf61b214676f1d13b9904e84403afb418c13d3ee23c3120e09032c53cb4c762091af1a4b0fb"
+                  },
+                  "yacl": {
+                    "version": "3.9.6+26.2-fabric",
+                    "id": "cnfPzuFU",
+                    "sha512": "b3a58e4a5ef54647569282b8b2e9630389b3568f0abecb9c168daaa815477cbf961e79de28081cac551b69b810f561f043d669d1034aec80f12153a53dff53ef"
+                  },
+                  "Text Placeholder API": {
+                    "version": "3.1.0-beta.1+26.2",
+                    "id": "NDqH16LT",
+                    "sha512": "07b6fc802559d54ec6577f6e2788926ef391d755206c2bfb0528280977885cae4bc0c517d8a53eb6f34092015ebe6c41210627d255aa6504662daefa8fb76397"
+                  }
+                },
+                "status": "passed",
+                "channel": "stable",
+                "released_at": "2026-06-16T12:03:33+00:00",
+                "runtime": {
+                  "minecraft_version": "26.2",
+                  "fabric_api_version": "0.160.0+26.2",
+                  "fabric_loader_version": "0.19.5"
+                },
+                "run_url": "",
+                "observed_seconds": 151.5,
+                "config_interaction": "passed"
+              },
+              "core": {
+                "publication": "1.6.0",
+                "build_minecraft_version": "26.2",
+                "artifact_sha256": "6af75d89c831c3fdd12927bcc592271845c2f1dc8e84daf13770866a3a1d1959",
+                "minecraft_version": "26.2",
+                "loader": "fabric",
+                "mode": "core",
+                "dependencies": {},
+                "status": "passed",
+                "channel": "stable",
+                "released_at": "2026-06-16T12:03:33+00:00",
+                "runtime": {
+                  "minecraft_version": "26.2",
+                  "fabric_api_version": "0.160.0+26.2",
+                  "fabric_loader_version": "0.19.5"
+                },
+                "run_url": "",
+                "observed_seconds": 151.4
+              }
+            },
+            "neoforge": {
+              "deps": {
+                "publication": "1.6.0",
+                "build_minecraft_version": "26.2",
+                "artifact_sha256": "d81e67efa7cac1858b1451660cd10513990a4c078d6cf0ba3fc8f6f020483501",
+                "minecraft_version": "26.2",
+                "loader": "neoforge",
+                "mode": "deps",
+                "dependencies": {
+                  "yacl": {
+                    "version": "3.9.6+26.2-neoforge",
+                    "id": "bUVJOAmR",
+                    "sha512": "eeaa16bc7abc6e059aad2094d2e27ceb37a9d529ed5f30a2a731bf162f164dcf5b8729316d251314e90358b46ceb178358f1600b27b9392fcb6423678f148d60"
+                  }
+                },
+                "status": "passed",
+                "channel": "stable",
+                "released_at": "2026-06-16T12:03:33+00:00",
+                "runtime": {
+                  "minecraft_version": "26.2",
+                  "neoforge_version": "26.2.0.88"
+                },
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35031867271",
+                "observed_seconds": 151.0,
+                "config_interaction": "passed"
+              },
+              "core": {
+                "publication": "1.6.0",
+                "build_minecraft_version": "26.2",
+                "artifact_sha256": "d81e67efa7cac1858b1451660cd10513990a4c078d6cf0ba3fc8f6f020483501",
+                "minecraft_version": "26.2",
+                "loader": "neoforge",
+                "mode": "core",
+                "dependencies": {},
+                "status": "passed",
+                "channel": "stable",
+                "released_at": "2026-06-16T12:03:33+00:00",
+                "runtime": {
+                  "minecraft_version": "26.2",
+                  "neoforge_version": "26.2.0.88"
+                },
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35029454696",
+                "observed_seconds": 150.9
+              }
+            },
+            "forge": {
+              "core": {
+                "publication": "1.6.0",
+                "build_minecraft_version": "26.2",
+                "artifact_sha256": "f81737ce8cf5581f872ca2c265bbccba55fdbfe2503662b1a98b022964904064",
+                "minecraft_version": "26.2",
+                "loader": "forge",
+                "mode": "core",
+                "dependencies": {},
+                "status": "passed",
+                "channel": "stable",
+                "released_at": "2026-06-16T12:03:33+00:00",
+                "runtime": {
+                  "minecraft_version": "26.2",
+                  "forge_version": "65.1.3"
+                },
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/34929353555",
+                "observed_seconds": 150.6
+              }
+            }
+          }
+        },
+        "26.3-rc-3": {
+          "channel": "preview",
+          "released_at": "2026-09-14T12:58:38+00:00",
+          "loaders": {
+            "fabric": {
+              "core": {
+                "publication": "1.6.0",
+                "build_minecraft_version": "26.2",
+                "artifact_sha256": "6af75d89c831c3fdd12927bcc592271845c2f1dc8e84daf13770866a3a1d1959",
+                "minecraft_version": "26.3-rc-3",
+                "loader": "fabric",
+                "mode": "core",
+                "dependencies": {},
+                "channel": "preview",
+                "released_at": "2026-09-14T12:58:38+00:00",
+                "status": "passed",
+                "runtime": {
+                  "minecraft_version": "26.3-rc-3",
+                  "fabric_api_version": "0.160.5+26.3",
+                  "fabric_loader_version": "0.19.5"
+                },
+                "run_url": "",
+                "observed_seconds": 151.1
+              }
+            },
+            "forge": {
+              "core": {
+                "publication": "1.6.0",
+                "build_minecraft_version": "26.2",
+                "artifact_sha256": "f81737ce8cf5581f872ca2c265bbccba55fdbfe2503662b1a98b022964904064",
+                "minecraft_version": "26.3-rc-3",
+                "loader": "forge",
+                "mode": "core",
+                "dependencies": {},
+                "channel": "preview",
+                "released_at": "2026-09-14T12:58:38+00:00",
+                "status": "unavailable",
+                "reason": "No forge loader for this Minecraft version"
+              }
+            },
+            "neoforge": {
+              "core": {
+                "publication": "1.6.0",
+                "build_minecraft_version": "26.2",
+                "artifact_sha256": "d81e67efa7cac1858b1451660cd10513990a4c078d6cf0ba3fc8f6f020483501",
+                "minecraft_version": "26.3-rc-3",
+                "loader": "neoforge",
+                "mode": "core",
+                "dependencies": {},
+                "channel": "preview",
+                "released_at": "2026-09-14T12:58:38+00:00",
+                "status": "unavailable",
+                "reason": "No neoforge loader for this Minecraft version"
+              }
+            }
+          }
+        },
+        "26.3": {
+          "channel": "stable",
+          "released_at": "2026-09-15T11:23:02+00:00",
+          "loaders": {
+            "fabric": {
+              "core": {
+                "publication": "1.6.0",
+                "build_minecraft_version": "26.2",
+                "artifact_sha256": "6af75d89c831c3fdd12927bcc592271845c2f1dc8e84daf13770866a3a1d1959",
+                "minecraft_version": "26.3",
+                "loader": "fabric",
+                "mode": "core",
+                "dependencies": {},
+                "status": "passed",
+                "channel": "stable",
+                "released_at": "2026-09-15T11:23:02+00:00",
+                "runtime": {
+                  "minecraft_version": "26.3",
+                  "fabric_api_version": "0.160.5+26.3",
+                  "fabric_loader_version": "0.19.5"
+                },
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35030750536",
+                "observed_seconds": 150.7
+              },
+              "deps": {
+                "publication": "1.6.0",
+                "build_minecraft_version": "26.2",
+                "artifact_sha256": "6af75d89c831c3fdd12927bcc592271845c2f1dc8e84daf13770866a3a1d1959",
+                "minecraft_version": "26.3",
+                "loader": "fabric",
+                "mode": "deps",
+                "dependencies": {},
+                "status": "unavailable",
+                "channel": "stable",
+                "released_at": "2026-09-15T11:23:02+00:00",
+                "runtime": {
+                  "minecraft_version": "26.3",
+                  "fabric_api_version": "0.160.5+26.3",
+                  "fabric_loader_version": "0.19.5"
+                },
+                "reason": "No compatible modmenu release",
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35029454696"
+              }
+            },
+            "forge": {
+              "core": {
+                "publication": "1.6.0",
+                "build_minecraft_version": "26.2",
+                "artifact_sha256": "f81737ce8cf5581f872ca2c265bbccba55fdbfe2503662b1a98b022964904064",
+                "minecraft_version": "26.3",
+                "loader": "forge",
+                "mode": "core",
+                "dependencies": {},
+                "status": "unavailable",
+                "channel": "stable",
+                "released_at": "2026-09-15T11:23:02+00:00",
+                "reason": "No forge loader for this Minecraft version",
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35029454696"
+              }
+            },
+            "neoforge": {
+              "core": {
+                "publication": "1.6.0",
+                "build_minecraft_version": "26.2",
+                "artifact_sha256": "d81e67efa7cac1858b1451660cd10513990a4c078d6cf0ba3fc8f6f020483501",
+                "minecraft_version": "26.3",
+                "loader": "neoforge",
+                "mode": "core",
+                "dependencies": {},
+                "status": "passed",
+                "channel": "stable",
+                "released_at": "2026-09-15T11:23:02+00:00",
+                "runtime": {
+                  "minecraft_version": "26.3",
+                  "neoforge_version": "26.3.0.1-beta"
+                },
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35031867271",
+                "observed_seconds": 151.0
+              },
+              "deps": {
+                "publication": "1.6.0",
+                "build_minecraft_version": "26.2",
+                "artifact_sha256": "d81e67efa7cac1858b1451660cd10513990a4c078d6cf0ba3fc8f6f020483501",
+                "minecraft_version": "26.3",
+                "loader": "neoforge",
+                "mode": "deps",
+                "dependencies": {},
+                "status": "unavailable",
+                "channel": "stable",
+                "released_at": "2026-09-15T11:23:02+00:00",
+                "runtime": {
+                  "minecraft_version": "26.3",
+                  "neoforge_version": "26.3.0.1-beta"
+                },
+                "reason": "No compatible yacl release",
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35029454696"
+              }
+            }
+          }
+        },
+        "26.3-snapshot-1": {
+          "channel": "preview",
+          "released_at": "2026-06-23T11:57:02+00:00",
+          "loaders": {
+            "fabric": {
+              "core": {
+                "publication": "1.6.0",
+                "build_minecraft_version": "26.2",
+                "artifact_sha256": "6af75d89c831c3fdd12927bcc592271845c2f1dc8e84daf13770866a3a1d1959",
+                "minecraft_version": "26.3-snapshot-1",
+                "loader": "fabric",
+                "mode": "core",
+                "dependencies": {},
+                "status": "passed",
+                "channel": "preview",
+                "released_at": "2026-06-23T11:57:02+00:00",
+                "runtime": {
+                  "minecraft_version": "26.3-snapshot-1",
+                  "fabric_api_version": "0.153.1+26.3",
+                  "fabric_loader_version": "0.19.5"
+                },
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35029529350",
+                "observed_seconds": 150.5
+              }
+            },
+            "forge": {
+              "core": {
+                "publication": "1.6.0",
+                "build_minecraft_version": "26.2",
+                "artifact_sha256": "f81737ce8cf5581f872ca2c265bbccba55fdbfe2503662b1a98b022964904064",
+                "minecraft_version": "26.3-snapshot-1",
+                "loader": "forge",
+                "mode": "core",
+                "dependencies": {},
+                "status": "unavailable",
+                "channel": "preview",
+                "released_at": "2026-06-23T11:57:02+00:00",
+                "reason": "No forge loader for this Minecraft version",
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35029529350"
+              }
+            },
+            "neoforge": {
+              "core": {
+                "publication": "1.6.0",
+                "build_minecraft_version": "26.2",
+                "artifact_sha256": "d81e67efa7cac1858b1451660cd10513990a4c078d6cf0ba3fc8f6f020483501",
+                "minecraft_version": "26.3-snapshot-1",
+                "loader": "neoforge",
+                "mode": "core",
+                "dependencies": {},
+                "status": "unavailable",
+                "channel": "preview",
+                "released_at": "2026-06-23T11:57:02+00:00",
+                "reason": "No neoforge loader for this Minecraft version",
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35029529350"
+              }
+            }
+          }
+        },
+        "26.3-snapshot-10": {
+          "channel": "preview",
+          "released_at": "2026-08-25T12:53:43+00:00",
+          "loaders": {
+            "fabric": {
+              "core": {
+                "publication": "1.6.0",
+                "build_minecraft_version": "26.2",
+                "artifact_sha256": "6af75d89c831c3fdd12927bcc592271845c2f1dc8e84daf13770866a3a1d1959",
+                "minecraft_version": "26.3-snapshot-10",
+                "loader": "fabric",
+                "mode": "core",
+                "dependencies": {},
+                "status": "passed",
+                "channel": "preview",
+                "released_at": "2026-08-25T12:53:43+00:00",
+                "runtime": {
+                  "minecraft_version": "26.3-snapshot-10",
+                  "fabric_api_version": "0.159.0+26.3",
+                  "fabric_loader_version": "0.19.5"
+                },
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35031491070",
+                "observed_seconds": 151.2
+              }
+            },
+            "forge": {
+              "core": {
+                "publication": "1.6.0",
+                "build_minecraft_version": "26.2",
+                "artifact_sha256": "f81737ce8cf5581f872ca2c265bbccba55fdbfe2503662b1a98b022964904064",
+                "minecraft_version": "26.3-snapshot-10",
+                "loader": "forge",
+                "mode": "core",
+                "dependencies": {},
+                "status": "unavailable",
+                "channel": "preview",
+                "released_at": "2026-08-25T12:53:43+00:00",
+                "reason": "No forge loader for this Minecraft version",
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35029529350"
+              }
+            },
+            "neoforge": {
+              "core": {
+                "publication": "1.6.0",
+                "build_minecraft_version": "26.2",
+                "artifact_sha256": "d81e67efa7cac1858b1451660cd10513990a4c078d6cf0ba3fc8f6f020483501",
+                "minecraft_version": "26.3-snapshot-10",
+                "loader": "neoforge",
+                "mode": "core",
+                "dependencies": {},
+                "status": "unavailable",
+                "channel": "preview",
+                "released_at": "2026-08-25T12:53:43+00:00",
+                "reason": "No neoforge loader for this Minecraft version",
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35029529350"
+              }
+            }
+          }
+        },
+        "26.3-snapshot-2": {
+          "channel": "preview",
+          "released_at": "2026-06-30T12:45:43+00:00",
+          "loaders": {
+            "fabric": {
+              "core": {
+                "publication": "1.6.0",
+                "build_minecraft_version": "26.2",
+                "artifact_sha256": "6af75d89c831c3fdd12927bcc592271845c2f1dc8e84daf13770866a3a1d1959",
+                "minecraft_version": "26.3-snapshot-2",
+                "loader": "fabric",
+                "mode": "core",
+                "dependencies": {},
+                "status": "passed",
+                "channel": "preview",
+                "released_at": "2026-06-30T12:45:43+00:00",
+                "runtime": {
+                  "minecraft_version": "26.3-snapshot-2",
+                  "fabric_api_version": "0.154.2+26.3",
+                  "fabric_loader_version": "0.19.5"
+                },
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35029529350",
+                "observed_seconds": 150.6
+              }
+            },
+            "forge": {
+              "core": {
+                "publication": "1.6.0",
+                "build_minecraft_version": "26.2",
+                "artifact_sha256": "f81737ce8cf5581f872ca2c265bbccba55fdbfe2503662b1a98b022964904064",
+                "minecraft_version": "26.3-snapshot-2",
+                "loader": "forge",
+                "mode": "core",
+                "dependencies": {},
+                "status": "unavailable",
+                "channel": "preview",
+                "released_at": "2026-06-30T12:45:43+00:00",
+                "reason": "No forge loader for this Minecraft version",
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35029529350"
+              }
+            },
+            "neoforge": {
+              "core": {
+                "publication": "1.6.0",
+                "build_minecraft_version": "26.2",
+                "artifact_sha256": "d81e67efa7cac1858b1451660cd10513990a4c078d6cf0ba3fc8f6f020483501",
+                "minecraft_version": "26.3-snapshot-2",
+                "loader": "neoforge",
+                "mode": "core",
+                "dependencies": {},
+                "status": "unavailable",
+                "channel": "preview",
+                "released_at": "2026-06-30T12:45:43+00:00",
+                "reason": "No neoforge loader for this Minecraft version",
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35029529350"
+              }
+            }
+          }
+        },
+        "26.3-snapshot-3": {
+          "channel": "preview",
+          "released_at": "2026-07-07T12:03:01+00:00",
+          "loaders": {
+            "fabric": {
+              "core": {
+                "publication": "1.6.0",
+                "build_minecraft_version": "26.2",
+                "artifact_sha256": "6af75d89c831c3fdd12927bcc592271845c2f1dc8e84daf13770866a3a1d1959",
+                "minecraft_version": "26.3-snapshot-3",
+                "loader": "fabric",
+                "mode": "core",
+                "dependencies": {},
+                "status": "passed",
+                "channel": "preview",
+                "released_at": "2026-07-07T12:03:01+00:00",
+                "runtime": {
+                  "minecraft_version": "26.3-snapshot-3",
+                  "fabric_api_version": "0.155.0+26.3",
+                  "fabric_loader_version": "0.19.5"
+                },
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35029529350",
+                "observed_seconds": 150.9
+              }
+            },
+            "forge": {
+              "core": {
+                "publication": "1.6.0",
+                "build_minecraft_version": "26.2",
+                "artifact_sha256": "f81737ce8cf5581f872ca2c265bbccba55fdbfe2503662b1a98b022964904064",
+                "minecraft_version": "26.3-snapshot-3",
+                "loader": "forge",
+                "mode": "core",
+                "dependencies": {},
+                "status": "unavailable",
+                "channel": "preview",
+                "released_at": "2026-07-07T12:03:01+00:00",
+                "reason": "No forge loader for this Minecraft version",
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35029529350"
+              }
+            },
+            "neoforge": {
+              "core": {
+                "publication": "1.6.0",
+                "build_minecraft_version": "26.2",
+                "artifact_sha256": "d81e67efa7cac1858b1451660cd10513990a4c078d6cf0ba3fc8f6f020483501",
+                "minecraft_version": "26.3-snapshot-3",
+                "loader": "neoforge",
+                "mode": "core",
+                "dependencies": {},
+                "status": "unavailable",
+                "channel": "preview",
+                "released_at": "2026-07-07T12:03:01+00:00",
+                "reason": "No neoforge loader for this Minecraft version",
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35029529350"
+              }
+            }
+          }
+        },
+        "26.3-snapshot-4": {
+          "channel": "preview",
+          "released_at": "2026-07-16T13:59:30+00:00",
+          "loaders": {
+            "fabric": {
+              "core": {
+                "publication": "1.6.0",
+                "build_minecraft_version": "26.2",
+                "artifact_sha256": "6af75d89c831c3fdd12927bcc592271845c2f1dc8e84daf13770866a3a1d1959",
+                "minecraft_version": "26.3-snapshot-4",
+                "loader": "fabric",
+                "mode": "core",
+                "dependencies": {},
+                "status": "passed",
+                "channel": "preview",
+                "released_at": "2026-07-16T13:59:30+00:00",
+                "runtime": {
+                  "minecraft_version": "26.3-snapshot-4",
+                  "fabric_api_version": "0.155.2+26.3",
+                  "fabric_loader_version": "0.19.5"
+                },
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35031491070",
+                "observed_seconds": 150.6
+              }
+            },
+            "forge": {
+              "core": {
+                "publication": "1.6.0",
+                "build_minecraft_version": "26.2",
+                "artifact_sha256": "f81737ce8cf5581f872ca2c265bbccba55fdbfe2503662b1a98b022964904064",
+                "minecraft_version": "26.3-snapshot-4",
+                "loader": "forge",
+                "mode": "core",
+                "dependencies": {},
+                "status": "unavailable",
+                "channel": "preview",
+                "released_at": "2026-07-16T13:59:30+00:00",
+                "reason": "No forge loader for this Minecraft version",
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35029529350"
+              }
+            },
+            "neoforge": {
+              "core": {
+                "publication": "1.6.0",
+                "build_minecraft_version": "26.2",
+                "artifact_sha256": "d81e67efa7cac1858b1451660cd10513990a4c078d6cf0ba3fc8f6f020483501",
+                "minecraft_version": "26.3-snapshot-4",
+                "loader": "neoforge",
+                "mode": "core",
+                "dependencies": {},
+                "status": "unavailable",
+                "channel": "preview",
+                "released_at": "2026-07-16T13:59:30+00:00",
+                "reason": "No neoforge loader for this Minecraft version",
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35029529350"
+              }
+            }
+          }
+        },
+        "26.3-snapshot-5": {
+          "channel": "preview",
+          "released_at": "2026-07-21T11:45:42+00:00",
+          "loaders": {
+            "fabric": {
+              "core": {
+                "publication": "1.6.0",
+                "build_minecraft_version": "26.2",
+                "artifact_sha256": "6af75d89c831c3fdd12927bcc592271845c2f1dc8e84daf13770866a3a1d1959",
+                "minecraft_version": "26.3-snapshot-5",
+                "loader": "fabric",
+                "mode": "core",
+                "dependencies": {},
+                "status": "passed",
+                "channel": "preview",
+                "released_at": "2026-07-21T11:45:42+00:00",
+                "runtime": {
+                  "minecraft_version": "26.3-snapshot-5",
+                  "fabric_api_version": "0.156.0+26.3",
+                  "fabric_loader_version": "0.19.5"
+                },
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35031491070",
+                "observed_seconds": 150.6
+              }
+            },
+            "forge": {
+              "core": {
+                "publication": "1.6.0",
+                "build_minecraft_version": "26.2",
+                "artifact_sha256": "f81737ce8cf5581f872ca2c265bbccba55fdbfe2503662b1a98b022964904064",
+                "minecraft_version": "26.3-snapshot-5",
+                "loader": "forge",
+                "mode": "core",
+                "dependencies": {},
+                "status": "unavailable",
+                "channel": "preview",
+                "released_at": "2026-07-21T11:45:42+00:00",
+                "reason": "No forge loader for this Minecraft version",
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35029529350"
+              }
+            },
+            "neoforge": {
+              "core": {
+                "publication": "1.6.0",
+                "build_minecraft_version": "26.2",
+                "artifact_sha256": "d81e67efa7cac1858b1451660cd10513990a4c078d6cf0ba3fc8f6f020483501",
+                "minecraft_version": "26.3-snapshot-5",
+                "loader": "neoforge",
+                "mode": "core",
+                "dependencies": {},
+                "status": "unavailable",
+                "channel": "preview",
+                "released_at": "2026-07-21T11:45:42+00:00",
+                "reason": "No neoforge loader for this Minecraft version",
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35029529350"
+              }
+            }
+          }
+        },
+        "26.3-snapshot-6": {
+          "channel": "preview",
+          "released_at": "2026-07-28T12:25:51+00:00",
+          "loaders": {
+            "fabric": {
+              "core": {
+                "publication": "1.6.0",
+                "build_minecraft_version": "26.2",
+                "artifact_sha256": "6af75d89c831c3fdd12927bcc592271845c2f1dc8e84daf13770866a3a1d1959",
+                "minecraft_version": "26.3-snapshot-6",
+                "loader": "fabric",
+                "mode": "core",
+                "dependencies": {},
+                "status": "passed",
+                "channel": "preview",
+                "released_at": "2026-07-28T12:25:51+00:00",
+                "runtime": {
+                  "minecraft_version": "26.3-snapshot-6",
+                  "fabric_api_version": "0.156.1+26.3",
+                  "fabric_loader_version": "0.19.5"
+                },
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35031491070",
+                "observed_seconds": 150.8
+              }
+            },
+            "forge": {
+              "core": {
+                "publication": "1.6.0",
+                "build_minecraft_version": "26.2",
+                "artifact_sha256": "f81737ce8cf5581f872ca2c265bbccba55fdbfe2503662b1a98b022964904064",
+                "minecraft_version": "26.3-snapshot-6",
+                "loader": "forge",
+                "mode": "core",
+                "dependencies": {},
+                "status": "unavailable",
+                "channel": "preview",
+                "released_at": "2026-07-28T12:25:51+00:00",
+                "reason": "No forge loader for this Minecraft version",
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35029529350"
+              }
+            },
+            "neoforge": {
+              "core": {
+                "publication": "1.6.0",
+                "build_minecraft_version": "26.2",
+                "artifact_sha256": "d81e67efa7cac1858b1451660cd10513990a4c078d6cf0ba3fc8f6f020483501",
+                "minecraft_version": "26.3-snapshot-6",
+                "loader": "neoforge",
+                "mode": "core",
+                "dependencies": {},
+                "status": "unavailable",
+                "channel": "preview",
+                "released_at": "2026-07-28T12:25:51+00:00",
+                "reason": "No neoforge loader for this Minecraft version",
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35029529350"
+              }
+            }
+          }
+        },
+        "26.3-snapshot-7": {
+          "channel": "preview",
+          "released_at": "2026-08-04T11:49:07+00:00",
+          "loaders": {
+            "fabric": {
+              "core": {
+                "publication": "1.6.0",
+                "build_minecraft_version": "26.2",
+                "artifact_sha256": "6af75d89c831c3fdd12927bcc592271845c2f1dc8e84daf13770866a3a1d1959",
+                "minecraft_version": "26.3-snapshot-7",
+                "loader": "fabric",
+                "mode": "core",
+                "dependencies": {},
+                "status": "passed",
+                "channel": "preview",
+                "released_at": "2026-08-04T11:49:07+00:00",
+                "runtime": {
+                  "minecraft_version": "26.3-snapshot-7",
+                  "fabric_api_version": "0.157.0+26.3",
+                  "fabric_loader_version": "0.19.5"
+                },
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35031491070",
+                "observed_seconds": 150.8
+              }
+            },
+            "forge": {
+              "core": {
+                "publication": "1.6.0",
+                "build_minecraft_version": "26.2",
+                "artifact_sha256": "f81737ce8cf5581f872ca2c265bbccba55fdbfe2503662b1a98b022964904064",
+                "minecraft_version": "26.3-snapshot-7",
+                "loader": "forge",
+                "mode": "core",
+                "dependencies": {},
+                "status": "unavailable",
+                "channel": "preview",
+                "released_at": "2026-08-04T11:49:07+00:00",
+                "reason": "No forge loader for this Minecraft version",
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35029529350"
+              }
+            },
+            "neoforge": {
+              "core": {
+                "publication": "1.6.0",
+                "build_minecraft_version": "26.2",
+                "artifact_sha256": "d81e67efa7cac1858b1451660cd10513990a4c078d6cf0ba3fc8f6f020483501",
+                "minecraft_version": "26.3-snapshot-7",
+                "loader": "neoforge",
+                "mode": "core",
+                "dependencies": {},
+                "status": "unavailable",
+                "channel": "preview",
+                "released_at": "2026-08-04T11:49:07+00:00",
+                "reason": "No neoforge loader for this Minecraft version",
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35029529350"
+              }
+            }
+          }
+        },
+        "26.3-snapshot-8": {
+          "channel": "preview",
+          "released_at": "2026-08-12T09:39:37+00:00",
+          "loaders": {
+            "fabric": {
+              "core": {
+                "publication": "1.6.0",
+                "build_minecraft_version": "26.2",
+                "artifact_sha256": "6af75d89c831c3fdd12927bcc592271845c2f1dc8e84daf13770866a3a1d1959",
+                "minecraft_version": "26.3-snapshot-8",
+                "loader": "fabric",
+                "mode": "core",
+                "dependencies": {},
+                "status": "passed",
+                "channel": "preview",
+                "released_at": "2026-08-12T09:39:37+00:00",
+                "runtime": {
+                  "minecraft_version": "26.3-snapshot-8",
+                  "fabric_api_version": "0.157.1+26.3",
+                  "fabric_loader_version": "0.19.5"
+                },
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35031491070",
+                "observed_seconds": 150.8
+              }
+            },
+            "forge": {
+              "core": {
+                "publication": "1.6.0",
+                "build_minecraft_version": "26.2",
+                "artifact_sha256": "f81737ce8cf5581f872ca2c265bbccba55fdbfe2503662b1a98b022964904064",
+                "minecraft_version": "26.3-snapshot-8",
+                "loader": "forge",
+                "mode": "core",
+                "dependencies": {},
+                "status": "unavailable",
+                "channel": "preview",
+                "released_at": "2026-08-12T09:39:37+00:00",
+                "reason": "No forge loader for this Minecraft version",
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35029529350"
+              }
+            },
+            "neoforge": {
+              "core": {
+                "publication": "1.6.0",
+                "build_minecraft_version": "26.2",
+                "artifact_sha256": "d81e67efa7cac1858b1451660cd10513990a4c078d6cf0ba3fc8f6f020483501",
+                "minecraft_version": "26.3-snapshot-8",
+                "loader": "neoforge",
+                "mode": "core",
+                "dependencies": {},
+                "status": "unavailable",
+                "channel": "preview",
+                "released_at": "2026-08-12T09:39:37+00:00",
+                "reason": "No neoforge loader for this Minecraft version",
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35029529350"
+              }
+            }
+          }
+        },
+        "26.3-snapshot-9": {
+          "channel": "preview",
+          "released_at": "2026-08-17T11:46:16+00:00",
+          "loaders": {
+            "fabric": {
+              "core": {
+                "publication": "1.6.0",
+                "build_minecraft_version": "26.2",
+                "artifact_sha256": "6af75d89c831c3fdd12927bcc592271845c2f1dc8e84daf13770866a3a1d1959",
+                "minecraft_version": "26.3-snapshot-9",
+                "loader": "fabric",
+                "mode": "core",
+                "dependencies": {},
+                "status": "passed",
+                "channel": "preview",
+                "released_at": "2026-08-17T11:46:16+00:00",
+                "runtime": {
+                  "minecraft_version": "26.3-snapshot-9",
+                  "fabric_api_version": "0.158.1+26.3",
+                  "fabric_loader_version": "0.19.5"
+                },
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35031491070",
+                "observed_seconds": 150.7
+              }
+            },
+            "forge": {
+              "core": {
+                "publication": "1.6.0",
+                "build_minecraft_version": "26.2",
+                "artifact_sha256": "f81737ce8cf5581f872ca2c265bbccba55fdbfe2503662b1a98b022964904064",
+                "minecraft_version": "26.3-snapshot-9",
+                "loader": "forge",
+                "mode": "core",
+                "dependencies": {},
+                "status": "unavailable",
+                "channel": "preview",
+                "released_at": "2026-08-17T11:46:16+00:00",
+                "reason": "No forge loader for this Minecraft version",
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35029529350"
+              }
+            },
+            "neoforge": {
+              "core": {
+                "publication": "1.6.0",
+                "build_minecraft_version": "26.2",
+                "artifact_sha256": "d81e67efa7cac1858b1451660cd10513990a4c078d6cf0ba3fc8f6f020483501",
+                "minecraft_version": "26.3-snapshot-9",
+                "loader": "neoforge",
+                "mode": "core",
+                "dependencies": {},
+                "status": "unavailable",
+                "channel": "preview",
+                "released_at": "2026-08-17T11:46:16+00:00",
+                "reason": "No neoforge loader for this Minecraft version",
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35029529350"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
