@@ -50,7 +50,7 @@ jobs:
           sudo swapon /swapfile-dcn
 
       - name: Install graphics libraries
-        run: sudo apt-get update && sudo apt-get install -y xvfb libgl1-mesa-dri libglx-mesa0 libegl-mesa0 mesa-vulkan-drivers
+        run: sudo apt-get update && sudo apt-get install -y xvfb libgl1-mesa-dri libglx-mesa0 libegl1 libegl-mesa0 mesa-vulkan-drivers
 
       - name: Build mod
         working-directory: fabric
@@ -123,7 +123,7 @@ jobs:
           sudo swapon /swapfile-dcn
 
       - name: Install graphics libraries
-        run: sudo apt-get update && sudo apt-get install -y xvfb libgl1-mesa-dri libglx-mesa0 libegl-mesa0 mesa-vulkan-drivers
+        run: sudo apt-get update && sudo apt-get install -y xvfb libgl1-mesa-dri libglx-mesa0 libegl1 libegl-mesa0 mesa-vulkan-drivers
 
       - name: Build mod
         working-directory: neoforge
@@ -188,7 +188,7 @@ jobs:
           sudo swapon /swapfile-dcn
 
       - name: Install graphics libraries
-        run: sudo apt-get update && sudo apt-get install -y xvfb libgl1-mesa-dri libglx-mesa0 libegl-mesa0 mesa-vulkan-drivers
+        run: sudo apt-get update && sudo apt-get install -y xvfb libgl1-mesa-dri libglx-mesa0 libegl1 libegl-mesa0 mesa-vulkan-drivers
 
       - name: Build mod
         working-directory: forge

@@ -116,7 +116,7 @@ jobs:
 
       - name: Install graphics libraries for tagged runtime gate
         if: startsWith(github.ref, 'refs/tags/v')
-        run: sudo apt-get update && sudo apt-get install -y xvfb libgl1-mesa-dri libglx-mesa0 libegl-mesa0 mesa-vulkan-drivers
+        run: sudo apt-get update && sudo apt-get install -y xvfb libgl1-mesa-dri libglx-mesa0 libegl1 libegl-mesa0 mesa-vulkan-drivers
 
       - name: Run tagged Fabric deterministic client gametest
         if: >-
