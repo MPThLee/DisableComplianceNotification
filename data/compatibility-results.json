@@ -80,7 +80,7 @@
                     "sha512": "eeaa16bc7abc6e059aad2094d2e27ceb37a9d529ed5f30a2a731bf162f164dcf5b8729316d251314e90358b46ceb178358f1600b27b9392fcb6423678f148d60"
                   }
                 },
-                "status": "failed",
+                "status": "error",
                 "channel": "stable",
                 "released_at": "2026-06-16T12:03:33+00:00",
                 "runtime": {
@@ -88,7 +88,7 @@
                   "neoforge_version": "26.2.0.88"
                 },
                 "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/34929353555",
-                "reason": "Runtime check failed"
+                "reason": "Test harness resources were rejected"
               },
               "core": {
                 "publication": "1.6.0",
@@ -98,7 +98,7 @@
                 "loader": "neoforge",
                 "mode": "core",
                 "dependencies": {},
-                "status": "failed",
+                "status": "error",
                 "channel": "stable",
                 "released_at": "2026-06-16T12:03:33+00:00",
                 "runtime": {
@@ -106,7 +106,7 @@
                   "neoforge_version": "26.2.0.88"
                 },
                 "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/34929353555",
-                "reason": "Runtime check failed"
+                "reason": "Test harness resources were rejected"
               }
             },
             "forge": {

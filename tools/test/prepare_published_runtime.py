@@ -134,11 +134,12 @@ def prepare(project_root, data, loader, target=None, mode="core", result=None):
         for directory in ("classes", "resources"):
             shutil.rmtree(loader_root / "build" / directory, ignore_errors=True)
         paths = ", ".join(json.dumps(f"../published/{p.name}") for p in jars)
-        # Forge must load instrumentation alongside Minecraft, not in its bootstrap classloader.
-        if loader == "forge":
+        # FML needs a separate test-mod descriptor to load the instrumentation.
+        if loader in ("forge", "neoforge"):
             resources = loader_root / "build/clientgate-resources/META-INF"
             resources.mkdir(parents=True, exist_ok=True)
-            (resources / "mods.toml").write_text(
+            descriptor = "mods.toml" if loader == "forge" else "neoforge.mods.toml"
+            (resources / descriptor).write_text(
                 'modLoader="lowcodefml"\nloaderVersion="[1,)"\nlicense="MIT"\n'
                 '[[mods]]\nmodId="dcn_client_gate"\nversion="1"\ndisplayName="DCN client gate"\n'
             )
@@ -152,7 +153,7 @@ configurations.configureEach {{
 }}
 dependencies.add('implementation', files({paths}))
 """)
-            if loader == "forge":
+            if loader in ("forge", "neoforge"):
                 build.write("sourceSets.main.resources.srcDir('build/clientgate-resources')\n")
         record["status"] = "ready"
         return record

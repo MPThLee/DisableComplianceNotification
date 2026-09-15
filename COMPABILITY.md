@@ -2,7 +2,7 @@
 
 Automated checks of unchanged published jars. Mod **1.6.0+** only.
 
-Last updated: 2026-09-15 04:50:45 UTC
+Last updated: 2026-09-15 04:53:10 UTC
 
 | Mark | Meaning |
 | :---: | --- |
@@ -17,6 +17,8 @@ Dependency checks select the latest compatible versions **at test time**. Suppor
 
 **Passed checks are kept.** ✅ combinations are not tested again for the same published jar. ⚠️ combinations retry only the optional check. Failed, unavailable, and incomplete checks may retry; a new mod release starts fresh.
 
+Blank version input checks stable releases only. An exact version input also accepts snapshots and RCs. Results describe the recorded versions; they do not cover later dependency updates. The timestamp changes only when this report changes.
+
 ## v1.6.0
 
 Built for Minecraft **26.2**.
@@ -25,7 +27,7 @@ Built for Minecraft **26.2**.
 
 | Minecraft | Fabric | NeoForge | Forge |
 | --- | :---: | :---: | :---: |
-| 26.2 | ✅ | ❌ | ✅ |
+| 26.2 | ✅ | — | ✅ |
 
 <details>
 <summary>Test details</summary>
@@ -33,7 +35,7 @@ Built for Minecraft **26.2**.
 | Minecraft | Loader | Core | Optional | Versions / notes |
 | --- | --- | :---: | :---: | --- |
 | 26.2 | Fabric | Pass | Pass | Loader 0.19.5; Fabric API 0.160.0+26.2; Mod Menu 20.0.2; YACL 3.9.6+26.2-fabric; Text Placeholder API 3.1.0-beta.1+26.2; Config passed |
-| 26.2 | NeoForge | Fail | Fail | Loader 26.2.0.88; YACL 3.9.6+26.2-neoforge; Runtime check failed; Runtime check failed; <a href="https://github.com/MPThLee/DisableComplianceNotification/actions/runs/34929353555">Run</a> |
+| 26.2 | NeoForge | Incomplete | Incomplete | Loader 26.2.0.88; YACL 3.9.6+26.2-neoforge; Test harness resources were rejected; <a href="https://github.com/MPThLee/DisableComplianceNotification/actions/runs/34929353555">Run</a> |
 | 26.2 | Forge | Pass | — | Loader 65.1.3; <a href="https://github.com/MPThLee/DisableComplianceNotification/actions/runs/34929353555">Run</a> |
 
 </details>

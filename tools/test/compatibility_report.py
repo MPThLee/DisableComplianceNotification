@@ -65,6 +65,8 @@ def record(preparation, gate, outcome, run_url, log=""):
         started = re.search(r"> Task :runClient(?:\s|$)", log) is not None
         result["status"] = "failed" if outcome == "failure" and started else "error"
         result["reason"] = "Runtime check failed" if result["status"] == "failed" else "Runtime setup incomplete"
+        if re.search(r"\bbuild/resources/main is not a valid mod file", log):
+            result.update(status="error", reason="Test harness resources were rejected")
         if outcome == "success" and gate:
             valid = (
                 gate.get("passed") is True and gate.get("periodic_toast_absent") is True
@@ -102,6 +104,8 @@ def merge(state, results, publication):
         })
         tests = target["loaders"].setdefault(loader, {})
         old = tests.get(mode)
+        if old and old.get("status") == "passed" and old.get("artifact_sha256") == result["artifact_sha256"] and result["status"] != "passed":
+            continue  # A late or manually repeated run must not erase a retained pass.
         if old and result["status"] == "error":
             continue  # Preserve known evidence on a transient infrastructure error.
         def meaningful(value):
@@ -156,7 +160,7 @@ def detail_rows(targets):
             link = attempt.get("run_url", "")
             if link.startswith("https://github.com/"):
                 notes.append(f'<a href="{html.escape(link, quote=True)}">Run</a>')
-            rendered = "; ".join(cell(note) if not note.startswith('<a href=') else note for note in notes) or "—"
+            rendered = "; ".join(cell(note) if not note.startswith('<a href=') else note for note in dict.fromkeys(notes)) or "—"
             lines.append(f"| {cell(version)} | {NAMES[loader]} | {labels.get(core.get('status'), '—')} | {labels.get(deps.get('status'), '—')} | {rendered} |")
     return lines
 
@@ -169,6 +173,7 @@ def render(state):
         "Core checks run in-world for at least **150 seconds**. Stable Fabric also checks **Mod Menu + YACL**; NeoForge checks **YACL**. Forge uses its built-in config.", "",
         "Dependency checks select the latest compatible versions **at test time**. Supported config screens are opened, and a setting is saved, reloaded, and restored; unavailable APIs are noted.", "",
         "**Passed checks are kept.** ✅ combinations are not tested again for the same published jar. ⚠️ combinations retry only the optional check. Failed, unavailable, and incomplete checks may retry; a new mod release starts fresh."]
+    lines += ["", "Blank version input checks stable releases only. An exact version input also accepts snapshots and RCs. Results describe the recorded versions; they do not cover later dependency updates. The timestamp changes only when this report changes."]
     for version in sorted(state.get("releases", {}), key=lambda v: tuple(map(int, v.split("."))), reverse=True):
         if tuple(map(int, version.split("."))) < (1, 6, 0):
             continue
