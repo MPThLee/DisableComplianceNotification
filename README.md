@@ -11,11 +11,11 @@ As of 1.18.2, Mojang decided to implemented this on Java Edition with own implem
 
 ![example](https://static.wikia.nocookie.net/minecraft_gamepedia/images/a/ac/Regional_compliancies_notification_1_hour.png)
 
-> - Added gameplay timers and notices in compliance with gaming laws of South Korea to South Korean users, in order to
-
-    remind these players to take occasional breaks from gameplay.
+> - Added gameplay timers and notices in compliance with gaming laws of South Korea to South Korean users, in order to remind these players to take occasional breaks from gameplay.
 
 Image and quote reference: https://minecraft.wiki/w/Java_Edition_1.18.2#General
+
+
 
 ## Changelog
 
@@ -24,10 +24,6 @@ Older changelog is available on [CHANGELOG.md](./CHANGELOG.md).
 ### v1.6.0 (Minecraft 26.2 and later)
 
 - Updated for Minecraft 26.2, with experimental compatibility for later Minecraft versions.
-
-### v1.5.6+
-
-- Updated to Minecraft 26.1 (and above)
 
 ## Platform Support
 
@@ -38,6 +34,8 @@ Older changelog is available on [CHANGELOG.md](./CHANGELOG.md).
 | **Forge (LexForge)** | :white_check_mark: Supported | :white_check_mark: ForgeConfig |                                                                                                         |
 
 Version 1.6.0 supports Minecraft 26.2. It may also work on later Minecraft versions, but this compatibility is experimental and not guaranteed.
+
+See [COMPABILITY.md](./COMPABILITY.md) for automated compatibility test result for mod version.
 
 ## Download
 
