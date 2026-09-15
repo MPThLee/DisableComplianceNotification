@@ -322,6 +322,7 @@ class StatefulCurseForgeClient:
                 "26.3",
             ), 1)
         ]
+        self.available_names.append({"id": 7, "name": "Client", "gameVersionTypeID": 2})
         self.game_versions_url = sync.join_url(
             base_url, "api/game/versions"
         )
@@ -349,7 +350,7 @@ class StatefulCurseForgeClient:
         }
         self.calls.append(call)
         if method == "GET" and url == sync.join_url(self.base_url, "api/game/version-types"):
-            return [{"id": 1, "slug": "minecraft-26"}]
+            return [{"id": 1, "slug": "minecraft-26"}, {"id": 2, "slug": "environment"}]
         if method == "GET" and url == self.game_versions_url:
             return copy.deepcopy(self.available_names)
         if method != "POST" or url != self.update_url:
@@ -707,7 +708,7 @@ class CompatibilityReportSyncTest(unittest.TestCase):
         for loader in sync.EXPECTED_LOADERS:
             expected = ["26.2", "26.3"] if loader == "fabric" else ["26.2"]
             self.assertEqual(expected, modrinth.game_versions[loader])
-            self.assertEqual([release.publication.artifacts[loader].curseforge_loader, *expected],
+            self.assertEqual([release.publication.artifacts[loader].curseforge_loader, "Client", *expected],
                              curseforge.game_version_names[loader])
         self.assertEqual(0, sync.sync_modrinth(release, "token", modrinth,
                                              base_url=modrinth.base_url).updated)
@@ -902,6 +903,7 @@ class CurseForgeSyncTest(unittest.TestCase):
             {"id": 4, "name": "26.2", "gameVersionTypeID": 1},
             {"id": 5, "name": "26.3", "gameVersionTypeID": 1},
             {"id": 6, "name": "27.0", "gameVersionTypeID": 1},
+            {"id": 7, "name": "Client", "gameVersionTypeID": 2},
         ]
         update_url = sync.curseforge_update_url(
             base_url, release.publication.curseforge_project_id
@@ -910,7 +912,7 @@ class CurseForgeSyncTest(unittest.TestCase):
             ("GET", sync.join_url(base_url, "api/game/versions")): [
                 game_versions
             ],
-            ("GET", sync.join_url(base_url, "api/game/version-types")): [[{"id": 1, "slug": "minecraft-26"}]],
+            ("GET", sync.join_url(base_url, "api/game/version-types")): [[{"id": 1, "slug": "minecraft-26"}, {"id": 2, "slug": "environment"}]],
             ("POST", update_url): [
                 {
                     "id": release.publication.artifacts[loader].curseforge_file_id
@@ -952,7 +954,7 @@ class CurseForgeSyncTest(unittest.TestCase):
             self.assertEqual(
                 {
                     "fileID": artifact.curseforge_file_id,
-                    "gameVersions": [sync.EXPECTED_LOADERS.index(loader) + 1, 4, 5, 6],
+                    "gameVersions": [sync.EXPECTED_LOADERS.index(loader) + 1, 7, 4, 5, 6],
                 },
                 multipart_json(call),
             )
@@ -1093,6 +1095,7 @@ class SequentialCompatibilitySimulationTest(unittest.TestCase):
                     initial_release.publication.artifacts[
                         loader
                     ].curseforge_loader,
+                    "Client",
                     *expected_minecraft_versions,
                 ],
                 curseforge.game_version_names[loader],
@@ -1141,6 +1144,7 @@ class SequentialCompatibilitySimulationTest(unittest.TestCase):
                     initial_release.publication.artifacts[
                         loader
                     ].curseforge_loader,
+                    "Client",
                     *expected_minecraft_versions,
                 ],
                 curseforge.game_version_names[loader],
@@ -1254,6 +1258,7 @@ class SequentialCompatibilitySimulationTest(unittest.TestCase):
                     new_release.publication.artifacts[
                         loader
                     ].curseforge_loader,
+                    "Client",
                     "26.2",
                 ],
                 new_curseforge.game_version_names[loader],
@@ -1286,6 +1291,7 @@ class SequentialCompatibilitySimulationTest(unittest.TestCase):
                     new_release.publication.artifacts[
                         loader
                     ].curseforge_loader,
+                    "Client",
                     "26.2",
                     "26.3",
                 ],

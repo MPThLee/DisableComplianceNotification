@@ -846,6 +846,8 @@ def extract_curseforge_game_versions(raw_value: object, raw_types: object) -> di
         )
         if VERSION_PATTERN.fullmatch(name) and not types.get(version.get("gameVersionTypeID"), "").startswith("minecraft-"):
             continue  # Bukkit can have the same version name as Minecraft Java.
+        if name == "Client" and types.get(version.get("gameVersionTypeID")) != "environment":
+            continue
         names[name] = parse_positive_integer(version.get("id"), f"CurseForge game version {name} ID")
     return names
 
@@ -908,6 +910,7 @@ def sync_curseforge(
         ),
     )
     required_names = {version for loader in EXPECTED_LOADERS for version in release.versions_for(loader)}
+    required_names.add("Client")
     required_names.update(
         artifact.curseforge_loader
         for artifact in publication.artifacts.values()
@@ -929,12 +932,12 @@ def sync_curseforge(
             "fileID": artifact.curseforge_file_id,
             "gameVersions": [
                 available_versions[name]
-                for name in (artifact.curseforge_loader, *release.versions_for(loader))
+                for name in (artifact.curseforge_loader, "Client", *release.versions_for(loader))
             ],
         }
         print(f"CurseForge {loader}: " + ", ".join(
             f"{name}={available_versions[name]}"
-            for name in (artifact.curseforge_loader, *release.versions_for(loader))
+            for name in (artifact.curseforge_loader, "Client", *release.versions_for(loader))
         ), flush=True)
         boundary = boundary_factory()
         response = client.request_json(
