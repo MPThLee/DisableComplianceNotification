@@ -139,7 +139,7 @@ def cell(value):
 
 
 def detail_rows(targets):
-    lines = ["| Minecraft | Loader | Core | Optional | Versions / notes |", "| --- | --- | :---: | :---: | --- |"]
+    lines = ["| Minecraft | Loader | Core | Optional | Versions |", "| --- | --- | :---: | :---: | --- |"]
     labels = {"passed": "Pass", "failed": "Fail", "unavailable": "Unavailable", "error": "Incomplete"}
     for version, target in targets:
         for loader in LOADERS:
@@ -147,26 +147,16 @@ def detail_rows(targets):
             if not checks:
                 continue
             core, deps = checks.get("core", {}), checks.get("deps", {})
-            notes = []
+            versions = []
             runtime = core.get("runtime") or deps.get("runtime", {})
             key = "fabric_loader_version" if loader == "fabric" else f"{loader}_version"
             if runtime.get(key):
-                notes.append(f"Loader {runtime[key]}")
-            if runtime.get("fabric_api_version"):
-                notes.append(f"Fabric API {runtime['fabric_api_version']}")
-            for project, dependency in deps.get("dependencies", {}).items():
-                name = {"modmenu": "Mod Menu", "yacl": "YACL"}.get(project, project)
-                notes.append(f"{name} {dependency['version']}")
-            if deps.get("config_interaction"):
-                notes.append("Config " + ("passed" if deps["config_interaction"] == "passed" else "API unavailable"))
-            for attempt in (core, deps):
-                if attempt.get("reason"):
-                    notes.append(attempt["reason"])
-            attempt = deps or core
-            link = attempt.get("run_url", "")
-            if link.startswith("https://github.com/"):
-                notes.append(f'<a href="{html.escape(link, quote=True)}">Run</a>')
-            rendered = "; ".join(cell(note) if not note.startswith('<a href=') else note for note in dict.fromkeys(notes)) or "—"
+                versions.append(f"Loader {runtime[key]}")
+            for project, name in (("yacl", "YACL"), ("modmenu", "Mod Menu")):
+                dependency = deps.get("dependencies", {}).get(project)
+                if dependency:
+                    versions.append(f"{name} {dependency['version']}")
+            rendered = "; ".join(cell(version) for version in versions) or "—"
             lines.append(f"| {cell(version)} | {NAMES[loader]} | {labels.get(core.get('status'), '—')} | {labels.get(deps.get('status'), '—')} | {rendered} |")
     return lines
 
