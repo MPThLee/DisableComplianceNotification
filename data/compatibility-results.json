@@ -360,7 +360,7 @@
                 "loader": "fabric",
                 "mode": "core",
                 "dependencies": {},
-                "status": "error",
+                "status": "passed",
                 "channel": "preview",
                 "released_at": "2026-08-25T12:53:43+00:00",
                 "runtime": {
@@ -368,8 +368,8 @@
                   "fabric_api_version": "0.159.0+26.3",
                   "fabric_loader_version": "0.19.5"
                 },
-                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35029529350",
-                "reason": "Runner graphics initialization failed"
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35031491070",
+                "observed_seconds": 151.2
               }
             },
             "forge": {
@@ -537,7 +537,7 @@
                 "loader": "fabric",
                 "mode": "core",
                 "dependencies": {},
-                "status": "error",
+                "status": "passed",
                 "channel": "preview",
                 "released_at": "2026-07-16T13:59:30+00:00",
                 "runtime": {
@@ -545,8 +545,8 @@
                   "fabric_api_version": "0.155.2+26.3",
                   "fabric_loader_version": "0.19.5"
                 },
-                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35029529350",
-                "reason": "Runner graphics initialization failed"
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35031491070",
+                "observed_seconds": 150.6
               }
             },
             "forge": {
@@ -596,7 +596,7 @@
                 "loader": "fabric",
                 "mode": "core",
                 "dependencies": {},
-                "status": "error",
+                "status": "passed",
                 "channel": "preview",
                 "released_at": "2026-07-21T11:45:42+00:00",
                 "runtime": {
@@ -604,8 +604,8 @@
                   "fabric_api_version": "0.156.0+26.3",
                   "fabric_loader_version": "0.19.5"
                 },
-                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35029529350",
-                "reason": "Runner graphics initialization failed"
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35031491070",
+                "observed_seconds": 150.6
               }
             },
             "forge": {
@@ -655,7 +655,7 @@
                 "loader": "fabric",
                 "mode": "core",
                 "dependencies": {},
-                "status": "error",
+                "status": "passed",
                 "channel": "preview",
                 "released_at": "2026-07-28T12:25:51+00:00",
                 "runtime": {
@@ -663,8 +663,8 @@
                   "fabric_api_version": "0.156.1+26.3",
                   "fabric_loader_version": "0.19.5"
                 },
-                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35029529350",
-                "reason": "Runner graphics initialization failed"
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35031491070",
+                "observed_seconds": 150.8
               }
             },
             "forge": {
@@ -714,7 +714,7 @@
                 "loader": "fabric",
                 "mode": "core",
                 "dependencies": {},
-                "status": "error",
+                "status": "passed",
                 "channel": "preview",
                 "released_at": "2026-08-04T11:49:07+00:00",
                 "runtime": {
@@ -722,8 +722,8 @@
                   "fabric_api_version": "0.157.0+26.3",
                   "fabric_loader_version": "0.19.5"
                 },
-                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35029529350",
-                "reason": "Runner graphics initialization failed"
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35031491070",
+                "observed_seconds": 150.8
               }
             },
             "forge": {
@@ -773,7 +773,7 @@
                 "loader": "fabric",
                 "mode": "core",
                 "dependencies": {},
-                "status": "error",
+                "status": "passed",
                 "channel": "preview",
                 "released_at": "2026-08-12T09:39:37+00:00",
                 "runtime": {
@@ -781,8 +781,8 @@
                   "fabric_api_version": "0.157.1+26.3",
                   "fabric_loader_version": "0.19.5"
                 },
-                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35029529350",
-                "reason": "Runner graphics initialization failed"
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35031491070",
+                "observed_seconds": 150.8
               }
             },
             "forge": {
@@ -832,7 +832,7 @@
                 "loader": "fabric",
                 "mode": "core",
                 "dependencies": {},
-                "status": "error",
+                "status": "passed",
                 "channel": "preview",
                 "released_at": "2026-08-17T11:46:16+00:00",
                 "runtime": {
@@ -840,8 +840,8 @@
                   "fabric_api_version": "0.158.1+26.3",
                   "fabric_loader_version": "0.19.5"
                 },
-                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35029529350",
-                "reason": "Runner graphics initialization failed"
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35031491070",
+                "observed_seconds": 150.7
               }
             },
             "forge": {
