@@ -2,7 +2,7 @@
 
 Automated checks of unchanged published jars. Mod **1.6.0+** only.
 
-Last updated: 2026-09-15 04:53:10 UTC
+Last updated: 2026-09-15 04:58:43 UTC
 
 | Mark | Meaning |
 | :---: | --- |
@@ -11,17 +11,9 @@ Last updated: 2026-09-15 04:53:10 UTC
 | ❌ | Core runtime check failed |
 | — | Not tested, unavailable, or incomplete |
 
-Core checks run in-world for at least **150 seconds**. Stable Fabric also checks **Mod Menu + YACL**; NeoForge checks **YACL**. Forge uses its built-in config.
-
-Dependency checks select the latest compatible versions **at test time**. Supported config screens are opened, and a setting is saved, reloaded, and restored; unavailable APIs are noted.
-
-**Passed checks are kept.** ✅ combinations are not tested again for the same published jar. ⚠️ combinations retry only the optional check. Failed, unavailable, and incomplete checks may retry; a new mod release starts fresh.
-
-Blank version input checks stable releases only. An exact version input also accepts snapshots and RCs. Results describe the recorded versions; they do not cover later dependency updates. The timestamp changes only when this report changes.
-
 ## v1.6.0
 
-Built for Minecraft **26.2**.
+Built for Minecraft **26.2+**.
 
 ### Stable
 

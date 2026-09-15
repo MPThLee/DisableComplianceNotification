@@ -169,16 +169,12 @@ def render(state):
     lines = ["# Compatibility", "", "Automated checks of unchanged published jars. Mod **1.6.0+** only.", "",
         "Last updated: {updated_at}", "", "| Mark | Meaning |", "| :---: | --- |",
         "| ✅ | All applicable checks pass |", "| ⚠️ | Core passes; optional dependencies are not verified working |",
-        "| ❌ | Core runtime check failed |", "| — | Not tested, unavailable, or incomplete |", "",
-        "Core checks run in-world for at least **150 seconds**. Stable Fabric also checks **Mod Menu + YACL**; NeoForge checks **YACL**. Forge uses its built-in config.", "",
-        "Dependency checks select the latest compatible versions **at test time**. Supported config screens are opened, and a setting is saved, reloaded, and restored; unavailable APIs are noted.", "",
-        "**Passed checks are kept.** ✅ combinations are not tested again for the same published jar. ⚠️ combinations retry only the optional check. Failed, unavailable, and incomplete checks may retry; a new mod release starts fresh."]
-    lines += ["", "Blank version input checks stable releases only. An exact version input also accepts snapshots and RCs. Results describe the recorded versions; they do not cover later dependency updates. The timestamp changes only when this report changes."]
+        "| ❌ | Core runtime check failed |", "| — | Not tested, unavailable, or incomplete |"]
     for version in sorted(state.get("releases", {}), key=lambda v: tuple(map(int, v.split("."))), reverse=True):
         if tuple(map(int, version.split("."))) < (1, 6, 0):
             continue
         release = state["releases"][version]
-        lines += ["", f"## v{version}", "", f"Built for Minecraft **{release['build_minecraft_version']}**.", ""]
+        lines += ["", f"## v{version}", "", f"Built for Minecraft **{release['build_minecraft_version']}+**.", ""]
         targets = sorted(release["targets"].items(), key=lambda item: (item[1].get("released_at", ""), item[0]), reverse=True)
         stable = [(v, t) for v, t in targets if t["channel"] == "stable"]
         preview = [(v, t) for v, t in targets if t["channel"] == "preview"]
