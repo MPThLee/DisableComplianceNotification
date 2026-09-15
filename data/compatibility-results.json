@@ -201,7 +201,7 @@
                 "loader": "fabric",
                 "mode": "core",
                 "dependencies": {},
-                "status": "failed",
+                "status": "error",
                 "channel": "stable",
                 "released_at": "2026-09-15T11:23:02+00:00",
                 "runtime": {
@@ -210,7 +210,7 @@
                   "fabric_loader_version": "0.19.5"
                 },
                 "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35029454696",
-                "reason": "Runtime check failed"
+                "reason": "Runner graphics initialization failed"
               },
               "deps": {
                 "publication": "1.6.0",
@@ -257,7 +257,7 @@
                 "loader": "neoforge",
                 "mode": "core",
                 "dependencies": {},
-                "status": "failed",
+                "status": "error",
                 "channel": "stable",
                 "released_at": "2026-09-15T11:23:02+00:00",
                 "runtime": {
@@ -265,7 +265,7 @@
                   "neoforge_version": "26.3.0.1-beta"
                 },
                 "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35029454696",
-                "reason": "Runtime check failed"
+                "reason": "Runner graphics initialization failed"
               },
               "deps": {
                 "publication": "1.6.0",
@@ -360,7 +360,7 @@
                 "loader": "fabric",
                 "mode": "core",
                 "dependencies": {},
-                "status": "failed",
+                "status": "error",
                 "channel": "preview",
                 "released_at": "2026-08-25T12:53:43+00:00",
                 "runtime": {
@@ -369,7 +369,7 @@
                   "fabric_loader_version": "0.19.5"
                 },
                 "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35029529350",
-                "reason": "Runtime check failed"
+                "reason": "Runner graphics initialization failed"
               }
             },
             "forge": {
@@ -537,7 +537,7 @@
                 "loader": "fabric",
                 "mode": "core",
                 "dependencies": {},
-                "status": "failed",
+                "status": "error",
                 "channel": "preview",
                 "released_at": "2026-07-16T13:59:30+00:00",
                 "runtime": {
@@ -546,7 +546,7 @@
                   "fabric_loader_version": "0.19.5"
                 },
                 "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35029529350",
-                "reason": "Runtime check failed"
+                "reason": "Runner graphics initialization failed"
               }
             },
             "forge": {
@@ -596,7 +596,7 @@
                 "loader": "fabric",
                 "mode": "core",
                 "dependencies": {},
-                "status": "failed",
+                "status": "error",
                 "channel": "preview",
                 "released_at": "2026-07-21T11:45:42+00:00",
                 "runtime": {
@@ -605,7 +605,7 @@
                   "fabric_loader_version": "0.19.5"
                 },
                 "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35029529350",
-                "reason": "Runtime check failed"
+                "reason": "Runner graphics initialization failed"
               }
             },
             "forge": {
@@ -655,7 +655,7 @@
                 "loader": "fabric",
                 "mode": "core",
                 "dependencies": {},
-                "status": "failed",
+                "status": "error",
                 "channel": "preview",
                 "released_at": "2026-07-28T12:25:51+00:00",
                 "runtime": {
@@ -664,7 +664,7 @@
                   "fabric_loader_version": "0.19.5"
                 },
                 "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35029529350",
-                "reason": "Runtime check failed"
+                "reason": "Runner graphics initialization failed"
               }
             },
             "forge": {
@@ -714,7 +714,7 @@
                 "loader": "fabric",
                 "mode": "core",
                 "dependencies": {},
-                "status": "failed",
+                "status": "error",
                 "channel": "preview",
                 "released_at": "2026-08-04T11:49:07+00:00",
                 "runtime": {
@@ -723,7 +723,7 @@
                   "fabric_loader_version": "0.19.5"
                 },
                 "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35029529350",
-                "reason": "Runtime check failed"
+                "reason": "Runner graphics initialization failed"
               }
             },
             "forge": {
@@ -773,7 +773,7 @@
                 "loader": "fabric",
                 "mode": "core",
                 "dependencies": {},
-                "status": "failed",
+                "status": "error",
                 "channel": "preview",
                 "released_at": "2026-08-12T09:39:37+00:00",
                 "runtime": {
@@ -782,7 +782,7 @@
                   "fabric_loader_version": "0.19.5"
                 },
                 "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35029529350",
-                "reason": "Runtime check failed"
+                "reason": "Runner graphics initialization failed"
               }
             },
             "forge": {
@@ -832,7 +832,7 @@
                 "loader": "fabric",
                 "mode": "core",
                 "dependencies": {},
-                "status": "failed",
+                "status": "error",
                 "channel": "preview",
                 "released_at": "2026-08-17T11:46:16+00:00",
                 "runtime": {
@@ -841,7 +841,7 @@
                   "fabric_loader_version": "0.19.5"
                 },
                 "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35029529350",
-                "reason": "Runtime check failed"
+                "reason": "Runner graphics initialization failed"
               }
             },
             "forge": {
