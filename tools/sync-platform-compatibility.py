@@ -824,7 +824,7 @@ def sync_modrinth(
     return SyncSummary("modrinth", len(plans), updated)
 
 
-def extract_curseforge_game_versions(raw_value: object) -> dict[str, int]:
+def extract_curseforge_game_versions(raw_value: object, raw_types: object) -> dict[str, int]:
     values: object = raw_value
     if isinstance(raw_value, dict):
         values = raw_value.get("data")
@@ -833,6 +833,9 @@ def extract_curseforge_game_versions(raw_value: object) -> dict[str, int]:
             "CurseForge game-version response must be an array"
         )
 
+    if not isinstance(raw_types, list):
+        raise PlatformSyncError("CurseForge version types must be an array")
+    types = {entry["id"]: entry["slug"] for entry in raw_types}
     names: dict[str, int] = {}
     for index, raw_version in enumerate(values):
         version = require_object(
@@ -841,6 +844,8 @@ def extract_curseforge_game_versions(raw_value: object) -> dict[str, int]:
         name = require_string(
             version.get("name"), f"CurseForge game version {index} name"
         )
+        if VERSION_PATTERN.fullmatch(name) and not types.get(version.get("gameVersionTypeID"), "").startswith("minecraft-"):
+            continue  # Bukkit can have the same version name as Minecraft Java.
         names[name] = parse_positive_integer(version.get("id"), f"CurseForge game version {name} ID")
     return names
 
@@ -895,7 +900,12 @@ def sync_curseforge(
             "GET",
             join_url(base_url, "api/game/versions"),
             headers=headers,
-        )
+        ),
+        client.request_json(
+            "GET",
+            join_url(base_url, "api/game/version-types"),
+            headers=headers,
+        ),
     )
     required_names = {version for loader in EXPECTED_LOADERS for version in release.versions_for(loader)}
     required_names.update(

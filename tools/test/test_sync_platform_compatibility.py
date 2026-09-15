@@ -312,7 +312,7 @@ class StatefulCurseForgeClient:
         self.calls: list[dict[str, object]] = []
         self.game_version_names: dict[str, list[str]] = {}
         self.available_names = [
-            {"id": index, "name": name}
+            {"id": index, "name": name, "gameVersionTypeID": 1}
             for index, name in enumerate((
                 "Fabric",
                 "NeoForge",
@@ -348,6 +348,8 @@ class StatefulCurseForgeClient:
             "body": body,
         }
         self.calls.append(call)
+        if method == "GET" and url == sync.join_url(self.base_url, "api/game/version-types"):
+            return [{"id": 1, "slug": "minecraft-26"}]
         if method == "GET" and url == self.game_versions_url:
             return copy.deepcopy(self.available_names)
         if method != "POST" or url != self.update_url:
@@ -897,9 +899,9 @@ class CurseForgeSyncTest(unittest.TestCase):
             {"id": 1, "name": "Fabric"},
             {"id": 2, "name": "NeoForge"},
             {"id": 3, "name": "Forge"},
-            {"id": 4, "name": "26.2"},
-            {"id": 5, "name": "26.3"},
-            {"id": 6, "name": "27.0"},
+            {"id": 4, "name": "26.2", "gameVersionTypeID": 1},
+            {"id": 5, "name": "26.3", "gameVersionTypeID": 1},
+            {"id": 6, "name": "27.0", "gameVersionTypeID": 1},
         ]
         update_url = sync.curseforge_update_url(
             base_url, release.publication.curseforge_project_id
@@ -908,6 +910,7 @@ class CurseForgeSyncTest(unittest.TestCase):
             ("GET", sync.join_url(base_url, "api/game/versions")): [
                 game_versions
             ],
+            ("GET", sync.join_url(base_url, "api/game/version-types")): [[{"id": 1, "slug": "minecraft-26"}]],
             ("POST", update_url): [
                 {
                     "id": release.publication.artifacts[loader].curseforge_file_id
@@ -915,6 +918,12 @@ class CurseForgeSyncTest(unittest.TestCase):
                 for loader in sync.EXPECTED_LOADERS
             ],
         }
+
+    def test_excludes_bukkit_versions_with_the_same_name(self):
+        versions = [{"id": 10, "name": "26.2", "gameVersionTypeID": 1},
+                    {"id": 11, "name": "26.2", "gameVersionTypeID": 2}]
+        types = [{"id": 1, "slug": "minecraft-26-2"}, {"id": 2, "slug": "bukkit-26-2"}]
+        self.assertEqual({"26.2": 10}, sync.extract_curseforge_game_versions(versions, types))
 
     def test_posts_full_loader_and_verified_version_metadata(self):
         release = parsed_release()
@@ -958,8 +967,8 @@ class CurseForgeSyncTest(unittest.TestCase):
             {"id": 1, "name": "Fabric"},
             {"id": 2, "name": "NeoForge"},
             {"id": 3, "name": "Forge"},
-            {"id": 4, "name": "26.2"},
-            {"id": 5, "name": "26.3"},
+            {"id": 4, "name": "26.2", "gameVersionTypeID": 1},
+            {"id": 5, "name": "26.3", "gameVersionTypeID": 1},
         ]
         client = FakeClient(responses)
 
@@ -973,7 +982,7 @@ class CurseForgeSyncTest(unittest.TestCase):
                 base_url="https://curseforge.test",
             )
 
-        self.assertEqual(["GET"], [call["method"] for call in client.calls])
+        self.assertEqual(["GET", "GET"], [call["method"] for call in client.calls])
 
     def test_requires_update_response_to_match_the_immutable_file_id(self):
         release = parsed_release()
