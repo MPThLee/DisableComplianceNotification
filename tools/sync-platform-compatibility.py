@@ -17,7 +17,7 @@ import os
 import re
 import secrets
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Callable
 from urllib.error import HTTPError, URLError
@@ -78,6 +78,10 @@ class Publication:
 class PublishedRelease:
     publication: Publication
     verified_minecraft_versions: tuple[str, ...]
+    loader_versions: dict[str, tuple[str, ...]] | None = None
+
+    def versions_for(self, loader: str) -> tuple[str, ...]:
+        return self.loader_versions[loader] if self.loader_versions is not None else self.verified_minecraft_versions
 
 
 @dataclass(frozen=True)
@@ -573,6 +577,36 @@ def load_release_data(path: Path) -> PublishedRelease:
     return parse_release_data(value)
 
 
+def with_compatibility_results(release: PublishedRelease, state: dict) -> PublishedRelease:
+    """Add stable core passes only to the exact published loader artifact."""
+    if state.get("schema_version") != 1:
+        raise PlatformSyncError("unsupported compatibility-results schema")
+    publication = release.publication
+    targets = state.get("releases", {}).get(publication.release_version, {}).get("targets", {})
+    versions = {loader: list(release.verified_minecraft_versions) for loader in EXPECTED_LOADERS}
+    for version, target in targets.items():
+        if target.get("channel") != "stable":
+            continue
+        require_version(version, "compatibility target")
+        if compare_versions(version, publication.build_minecraft_version) < 0:
+            continue
+        for loader in EXPECTED_LOADERS:
+            core = target.get("loaders", {}).get(loader, {}).get("core", {})
+            if core.get("status") != "passed":
+                continue
+            if core.get("artifact_sha256") != publication.artifacts[loader].sha256:
+                continue
+            if (core.get("publication") != publication.release_version
+                    or core.get("minecraft_version") != version
+                    or core.get("loader") != loader or core.get("mode") != "core"
+                    or core.get("channel") != "stable"
+                    or require_number(core.get("observed_seconds"), "core observation") < 150):
+                raise PlatformSyncError("Compatibility pass has incomplete or mismatched evidence")
+            if version not in versions[loader]:
+                versions[loader].append(version)
+    return replace(release, loader_versions={loader: tuple(sorted(values, key=version_key)) for loader, values in versions.items()})
+
+
 def join_url(base_url: str, path: str) -> str:
     base = base_url.rstrip("/")
     if not base.startswith(("https://", "http://")):
@@ -729,7 +763,7 @@ def sync_modrinth(
                 artifact=artifact,
                 current_game_versions=current,
                 merged_game_versions=merge_game_versions(
-                    current, release.verified_minecraft_versions
+                    current, release.versions_for(loader)
                 ),
             )
         )
@@ -754,8 +788,8 @@ def sync_modrinth(
         updated += 1
 
     # Verify the final marketplace state, including the idempotent no-op path.
-    desired = set(release.verified_minecraft_versions)
     for plan in plans:
+        desired = set(release.versions_for(plan.artifact.loader))
         raw_version = client.request_json(
             "GET",
             modrinth_version_url(
@@ -851,7 +885,7 @@ def sync_curseforge(
             headers=headers,
         )
     )
-    required_names = set(release.verified_minecraft_versions)
+    required_names = {version for loader in EXPECTED_LOADERS for version in release.versions_for(loader)}
     required_names.update(
         artifact.curseforge_loader
         for artifact in publication.artifacts.values()
@@ -873,7 +907,7 @@ def sync_curseforge(
             "fileID": artifact.curseforge_file_id,
             "gameVersionNames": [
                 artifact.curseforge_loader,
-                *release.verified_minecraft_versions,
+                *release.versions_for(loader),
             ],
         }
         boundary = boundary_factory()
@@ -931,6 +965,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         default=CURSEFORGE_BASE_URL,
         help=argparse.SUPPRESS,
     )
+    parser.add_argument("--compatibility-data", type=Path, default=project_root / "data/compatibility-results.json")
     parser.add_argument("--timeout", type=float, default=30)
     return parser.parse_args(argv)
 
@@ -939,6 +974,8 @@ def main(argv: list[str] | None = None) -> int:
     args = parse_args(sys.argv[1:] if argv is None else argv)
     try:
         release = load_release_data(args.data)
+        if args.compatibility_data.exists():
+            release = with_compatibility_results(release, json.loads(args.compatibility_data.read_text()))
         client = JsonHttpClient(timeout=args.timeout)
         if args.platform == "modrinth":
             summary = sync_modrinth(

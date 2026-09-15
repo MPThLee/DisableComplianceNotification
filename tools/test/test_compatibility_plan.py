@@ -189,6 +189,20 @@ class CompatibilityPlanTest(unittest.TestCase):
                 "26.2",
             )
 
+    def test_unavailable_dependencies_defer_only_the_affected_target(self):
+        def resolver(target, **kwargs):
+            if target == "26.3":
+                raise planner.CompatibilityPlanError("No Forge release yet")
+            return FakeResolver()(target, **kwargs)
+        with tempfile.TemporaryDirectory() as directory:
+            source = make_source(Path(directory))
+            plan = planner.build_compatibility_plan(publication_data(), source, manifest(), resolver=resolver)
+            self.assertTrue(plan["has_work"])
+            self.assertEqual("deferred", plan["targets"][-1]["status"])
+            self.assertFalse(any(row["minecraft_version"] == "26.3" for row in plan["matrix"]["include"]))
+            self.assertTrue(any(row["minecraft_version"] == "26.2.1" for row in plan["matrix"]["include"]))
+            planner.write_plan_bundle(plan, source, Path(directory) / "plan")
+
     def test_missing_and_legacy_records_schedule_every_target_loader(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
             root = Path(temporary_directory)

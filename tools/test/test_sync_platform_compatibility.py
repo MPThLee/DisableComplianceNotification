@@ -684,6 +684,46 @@ class PublishedReleaseDataTest(unittest.TestCase):
                     sync.parse_release_data(document)
 
 
+class CompatibilityReportSyncTest(unittest.TestCase):
+    def setUp(self):
+        self.release = sync.parse_release_data(release_document_with_versions(["26.2"]))
+        core = {"status": "passed", "publication": "1.6.0", "minecraft_version": "26.3",
+                "loader": "fabric", "mode": "core", "channel": "stable",
+                "observed_seconds": 151, "artifact_sha256": TEST_HASHES["fabric"]}
+        self.state = {"schema_version": 1, "releases": {"1.6.0": {"targets": {
+            "26.3": {"channel": "stable", "loaders": {"fabric": {"core": core}}}
+        }}}}
+
+    def test_adds_only_the_passing_loader_on_both_marketplaces(self):
+        release = sync.with_compatibility_results(self.release, self.state)
+        modrinth = StatefulModrinthClient(release, "https://modrinth.test")
+        curseforge = StatefulCurseForgeClient(release, "https://curseforge.test")
+        sync.sync_modrinth(release, "token", modrinth, base_url=modrinth.base_url)
+        sync.sync_curseforge(release, "token", curseforge, base_url=curseforge.base_url)
+        for loader in sync.EXPECTED_LOADERS:
+            expected = ["26.2", "26.3"] if loader == "fabric" else ["26.2"]
+            self.assertEqual(expected, modrinth.game_versions[loader])
+            self.assertEqual([release.publication.artifacts[loader].curseforge_loader, *expected],
+                             curseforge.game_version_names[loader])
+        self.assertEqual(0, sync.sync_modrinth(release, "token", modrinth,
+                                             base_url=modrinth.base_url).updated)
+
+    def test_never_adds_failed_stale_or_preview_results(self):
+        for change in ({"status": "failed"}, {"artifact_sha256": "0" * 64}):
+            state = copy.deepcopy(self.state)
+            state["releases"]["1.6.0"]["targets"]["26.3"]["loaders"]["fabric"]["core"].update(change)
+            self.assertEqual(("26.2",), sync.with_compatibility_results(self.release, state).versions_for("fabric"))
+        self.state["releases"]["1.6.0"]["targets"]["26.3"]["channel"] = "preview"
+        self.assertEqual(("26.2",), sync.with_compatibility_results(self.release, self.state).versions_for("fabric"))
+
+    def test_rejects_incomplete_or_misattributed_pass(self):
+        for change in ({"observed_seconds": 149}, {"publication": "1.7.0"}, {"loader": "forge"}):
+            state = copy.deepcopy(self.state)
+            state["releases"]["1.6.0"]["targets"]["26.3"]["loaders"]["fabric"]["core"].update(change)
+            with self.assertRaises(sync.PlatformSyncError):
+                sync.with_compatibility_results(self.release, state)
+
+
 class ModrinthSyncTest(unittest.TestCase):
     def test_merges_verified_versions_and_verifies_every_immutable_version(self):
         release = parsed_release()

@@ -105,7 +105,10 @@ def main(
         return 1
 
     print(json.dumps(plan["matrix"], sort_keys=True, separators=(",", ":")))
-    if not plan["has_work"]:
+    deferred = [target for target in plan["targets"] if target["status"] == "deferred"]
+    for target in deferred:
+        print(f"Deferred Minecraft {target['minecraft_version']}: {target['reason']}", file=sys.stderr)
+    if not plan["has_work"] and not deferred:
         print("Published compatibility evidence is current.", file=sys.stderr)
     return 0
 

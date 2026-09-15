@@ -678,5 +678,6 @@ jobs:
       actions: read
       contents: write
     uses: ./.github/workflows/compatibility.yml
+    secrets: inherit
     with:
       minecraft_version: ${{ inputs.minecraft_version }}

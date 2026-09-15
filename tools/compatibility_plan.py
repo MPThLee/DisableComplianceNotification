@@ -608,12 +608,16 @@ def build_compatibility_plan(
         if version == build_version:
             resolved_config = dict(sorted(source.properties.items()))
         else:
-            resolved_config = resolve_target_config(
-                source,
-                version,
-                resolver=resolver,
-                timeout=timeout,
-            )
+            try:
+                resolved_config = resolve_target_config(
+                    source,
+                    version,
+                    resolver=resolver,
+                    timeout=timeout,
+                )
+            except CompatibilityPlanError as exc:
+                targets.append({"minecraft_version": version, "status": "deferred", "reason": str(exc)})
+                continue
         fingerprint = compute_dependency_fingerprint(resolved_config)
         pending_loaders = stale_loaders_for_target(
             publication_data,
@@ -690,6 +694,8 @@ def write_plan_bundle(
             target.get("minecraft_version"),
             label="planned Minecraft version",
         )
+        if target.get("status") == "deferred":
+            continue
         resolved_config = target.get("resolved_config")
         config_file = target.get("config_file")
         target_plan_file = target.get("target_plan_file")
