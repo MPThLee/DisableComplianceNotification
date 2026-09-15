@@ -80,15 +80,16 @@
                     "sha512": "eeaa16bc7abc6e059aad2094d2e27ceb37a9d529ed5f30a2a731bf162f164dcf5b8729316d251314e90358b46ceb178358f1600b27b9392fcb6423678f148d60"
                   }
                 },
-                "status": "failed",
+                "status": "passed",
                 "channel": "stable",
                 "released_at": "2026-06-16T12:03:33+00:00",
                 "runtime": {
                   "minecraft_version": "26.2",
                   "neoforge_version": "26.2.0.88"
                 },
-                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35029454696",
-                "reason": "Runtime check failed"
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35031867271",
+                "observed_seconds": 151.0,
+                "config_interaction": "passed"
               },
               "core": {
                 "publication": "1.6.0",
@@ -257,15 +258,15 @@
                 "loader": "neoforge",
                 "mode": "core",
                 "dependencies": {},
-                "status": "failed",
+                "status": "passed",
                 "channel": "stable",
                 "released_at": "2026-09-15T11:23:02+00:00",
                 "runtime": {
                   "minecraft_version": "26.3",
                   "neoforge_version": "26.3.0.1-beta"
                 },
-                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35030750536",
-                "reason": "Runtime check failed"
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35031867271",
+                "observed_seconds": 151.0
               },
               "deps": {
                 "publication": "1.6.0",
