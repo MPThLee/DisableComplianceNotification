@@ -23,6 +23,12 @@ def read(path, default=None):
     return json.loads(path.read_text()) if path.exists() else default
 
 
+def load_state(state_path, report_path):
+    if not state_path.exists() and report_path.exists():
+        raise ValueError(f"Missing {state_path}; refusing to discard existing report history")
+    return read(state_path, {"schema_version": 1, "releases": {}})
+
+
 def write(path, value):
     path.parent.mkdir(parents=True, exist_ok=True)
     text = json.dumps(value, indent=2, ensure_ascii=False) + "\n"
@@ -104,8 +110,8 @@ def merge(state, results, publication):
         })
         tests = target["loaders"].setdefault(loader, {})
         old = tests.get(mode)
-        if old and old.get("status") == "passed" and old.get("artifact_sha256") == result["artifact_sha256"] and result["status"] != "passed":
-            continue  # A late or manually repeated run must not erase a retained pass.
+        if old and old.get("status") == "passed" and old.get("artifact_sha256") == result["artifact_sha256"]:
+            continue  # Keep the original passing evidence, including dependency versions.
         if old and result["status"] == "error":
             continue  # Preserve known evidence on a transient infrastructure error.
         def meaningful(value):
@@ -220,7 +226,8 @@ def main():
     args = parser.parse_args()
     publication = read(args.data)["publication"]
     if args.command == "plan":
-        planned = plan(publication, args.target, load_manifest(), read(args.state, {}))
+        state = load_state(args.state, args.report)
+        planned = plan(publication, args.target, load_manifest(), state)
         matrix = json.dumps(planned, separators=(",", ":"))
         if os.environ.get("GITHUB_OUTPUT"):
             with open(os.environ["GITHUB_OUTPUT"], "a") as output:
@@ -231,7 +238,7 @@ def main():
         log = args.log.read_text(errors="replace") if args.log and args.log.exists() else ""
         write(args.output, record(read(args.preparation), read(args.gate), args.outcome, args.run_url, log))
     else:
-        state = read(args.state, {"schema_version": 1, "releases": {}})
+        state = load_state(args.state, args.report)
         if args.results:
             state = merge(state, [read(path) for path in sorted(args.results.rglob("result.json"))], publication)
         save_report(state, args.state, args.report)
