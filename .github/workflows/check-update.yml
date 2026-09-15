@@ -2,6 +2,12 @@ name: Check Minecraft Update
 
 on:
   workflow_dispatch:
+    inputs:
+      minecraft_version:
+        description: "Optional exact Minecraft version to test the published JAR against"
+        required: false
+        default: ""
+        type: string
 
 permissions:
   actions: read
@@ -12,7 +18,14 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  try_version:
+    if: inputs.minecraft_version != ''
+    uses: ./.github/workflows/test.yml
+    with:
+      minecraft_version: ${{ inputs.minecraft_version }}
+
   probe:
+    if: inputs.minecraft_version == ''
     runs-on: ubuntu-latest
     timeout-minutes: 20
     outputs:

@@ -77,7 +77,8 @@ class CheckUpdateTest(unittest.TestCase):
             PROJECT_ROOT / ".github/workflows/check-update.yml"
         ).read_text(encoding="utf-8")
 
-        self.assertIn('cron: "0 */6 * * *"', workflow)
+        self.assertIn("  workflow_dispatch:\n", workflow)
+        self.assertNotIn("  schedule:\n", workflow)
         self.assertIn("group: published-compatibility-state", workflow)
         jobs_start = workflow.index("jobs:\n") + len("jobs:\n")
         jobs_workflow = workflow[jobs_start:]
@@ -87,6 +88,7 @@ class CheckUpdateTest(unittest.TestCase):
             re.MULTILINE,
         )
         expected_jobs = (
+            "try_version",
             "probe",
             "verify",
             "aggregate",
@@ -161,6 +163,8 @@ class CheckUpdateTest(unittest.TestCase):
         self.assertNotIn("check-update.py --apply", workflow)
 
         for uses_line in re.findall(r"^\s*uses:\s*(.+)$", workflow, re.MULTILINE):
+            if uses_line == "./.github/workflows/test.yml":
+                continue
             with self.subTest(action=uses_line):
                 self.assertRegex(uses_line, r"@[0-9a-f]{40}(?:\s+#.*)?$")
 
