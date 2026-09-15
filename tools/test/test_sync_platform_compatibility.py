@@ -312,15 +312,15 @@ class StatefulCurseForgeClient:
         self.calls: list[dict[str, object]] = []
         self.game_version_names: dict[str, list[str]] = {}
         self.available_names = [
-            {"name": name}
-            for name in (
+            {"id": index, "name": name}
+            for index, name in enumerate((
                 "Fabric",
                 "NeoForge",
                 "Forge",
                 "26.2",
                 "26.2.1",
                 "26.3",
-            )
+            ), 1)
         ]
         self.game_versions_url = sync.join_url(
             base_url, "api/game/versions"
@@ -357,7 +357,8 @@ class StatefulCurseForgeClient:
         loader = self.loader_by_file_id.get(file_id)
         if loader is None:
             raise AssertionError(f"unexpected CurseForge file ID: {file_id}")
-        names = metadata["gameVersionNames"]
+        names_by_id = {version["id"]: version["name"] for version in self.available_names}
+        names = [names_by_id[value] for value in metadata["gameVersions"]]
         if len(names) != len(set(names)):
             raise AssertionError("CurseForge update introduced duplicates")
         self.game_version_names[loader] = list(names)
@@ -942,12 +943,7 @@ class CurseForgeSyncTest(unittest.TestCase):
             self.assertEqual(
                 {
                     "fileID": artifact.curseforge_file_id,
-                    "gameVersionNames": [
-                        artifact.curseforge_loader,
-                        "26.2",
-                        "26.3",
-                        "27.0",
-                    ],
+                    "gameVersions": [sync.EXPECTED_LOADERS.index(loader) + 1, 4, 5, 6],
                 },
                 multipart_json(call),
             )
@@ -959,11 +955,11 @@ class CurseForgeSyncTest(unittest.TestCase):
             "https://curseforge.test", "api/game/versions"
         )
         responses[("GET", game_versions_url)][0] = [
-            {"name": "Fabric"},
-            {"name": "NeoForge"},
-            {"name": "Forge"},
-            {"name": "26.2"},
-            {"name": "26.3"},
+            {"id": 1, "name": "Fabric"},
+            {"id": 2, "name": "NeoForge"},
+            {"id": 3, "name": "Forge"},
+            {"id": 4, "name": "26.2"},
+            {"id": 5, "name": "26.3"},
         ]
         client = FakeClient(responses)
 

@@ -824,7 +824,7 @@ def sync_modrinth(
     return SyncSummary("modrinth", len(plans), updated)
 
 
-def extract_curseforge_game_versions(raw_value: object) -> set[str]:
+def extract_curseforge_game_versions(raw_value: object) -> dict[str, int]:
     values: object = raw_value
     if isinstance(raw_value, dict):
         values = raw_value.get("data")
@@ -833,7 +833,7 @@ def extract_curseforge_game_versions(raw_value: object) -> set[str]:
             "CurseForge game-version response must be an array"
         )
 
-    names: set[str] = set()
+    names: dict[str, int] = {}
     for index, raw_version in enumerate(values):
         version = require_object(
             raw_version, f"CurseForge game version {index}"
@@ -841,7 +841,7 @@ def extract_curseforge_game_versions(raw_value: object) -> set[str]:
         name = require_string(
             version.get("name"), f"CurseForge game version {index} name"
         )
-        names.add(name)
+        names[name] = parse_positive_integer(version.get("id"), f"CurseForge game version {name} ID")
     return names
 
 
@@ -902,7 +902,7 @@ def sync_curseforge(
         artifact.curseforge_loader
         for artifact in publication.artifacts.values()
     )
-    missing_names = required_names - available_versions
+    missing_names = required_names - available_versions.keys()
     if missing_names:
         raise PlatformSyncError(
             "CurseForge does not recognize required game version names: "
@@ -917,9 +917,9 @@ def sync_curseforge(
         artifact = publication.artifacts[loader]
         metadata: dict[str, object] = {
             "fileID": artifact.curseforge_file_id,
-            "gameVersionNames": [
-                artifact.curseforge_loader,
-                *release.versions_for(loader),
+            "gameVersions": [
+                available_versions[name]
+                for name in (artifact.curseforge_loader, *release.versions_for(loader))
             ],
         }
         boundary = boundary_factory()
