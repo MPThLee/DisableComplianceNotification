@@ -201,7 +201,7 @@
                 "loader": "fabric",
                 "mode": "core",
                 "dependencies": {},
-                "status": "error",
+                "status": "passed",
                 "channel": "stable",
                 "released_at": "2026-09-15T11:23:02+00:00",
                 "runtime": {
@@ -209,8 +209,8 @@
                   "fabric_api_version": "0.160.5+26.3",
                   "fabric_loader_version": "0.19.5"
                 },
-                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35029454696",
-                "reason": "Runner graphics initialization failed"
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35030750536",
+                "observed_seconds": 150.7
               },
               "deps": {
                 "publication": "1.6.0",
@@ -257,15 +257,15 @@
                 "loader": "neoforge",
                 "mode": "core",
                 "dependencies": {},
-                "status": "error",
+                "status": "failed",
                 "channel": "stable",
                 "released_at": "2026-09-15T11:23:02+00:00",
                 "runtime": {
                   "minecraft_version": "26.3",
                   "neoforge_version": "26.3.0.1-beta"
                 },
-                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35029454696",
-                "reason": "Runner graphics initialization failed"
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35030750536",
+                "reason": "Runtime check failed"
               },
               "deps": {
                 "publication": "1.6.0",
