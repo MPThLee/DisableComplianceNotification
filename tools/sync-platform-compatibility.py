@@ -750,6 +750,7 @@ def sync_modrinth(
     token: str,
     client: JsonHttpClient,
     *,
+    loaders: tuple[str, ...] = EXPECTED_LOADERS,
     base_url: str = MODRINTH_BASE_URL,
 ) -> SyncSummary:
     if not token:
@@ -760,7 +761,7 @@ def sync_modrinth(
     plans: list[ModrinthPlan] = []
 
     # Validate every immutable coordinate before allowing any mutation.
-    for loader in EXPECTED_LOADERS:
+    for loader in loaders:
         artifact = publication.artifacts[loader]
         raw_version = client.request_json(
             "GET",
@@ -889,6 +890,7 @@ def sync_curseforge(
     token: str,
     client: JsonHttpClient,
     *,
+    loaders: tuple[str, ...] = EXPECTED_LOADERS,
     base_url: str = CURSEFORGE_BASE_URL,
     boundary_factory: Callable[[], str] = make_multipart_boundary,
 ) -> SyncSummary:
@@ -909,11 +911,11 @@ def sync_curseforge(
             headers=headers,
         ),
     )
-    required_names = {version for loader in EXPECTED_LOADERS for version in release.versions_for(loader)}
+    required_names = {version for loader in loaders for version in release.versions_for(loader)}
     required_names.add("Client")
     required_names.update(
-        artifact.curseforge_loader
-        for artifact in publication.artifacts.values()
+        publication.artifacts[loader].curseforge_loader
+        for loader in loaders
     )
     missing_names = required_names - available_versions.keys()
     if missing_names:
@@ -926,7 +928,7 @@ def sync_curseforge(
         base_url, publication.curseforge_project_id
     )
     updated = 0
-    for loader in EXPECTED_LOADERS:
+    for loader in loaders:
         artifact = publication.artifacts[loader]
         metadata: dict[str, object] = {
             "fileID": artifact.curseforge_file_id,
@@ -963,7 +965,7 @@ def sync_curseforge(
             )
         updated += 1
 
-    return SyncSummary("curseforge", len(EXPECTED_LOADERS), updated)
+    return SyncSummary("curseforge", len(loaders), updated)
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
@@ -995,6 +997,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         help=argparse.SUPPRESS,
     )
     parser.add_argument("--compatibility-data", type=Path, default=project_root / "data/compatibility-results.json")
+    parser.add_argument("--loader", choices=EXPECTED_LOADERS)
     parser.add_argument("--timeout", type=float, default=30)
     return parser.parse_args(argv)
 
@@ -1012,6 +1015,7 @@ def main(argv: list[str] | None = None) -> int:
                 os.environ.get("MODRINTH_TOKEN", ""),
                 client,
                 base_url=args.modrinth_base_url,
+                loaders=(args.loader,) if args.loader else EXPECTED_LOADERS,
             )
         else:
             summary = sync_curseforge(
@@ -1019,6 +1023,7 @@ def main(argv: list[str] | None = None) -> int:
                 os.environ.get("CURSEFORGE_TOKEN", ""),
                 client,
                 base_url=args.curseforge_base_url,
+                loaders=(args.loader,) if args.loader else EXPECTED_LOADERS,
             )
     except PlatformSyncError as exc:
         print(f"Error: {exc}", file=sys.stderr)

@@ -713,6 +713,17 @@ class CompatibilityReportSyncTest(unittest.TestCase):
         self.assertEqual(0, sync.sync_modrinth(release, "token", modrinth,
                                              base_url=modrinth.base_url).updated)
 
+    def test_selected_loader_does_not_update_other_files(self):
+        release = sync.with_compatibility_results(self.release, self.state)
+        modrinth = StatefulModrinthClient(release, "https://modrinth.test")
+        curseforge = StatefulCurseForgeClient(release, "https://curseforge.test")
+        self.assertEqual(1, sync.sync_modrinth(release, "token", modrinth,
+            base_url=modrinth.base_url, loaders=("fabric",)).checked)
+        self.assertEqual(1, sync.sync_curseforge(release, "token", curseforge,
+            base_url=curseforge.base_url, loaders=("neoforge",)).checked)
+        self.assertEqual({"neoforge"}, set(curseforge.game_version_names))
+        self.assertTrue(all("fabric-version-id" in call["url"] for call in modrinth.calls))
+
     def test_never_adds_failed_stale_or_preview_results(self):
         for change in ({"status": "failed"}, {"artifact_sha256": "0" * 64}):
             state = copy.deepcopy(self.state)

@@ -171,12 +171,15 @@ jobs:
       !cancelled() && github.ref_name == github.event.repository.default_branch &&
       needs.plan.result == 'success' &&
       (needs.report.result == 'success' || needs.plan.outputs.has_work == 'false')
+    name: Sync ${{ matrix.platform }} / ${{ matrix.loader }}
+    continue-on-error: true
     runs-on: ubuntu-latest
     timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
         platform: [modrinth, curseforge]
+        loader: [fabric, neoforge, forge]
     steps:
       - name: Checkout committed compatibility evidence
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -191,4 +194,4 @@ jobs:
         env:
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
           CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
-        run: python3 tools/sync-platform-compatibility.py --platform ${{ matrix.platform }}
+        run: python3 tools/sync-platform-compatibility.py --platform ${{ matrix.platform }} --loader ${{ matrix.loader }}
