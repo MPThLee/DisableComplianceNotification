@@ -18,14 +18,8 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  try_version:
-    if: inputs.minecraft_version != ''
-    uses: ./.github/workflows/test.yml
-    with:
-      minecraft_version: ${{ inputs.minecraft_version }}
-
   probe:
-    if: inputs.minecraft_version == ''
+    if: inputs.minecraft_version == '' && github.ref_name == github.event.repository.default_branch
     runs-on: ubuntu-latest
     timeout-minutes: 20
     outputs:
@@ -673,3 +667,13 @@ jobs:
             echo
             echo "Modrinth and CurseForge now advertise every verified Minecraft version."
           } >> "$GITHUB_STEP_SUMMARY"
+
+  compatibility_report:
+    needs: record_marketplace_sync
+    if: ${{ !cancelled() }}
+    permissions:
+      actions: read
+      contents: write
+    uses: ./.github/workflows/compatibility.yml
+    with:
+      minecraft_version: ${{ inputs.minecraft_version }}

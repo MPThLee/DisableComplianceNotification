@@ -400,6 +400,7 @@ def write_gate_result(
     observed_runtime_seconds: float,
     filtered: set[str],
     periodic_toast_absent: bool,
+    optional_config: str | None = None,
 ) -> dict[str, object]:
     result = {
         "schema_version": 1,
@@ -414,6 +415,8 @@ def write_gate_result(
         "periodic_toast_absent": periodic_toast_absent,
         "passed": True,
     }
+    if optional_config is not None:
+        result["optional_config"] = optional_config
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(".tmp")
     temporary.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
@@ -427,6 +430,7 @@ def run_gate(
     runtime_seconds: int,
     startup_timeout_seconds: int,
     use_xvfb: bool,
+    with_dependencies: bool = False,
 ) -> dict[str, object]:
     if runtime_seconds < MINIMUM_GATE_RUNTIME_SECONDS:
         raise ValueError(
@@ -455,6 +459,8 @@ def run_gate(
         if option not in java_options:
             java_options = f"{java_options} {option}".strip()
     environment["_JAVA_OPTIONS"] = java_options
+    if with_dependencies:
+        environment["_JAVA_OPTIONS"] += f" -Ddcn.client.gate.optionalLoader={loader}"
     world_name = f"dcn_compliance_gate_{os.getpid()}_{int(time.time())}"
     environment["_JAVA_OPTIONS"] = (
         f"{environment['_JAVA_OPTIONS']} -Ddcn.client.gate=true "
@@ -600,6 +606,15 @@ def run_gate(
                 world_runtime = (
                     0 if world_joined_at is None else time.monotonic() - world_joined_at
                 )
+                optional_config = None
+                if with_dependencies:
+                    log = output_path.read_text(encoding="utf-8", errors="replace")
+                    if "DCN optional config interaction passed" in log:
+                        optional_config = "passed"
+                    elif "DCN optional config interaction unavailable" in log:
+                        optional_config = "unavailable"
+                    else:
+                        failure = failure or "optional config interaction did not complete"
                 if failure is not None:
                     raise RuntimeError(
                         f"{loader} compliance gate failed: {failure}\n"
@@ -619,6 +634,7 @@ def run_gate(
                     world_runtime,
                     filtered,
                     no_periodic_toast_verified and not periodic_toast_observed,
+                    optional_config,
                 )
         finally:
             if process is not None:
@@ -664,6 +680,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         action="store_true",
         help="launch the client through xvfb-run",
     )
+    parser.add_argument("--with-dependencies", action="store_true")
     return parser.parse_args(argv)
 
 
@@ -681,6 +698,7 @@ def main(argv: list[str] | None = None) -> int:
             args.runtime_seconds,
             args.startup_timeout_seconds,
             args.xvfb,
+            args.with_dependencies,
         )
     except KeyboardInterrupt:
         print("client compliance gate interrupted", file=sys.stderr)

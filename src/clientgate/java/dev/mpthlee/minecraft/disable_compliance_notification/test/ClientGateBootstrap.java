@@ -43,6 +43,22 @@ public final class ClientGateBootstrap {
             Minecraft client = waitForClient();
             waitFor(client, () -> client.gui != null && client.gui.screen() != null && client.level == null);
             Thread.sleep(2_000);
+            String optionalLoader = System.getProperty("dcn.client.gate.optionalLoader");
+            if (optionalLoader != null) {
+                var configScreen = runOnClient(client, () -> OptionalConfigCheck.open(client, optionalLoader));
+                if (configScreen != null) {
+                    Thread.sleep(2_000);
+                    runOnClient(client, () -> {
+                        if (client.gui.screen() != configScreen) {
+                            throw new IllegalStateException("Optional config screen did not remain open");
+                        }
+                        configScreen.onClose();
+                        client.gui.setScreen(new TitleScreen());
+                        return null;
+                    });
+                    LOGGER.info("DCN optional config interaction passed");
+                }
+            }
             LOGGER.info(
                     "DCN client gate opening world from screen: {}",
                     runOnClient(client, () -> client.gui.screen().getClass().getName())

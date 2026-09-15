@@ -8,12 +8,6 @@ on:
     branches:
       - mc*
   workflow_dispatch:
-  workflow_call:
-    inputs:
-      minecraft_version:
-        required: false
-        default: ""
-        type: string
 
 jobs:
   test-fabric:
@@ -23,20 +17,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
-      - name: Test build tooling
-        run: python3 -m unittest discover -s tools/test -p 'test_*.py'
-
-      - name: Prepare published JAR for optional version trial
-        if: inputs.minecraft_version != ''
-        env:
-          TARGET_VERSION: ${{ inputs.minecraft_version }}
-        run: python3 tools/test/prepare_published_runtime.py --target "$TARGET_VERSION" --loader fabric
-
       - name: Read config.properties
         id: config
         run: |
           echo "mc_version=$(grep '^minecraft_version=' config.properties | cut -d'=' -f2)" >> "$GITHUB_OUTPUT"
           echo "java_version=$(grep '^java_version=' config.properties | cut -d'=' -f2)" >> "$GITHUB_OUTPUT"
+
+      - name: Test build tooling
+        run: python3 -m unittest discover -s tools/test -p 'test_*.py'
 
       - name: Setup Java ${{ steps.config.outputs.java_version }}
         uses: actions/setup-java@0f481fcb613427c0f801b606911222b5b6f3083a # v5.5.0
@@ -61,7 +49,6 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y xvfb
 
       - name: Build mod
-        if: inputs.minecraft_version == ''
         working-directory: fabric
         timeout-minutes: 60
         run: |
@@ -107,12 +94,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
-      - name: Prepare published JAR for optional version trial
-        if: inputs.minecraft_version != ''
-        env:
-          TARGET_VERSION: ${{ inputs.minecraft_version }}
-        run: python3 tools/test/prepare_published_runtime.py --target "$TARGET_VERSION" --loader neoforge
-
       - name: Read config.properties
         id: config
         run: |
@@ -141,7 +122,6 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y xvfb
 
       - name: Build mod
-        if: inputs.minecraft_version == ''
         working-directory: neoforge
         timeout-minutes: 60
         run: |
@@ -179,12 +159,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
-      - name: Prepare published JAR for optional version trial
-        if: inputs.minecraft_version != ''
-        env:
-          TARGET_VERSION: ${{ inputs.minecraft_version }}
-        run: python3 tools/test/prepare_published_runtime.py --target "$TARGET_VERSION" --loader forge
-
       - name: Read config.properties
         id: config
         run: |
@@ -213,7 +187,6 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y xvfb
 
       - name: Build mod
-        if: inputs.minecraft_version == ''
         working-directory: forge
         timeout-minutes: 60
         run: |
