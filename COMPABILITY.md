@@ -2,7 +2,7 @@
 
 Automated checks of unchanged published jars. Mod **1.6.0+** only.
 
-Last updated: 2026-09-15 22:13:56 UTC
+Last updated: 2026-09-15 22:19:23 UTC
 
 | Mark | Meaning |
 | :---: | --- |
@@ -44,6 +44,16 @@ Core only. Optional config is not tested.
 | Minecraft | Fabric | NeoForge | Forge |
 | --- | :---: | :---: | :---: |
 | 26.3-rc-3 | ✅ | — | — |
+| 26.3-snapshot-10 | ❌ | — | — |
+| 26.3-snapshot-9 | ❌ | — | — |
+| 26.3-snapshot-8 | ❌ | — | — |
+| 26.3-snapshot-7 | ❌ | — | — |
+| 26.3-snapshot-6 | ❌ | — | — |
+| 26.3-snapshot-5 | ❌ | — | — |
+| 26.3-snapshot-4 | ❌ | — | — |
+| 26.3-snapshot-3 | ✅ | — | — |
+| 26.3-snapshot-2 | ✅ | — | — |
+| 26.3-snapshot-1 | ✅ | — | — |
 
 <details>
 <summary>Test details</summary>
@@ -53,6 +63,36 @@ Core only. Optional config is not tested.
 | 26.3-rc-3 | Fabric | Pass | — | Loader 0.19.5 |
 | 26.3-rc-3 | NeoForge | Unavailable | — | — |
 | 26.3-rc-3 | Forge | Unavailable | — | — |
+| 26.3-snapshot-10 | Fabric | Fail | — | Loader 0.19.5 |
+| 26.3-snapshot-10 | NeoForge | Unavailable | — | — |
+| 26.3-snapshot-10 | Forge | Unavailable | — | — |
+| 26.3-snapshot-9 | Fabric | Fail | — | Loader 0.19.5 |
+| 26.3-snapshot-9 | NeoForge | Unavailable | — | — |
+| 26.3-snapshot-9 | Forge | Unavailable | — | — |
+| 26.3-snapshot-8 | Fabric | Fail | — | Loader 0.19.5 |
+| 26.3-snapshot-8 | NeoForge | Unavailable | — | — |
+| 26.3-snapshot-8 | Forge | Unavailable | — | — |
+| 26.3-snapshot-7 | Fabric | Fail | — | Loader 0.19.5 |
+| 26.3-snapshot-7 | NeoForge | Unavailable | — | — |
+| 26.3-snapshot-7 | Forge | Unavailable | — | — |
+| 26.3-snapshot-6 | Fabric | Fail | — | Loader 0.19.5 |
+| 26.3-snapshot-6 | NeoForge | Unavailable | — | — |
+| 26.3-snapshot-6 | Forge | Unavailable | — | — |
+| 26.3-snapshot-5 | Fabric | Fail | — | Loader 0.19.5 |
+| 26.3-snapshot-5 | NeoForge | Unavailable | — | — |
+| 26.3-snapshot-5 | Forge | Unavailable | — | — |
+| 26.3-snapshot-4 | Fabric | Fail | — | Loader 0.19.5 |
+| 26.3-snapshot-4 | NeoForge | Unavailable | — | — |
+| 26.3-snapshot-4 | Forge | Unavailable | — | — |
+| 26.3-snapshot-3 | Fabric | Pass | — | Loader 0.19.5 |
+| 26.3-snapshot-3 | NeoForge | Unavailable | — | — |
+| 26.3-snapshot-3 | Forge | Unavailable | — | — |
+| 26.3-snapshot-2 | Fabric | Pass | — | Loader 0.19.5 |
+| 26.3-snapshot-2 | NeoForge | Unavailable | — | — |
+| 26.3-snapshot-2 | Forge | Unavailable | — | — |
+| 26.3-snapshot-1 | Fabric | Pass | — | Loader 0.19.5 |
+| 26.3-snapshot-1 | NeoForge | Unavailable | — | — |
+| 26.3-snapshot-1 | Forge | Unavailable | — | — |
 
 </details>
 
