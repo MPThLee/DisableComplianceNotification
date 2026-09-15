@@ -41,7 +41,8 @@ public final class ClientGateBootstrap {
     private static void createAndEnterWorld() {
         try {
             Minecraft client = waitForClient();
-            waitFor(client, () -> client.gui != null && client.gui.screen() != null && client.level == null);
+            waitFor(client, () -> client.gui != null && client.gui.screen() instanceof TitleScreen
+                    && client.gui.overlay() == null && client.level == null);
             Thread.sleep(2_000);
             String optionalLoader = System.getProperty("dcn.client.gate.optionalLoader");
             if (optionalLoader != null) {
