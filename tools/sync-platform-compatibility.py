@@ -137,9 +137,21 @@ class JsonHttpClient:
                 raw_response = response.read()
         except HTTPError as exc:
             status = exc.code
-            exc.close()
+            detail = ""
+            try:
+                error = json.loads(exc.read(8192))
+                if isinstance(error, dict):
+                    detail = str(error.get("errorMessage") or error.get("message") or error.get("error") or error.get("errors") or "")
+                    for value in (headers or {}).values():
+                        if value:
+                            detail = detail.replace(value, "[redacted]")
+                    detail = " ".join(detail.split())[:1000]
+            except (ValueError, OSError):
+                pass
+            finally:
+                exc.close()
             raise PlatformSyncError(
-                f"{method} {url} failed with HTTP {status}"
+                f"{method} {url} failed with HTTP {status}" + (f": {detail}" if detail else "")
             ) from exc
         except (URLError, TimeoutError, OSError) as exc:
             raise PlatformSyncError(f"{method} {url} failed") from exc

@@ -2,6 +2,7 @@
 
 import copy
 import importlib.util
+import io
 import json
 import sys
 import tempfile
@@ -1013,7 +1014,7 @@ class HttpClientTest(unittest.TestCase):
         secret = "secret-that-must-not-be-printed"
 
         def failing_opener(request, timeout):
-            raise HTTPError(request.full_url, 401, "Unauthorized", {}, None)
+            raise HTTPError(request.full_url, 401, "Unauthorized", {}, io.BytesIO(json.dumps({"message": "Rejected " + secret}).encode()))
 
         client = sync.JsonHttpClient(timeout=1, opener=failing_opener)
         with self.assertRaises(sync.PlatformSyncError) as caught:
