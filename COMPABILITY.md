@@ -2,7 +2,7 @@
 
 Automated checks of unchanged published jars. Mod **1.6.0+** only.
 
-Last updated: 2026-09-16 05:01:02 UTC
+Last updated: 2026-09-16 13:14:59 UTC
 
 | Mark | Meaning |
 | :---: | --- |
@@ -46,6 +46,9 @@ Core only. Optional config is not tested.
 | 26.3-rc-3 | ✅ | — | — |
 | 26.3-rc-2 | ✅ | — | — |
 | 26.3-rc-1 | ✅ | — | — |
+| 26.3-pre-3 | ✅ | — | — |
+| 26.3-pre-2 | ✅ | — | — |
+| 26.3-pre-1 | ✅ | — | — |
 | 26.3-snapshot-10 | ✅ | — | — |
 | 26.3-snapshot-9 | ✅ | — | — |
 | 26.3-snapshot-8 | ✅ | — | — |
@@ -71,6 +74,15 @@ Core only. Optional config is not tested.
 | 26.3-rc-1 | Fabric | Pass | — | Loader 0.19.5 |
 | 26.3-rc-1 | NeoForge | Unavailable | — | — |
 | 26.3-rc-1 | Forge | Unavailable | — | — |
+| 26.3-pre-3 | Fabric | Pass | — | Loader 0.19.5 |
+| 26.3-pre-3 | NeoForge | Unavailable | — | — |
+| 26.3-pre-3 | Forge | Unavailable | — | — |
+| 26.3-pre-2 | Fabric | Pass | — | Loader 0.19.5 |
+| 26.3-pre-2 | NeoForge | Unavailable | — | — |
+| 26.3-pre-2 | Forge | Unavailable | — | — |
+| 26.3-pre-1 | Fabric | Pass | — | Loader 0.19.5 |
+| 26.3-pre-1 | NeoForge | Unavailable | — | — |
+| 26.3-pre-1 | Forge | Unavailable | — | — |
 | 26.3-snapshot-10 | Fabric | Pass | — | Loader 0.19.5 |
 | 26.3-snapshot-10 | NeoForge | Unavailable | — | — |
 | 26.3-snapshot-10 | Forge | Unavailable | — | — |
