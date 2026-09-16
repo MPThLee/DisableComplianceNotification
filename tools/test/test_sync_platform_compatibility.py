@@ -965,6 +965,7 @@ class CurseForgeSyncTest(unittest.TestCase):
             self.assertEqual(
                 {
                     "fileID": artifact.curseforge_file_id,
+                    "gameVersionNames": [artifact.curseforge_loader, "Client", "26.2", "26.3", "27.0"],
                     "gameVersions": [sync.EXPECTED_LOADERS.index(loader) + 1, 7, 4, 5, 6],
                 },
                 multipart_json(call),

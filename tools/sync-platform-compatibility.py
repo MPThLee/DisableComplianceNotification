@@ -932,6 +932,7 @@ def sync_curseforge(
         artifact = publication.artifacts[loader]
         metadata: dict[str, object] = {
             "fileID": artifact.curseforge_file_id,
+            "gameVersionNames": [artifact.curseforge_loader, "Client", *release.versions_for(loader)],
             "gameVersions": [
                 available_versions[name]
                 for name in (artifact.curseforge_loader, "Client", *release.versions_for(loader))
