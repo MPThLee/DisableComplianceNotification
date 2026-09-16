@@ -228,11 +228,11 @@
                 "released_at": "2026-09-15T11:23:02+00:00",
                 "runtime": {
                   "minecraft_version": "26.3",
-                  "fabric_api_version": "0.160.5+26.3",
+                  "fabric_api_version": "0.160.6+26.3",
                   "fabric_loader_version": "0.19.5"
                 },
                 "reason": "No compatible modmenu release",
-                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35029454696"
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35096927800"
               }
             },
             "forge": {
