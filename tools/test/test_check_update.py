@@ -17,6 +17,32 @@ sys.modules[SPEC.name] = check_update
 SPEC.loader.exec_module(check_update)
 
 
+class CompatibilityTargetsTest(unittest.TestCase):
+    def test_automatic_previews_are_core_only_and_keep_existing_passes(self):
+        import compatibility_report as report
+        publication = {"release_version": "1.6.0", "build_minecraft_version": "26.2",
+                       "artifacts": {loader: {"sha256": loader} for loader in report.LOADERS}}
+        versions = [("26.2-rc-1", "snapshot", "2026-06-01"),
+                    ("26.2", "release", "2026-06-16"),
+                    ("26.3-snapshot-1", "snapshot", "2026-07-01"),
+                    ("26.3-rc-1", "snapshot", "2026-09-01"),
+                    ("26.3", "release", "2026-09-15"),
+                    ("27.1-snapshot-1", "snapshot", "2027-01-01")]
+        manifest = {"latest": {"release": "26.3"}, "versions": [
+            {"id": version, "type": kind, "releaseTime": date + "T00:00:00Z"}
+            for version, kind, date in versions]}
+        state = {"releases": {"1.6.0": {"targets": {"26.3-rc-1": {"loaders": {
+            "fabric": {"core": {"status": "passed", "artifact_sha256": "fabric"}}
+        }}}}}}
+        rows = report.plan(publication, "", manifest, state)["include"]
+        self.assertEqual({v for v, _, _ in versions} - {"26.2-rc-1"},
+                         {row["minecraft_version"] for row in rows})
+        self.assertTrue(all(row["mode"] == "core" for row in rows if "-" in row["minecraft_version"]))
+        self.assertNotIn({"minecraft_version": "26.3-rc-1", "loader": "fabric", "mode": "core"}, rows)
+        explicit = report.plan(publication, "26.3-rc-1", manifest, state)["include"]
+        self.assertEqual({"26.3-rc-1"}, {row["minecraft_version"] for row in explicit})
+
+
 class CheckUpdateTest(unittest.TestCase):
     def setUp(self):
         self.manifest = check_update.load_manifest(FIXTURE_PATH, timeout=1)

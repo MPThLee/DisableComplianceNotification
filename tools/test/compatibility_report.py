@@ -41,7 +41,15 @@ def plan(publication, requested, manifest, state=None):
     if tuple(map(int, release.split("."))) < (1, 6, 0):
         raise ValueError("Compatibility reports start at mod 1.6.0")
     entries = {entry["id"]: entry for entry in manifest["versions"]}
-    targets = list(dict.fromkeys(v.strip() for v in requested.split(","))) if requested else enumerate_release_versions(manifest, publication["build_minecraft_version"])
+    if requested:
+        targets = list(dict.fromkeys(v.strip() for v in requested.split(",")))
+    else:
+        build_version = publication["build_minecraft_version"]
+        targets = enumerate_release_versions(manifest, build_version)
+        built_at = datetime.fromisoformat(entries[build_version]["releaseTime"])
+        targets += [entry["id"] for entry in manifest["versions"]
+                    if entry["type"] == "snapshot"
+                    and datetime.fromisoformat(entry["releaseTime"]) > built_at]
     previous = (state or {}).get("releases", {}).get(release, {}).get("targets", {})
     matrix = []
     for target in targets:
