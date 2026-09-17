@@ -222,7 +222,18 @@
                 "minecraft_version": "26.3",
                 "loader": "fabric",
                 "mode": "deps",
-                "dependencies": {},
+                "dependencies": {
+                  "modmenu": {
+                    "version": "21.0.0-beta.1",
+                    "id": "lcxkZSq6",
+                    "sha512": "f56cf8d2d1daaf5de33a9615d75fa70aae9502144c3c605973ae627c9c67750bf181e1a83b37583582414fb7626487a2850a3bc88c2b34ea54a46f91ca6802b4"
+                  },
+                  "Text Placeholder API": {
+                    "version": "3.2.0+26.3",
+                    "id": "lXytLqWj",
+                    "sha512": "eb2bb31e51068aad2581b7864ea7b11b1209ba1c2b27551cd5837d9b312b818b73bb47c06374b46b99b73401c62c6b6c115f702c55aed6afd467ad8ad6448de4"
+                  }
+                },
                 "status": "unavailable",
                 "channel": "stable",
                 "released_at": "2026-09-15T11:23:02+00:00",
@@ -231,8 +242,8 @@
                   "fabric_api_version": "0.160.6+26.3",
                   "fabric_loader_version": "0.19.5"
                 },
-                "reason": "No compatible modmenu release",
-                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35096927800"
+                "reason": "No compatible yacl release",
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35183493925"
               }
             },
             "forge": {

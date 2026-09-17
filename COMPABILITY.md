@@ -2,7 +2,7 @@
 
 Automated checks of unchanged published jars. Mod **1.6.0+** only.
 
-Last updated: 2026-09-16 13:14:59 UTC
+Last updated: 2026-09-17 04:52:27 UTC
 
 | Mark | Meaning |
 | :---: | --- |
@@ -27,7 +27,7 @@ Built for Minecraft **26.2+**.
 
 | Minecraft | Loader | Core | Optional | Versions |
 | --- | --- | :---: | :---: | --- |
-| 26.3 | Fabric | Pass | Unavailable | Loader 0.19.5 |
+| 26.3 | Fabric | Pass | Unavailable | Loader 0.19.5; Mod Menu 21.0.0-beta.1 |
 | 26.3 | NeoForge | Pass | Unavailable | Loader 26.3.0.1-beta |
 | 26.3 | Forge | Unavailable | — | — |
 | 26.2 | Fabric | Pass | Pass | Loader 0.19.5; YACL 3.9.6+26.2-fabric; Mod Menu 20.0.2 |
