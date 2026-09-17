@@ -232,9 +232,14 @@
                     "version": "3.2.0+26.3",
                     "id": "lXytLqWj",
                     "sha512": "eb2bb31e51068aad2581b7864ea7b11b1209ba1c2b27551cd5837d9b312b818b73bb47c06374b46b99b73401c62c6b6c115f702c55aed6afd467ad8ad6448de4"
+                  },
+                  "yacl": {
+                    "version": "3.9.6+26.3-fabric",
+                    "id": "rSnhz5tr",
+                    "sha512": "e858b30a27621e56fbe68f181cf5dcba156ce54fd39c92d2f10409051952f4f0d506ff48cd1d25b3915489dd2058275abb3aea362faa5aaff0d1dce4a2415d5b"
                   }
                 },
-                "status": "unavailable",
+                "status": "passed",
                 "channel": "stable",
                 "released_at": "2026-09-15T11:23:02+00:00",
                 "runtime": {
@@ -242,8 +247,9 @@
                   "fabric_api_version": "0.160.7+26.3",
                   "fabric_loader_version": "0.19.5"
                 },
-                "reason": "No compatible yacl release",
-                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35216860097"
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35276197853",
+                "observed_seconds": 150.7,
+                "config_interaction": "passed"
               }
             },
             "forge": {
@@ -294,10 +300,10 @@
                 "released_at": "2026-09-15T11:23:02+00:00",
                 "runtime": {
                   "minecraft_version": "26.3",
-                  "neoforge_version": "26.3.0.3-beta"
+                  "neoforge_version": "26.3.0.4-beta"
                 },
                 "reason": "No compatible yacl release",
-                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35151491897"
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35276197853"
               }
             }
           }
