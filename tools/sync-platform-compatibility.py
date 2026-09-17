@@ -885,6 +885,21 @@ def curseforge_update_url(base_url: str, project_id: str) -> str:
     )
 
 
+def read_curseforge_file(client, project_id, artifact):
+    # Public file metadata; no author session or upload token is sent.
+    url = f"https://www.curseforge.com/api/v1/mods/{project_id}/files/{artifact.curseforge_file_id}"
+    data = require_object(client.request_json("GET", url), "CurseForge file response")
+    data = require_object(data.get("data"), "CurseForge file")
+    if (data.get("id") != artifact.curseforge_file_id
+            or str(data.get("projectId")) != str(project_id)
+            or data.get("fileName") != artifact.filename):
+        raise PlatformSyncError("CurseForge read-back belongs to a different published file")
+    versions = data.get("gameVersions")
+    if not isinstance(versions, list) or not all(isinstance(v, str) for v in versions):
+        raise PlatformSyncError("CurseForge file has invalid game versions")
+    return versions
+
+
 def sync_curseforge(
     release: PublishedRelease,
     token: str,
@@ -893,6 +908,7 @@ def sync_curseforge(
     loaders: tuple[str, ...] = EXPECTED_LOADERS,
     base_url: str = CURSEFORGE_BASE_URL,
     boundary_factory: Callable[[], str] = make_multipart_boundary,
+    file_reader: Callable[[Artifact], list[str]] | None = None,
 ) -> SyncSummary:
     if not token:
         raise PlatformSyncError("CURSEFORGE_TOKEN is not configured")
@@ -930,28 +946,43 @@ def sync_curseforge(
     updated = 0
     for loader in loaders:
         artifact = publication.artifacts[loader]
+        names = [artifact.curseforge_loader, "Client", *release.versions_for(loader)]
+        if file_reader:
+            existing = file_reader(artifact)
+            if set(names).issubset(existing):
+                continue
+            names = list(dict.fromkeys([*existing, *names]))
+            if set(names) - available_versions.keys():
+                raise PlatformSyncError("Cannot preserve unrecognized existing CurseForge versions")
         metadata: dict[str, object] = {
             "fileID": artifact.curseforge_file_id,
-            "gameVersionNames": [artifact.curseforge_loader, "Client", *release.versions_for(loader)],
+            "gameVersionNames": names,
             "gameVersions": [
                 available_versions[name]
-                for name in (artifact.curseforge_loader, "Client", *release.versions_for(loader))
+                for name in names
             ],
         }
         print(f"CurseForge {loader}: " + ", ".join(
             f"{name}={available_versions[name]}"
-            for name in (artifact.curseforge_loader, "Client", *release.versions_for(loader))
+            for name in names
         ), flush=True)
         boundary = boundary_factory()
-        response = client.request_json(
-            "POST",
-            update_url,
-            headers={
-                **headers,
-                "Content-Type": f"multipart/form-data; boundary={boundary}",
-            },
-            body=encode_multipart_metadata(metadata, boundary),
-        )
+        try:
+            response = client.request_json(
+                "POST",
+                update_url,
+                headers={
+                    **headers,
+                    "Content-Type": f"multipart/form-data; boundary={boundary}",
+                },
+                body=encode_multipart_metadata(metadata, boundary),
+            )
+        except PlatformSyncError:
+            if not file_reader or not set(names).issubset(file_reader(artifact)):
+                raise
+            print(f"CurseForge {loader}: metadata confirmed after API error", flush=True)
+            updated += 1
+            continue
         response_data = require_object(
             response,
             f"CurseForge update response for {artifact.filename}",
@@ -1024,6 +1055,8 @@ def main(argv: list[str] | None = None) -> int:
                 os.environ.get("CURSEFORGE_TOKEN", ""),
                 client,
                 base_url=args.curseforge_base_url,
+                file_reader=lambda artifact: read_curseforge_file(
+                    client, release.publication.curseforge_project_id, artifact),
                 loaders=(args.loader,) if args.loader else EXPECTED_LOADERS,
             )
     except PlatformSyncError as exc:

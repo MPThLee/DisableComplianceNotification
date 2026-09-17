@@ -42,6 +42,24 @@ class CompatibilityTargetsTest(unittest.TestCase):
         explicit = report.plan(publication, "26.3-rc-1", manifest, state)["include"]
         self.assertEqual({"26.3-rc-1"}, {row["minecraft_version"] for row in explicit})
 
+    def test_unavailable_preview_loaders_wait_for_new_targets(self):
+        import compatibility_report as report
+        publication = {"release_version": "1.6.0", "build_minecraft_version": "26.2",
+                       "artifacts": {loader: {"sha256": loader} for loader in report.LOADERS}}
+        manifest = {"latest": {"release": "26.2"}, "versions": [{"id": version, "type": kind, "releaseTime": date}
+            for version, kind, date in [("26.2", "release", "2026-06-16T00:00:00Z"),
+                ("26.3-rc-1", "snapshot", "2026-09-01T00:00:00Z"),
+                ("26.3-rc-2", "snapshot", "2026-09-02T00:00:00Z")]]}
+        state = {"releases": {"1.6.0": {"targets": {version: {"loaders": {
+            loader: {"core": {"status": "unavailable", "artifact_sha256": loader}}
+            for loader in report.LOADERS}} for version in ("26.2", "26.3-rc-1")}}}}
+        rows = report.plan(publication, "", manifest, state)["include"]
+        old = [row["loader"] for row in rows if row["minecraft_version"] == "26.3-rc-1"]
+        self.assertEqual(["fabric"], old)
+        self.assertEqual(3, len([row for row in rows if row["minecraft_version"] == "26.3-rc-2"]))
+        self.assertEqual(5, len([row for row in rows if row["minecraft_version"] == "26.2"]))
+        self.assertEqual(3, len(report.plan(publication, "26.3-rc-1", manifest, state)["include"]))
+
 
 class CheckUpdateTest(unittest.TestCase):
     def setUp(self):

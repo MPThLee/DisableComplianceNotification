@@ -76,9 +76,14 @@ jobs:
           LOADER: ${{ matrix.loader }}
           MODE: ${{ matrix.mode }}
         run: |
-          python3 tools/test/prepare_published_runtime.py --loader "$LOADER" --target "$TARGET_VERSION" --mode "$MODE" --result preparation.json
+          python3 tools/test/prepare_published_runtime.py --loader "$LOADER" --target "$TARGET_VERSION" --mode "$MODE" --result preparation.json ||
+            python3 -c 'import json; assert json.load(open("preparation.json"))["status"] == "unavailable"'
+          preparation_status=$(python3 -c 'import json; print(json.load(open("preparation.json"))["status"])')
+          echo "status=$preparation_status" >> "$GITHUB_OUTPUT"
+          if [ "$preparation_status" != ready ]; then exit 0; fi
           echo "java_version=$(sed -n 's/^java_version=//p' config.properties)" >> "$GITHUB_OUTPUT"
       - name: Set up Java
+        if: steps.prepare.outputs.status == 'ready'
         uses: actions/setup-java@0f481fcb613427c0f801b606911222b5b6f3083a # v5.5.0
         with:
           distribution: temurin
@@ -89,6 +94,7 @@ jobs:
             ${{ matrix.loader }}/*.gradle*
             ${{ matrix.loader }}/gradle.properties
       - name: Prepare client environment
+        if: steps.prepare.outputs.status == 'ready'
         run: |
           sudo fallocate -l 10G /swapfile-dcn
           sudo chmod 600 /swapfile-dcn
@@ -98,6 +104,7 @@ jobs:
           sudo apt-get install -y xvfb libgl1-mesa-dri libglx-mesa0 libegl1 libegl-mesa0 mesa-vulkan-drivers
       - name: Check real notifications and supported config integration
         id: gate
+        if: steps.prepare.outputs.status == 'ready'
         timeout-minutes: 20
         env:
           LOADER: ${{ matrix.loader }}

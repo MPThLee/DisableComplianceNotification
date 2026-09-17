@@ -64,7 +64,9 @@ def plan(publication, requested, manifest, state=None):
                 evidence = known.get(mode, {})
                 return evidence.get("status") == "passed" and evidence.get("artifact_sha256") == publication["artifacts"][loader]["sha256"]
             for mode in modes:
-                if passed(mode):
+                if passed(mode) or (not requested and not stable and loader != "fabric"
+                        and known.get(mode, {}).get("status") == "unavailable"
+                        and known[mode].get("artifact_sha256") == publication["artifacts"][loader]["sha256"]):
                     continue
                 matrix.append({"minecraft_version": target, "loader": loader, "mode": mode})
     return {"include": matrix}

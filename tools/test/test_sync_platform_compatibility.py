@@ -932,6 +932,44 @@ class CurseForgeSyncTest(unittest.TestCase):
             ],
         }
 
+    def test_readback_skips_existing_versions_and_confirms_api_errors(self):
+        release = parsed_release()
+        artifact = release.publication.artifacts["forge"]
+        desired = ["Forge", "Client", *release.versions_for("forge")]
+        update_url = sync.curseforge_update_url("https://curseforge.test", release.publication.curseforge_project_id)
+        for existing, after, succeeds, posts in [
+            (desired, desired, True, 0),
+            (["Forge", "Client", "26.2"], desired, True, 1),
+            (["Forge", "Client", "26.2"], ["Forge", "Client", "26.2"], False, 1),
+        ]:
+            with self.subTest(existing=existing, after=after):
+                responses = self.responses(release)
+                responses[("POST", update_url)] = [sync.PlatformSyncError("HTTP 500")]
+                client = FakeClient(responses)
+                reads = iter([existing, after])
+                def run():
+                    return sync.sync_curseforge(release, "token", client, loaders=("forge",),
+                        base_url="https://curseforge.test", file_reader=lambda artifact: next(reads))
+                if succeeds:
+                    self.assertEqual(posts, run().updated)
+                else:
+                    with self.assertRaisesRegex(sync.PlatformSyncError, "HTTP 500"):
+                        run()
+                self.assertEqual(posts, len([call for call in client.calls if call["method"] == "POST"]))
+
+    def test_public_readback_checks_file_identity_without_credentials(self):
+        release = parsed_release()
+        artifact = release.publication.artifacts["forge"]
+        project = release.publication.curseforge_project_id
+        url = f"https://www.curseforge.com/api/v1/mods/{project}/files/{artifact.curseforge_file_id}"
+        data = {"id": artifact.curseforge_file_id, "projectId": int(project),
+                "fileName": artifact.filename, "gameVersions": ["Forge", "Client", "26.2"]}
+        client = FakeClient({("GET", url): [{"data": data}, {"data": dict(data, id=1)}]})
+        self.assertEqual(data["gameVersions"], sync.read_curseforge_file(client, project, artifact))
+        self.assertEqual({}, client.calls[0]["headers"])
+        with self.assertRaisesRegex(sync.PlatformSyncError, "different published file"):
+            sync.read_curseforge_file(client, project, artifact)
+
     def test_excludes_bukkit_versions_with_the_same_name(self):
         versions = [{"id": 10, "name": "26.2", "gameVersionTypeID": 1},
                     {"id": 11, "name": "26.2", "gameVersionTypeID": 2}]
