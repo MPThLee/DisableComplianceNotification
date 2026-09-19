@@ -173,6 +173,11 @@ def detail_rows(targets):
     return lines
 
 
+def table(rows):
+    return ["| Minecraft | Fabric | NeoForge | Forge |", "| --- | :---: | :---: | :---: |"] + [
+        f"| {cell(v)} | " + " | ".join(mark(t, loader) for loader in LOADERS) + " |" for v, t in rows]
+
+
 def render(state):
     lines = ["# Compatibility", "", "Automated checks of unchanged published jars. Mod **1.6.0+** only.", "",
         "Last updated: {updated_at}", "", "| Mark | Meaning |", "| :---: | --- |",
@@ -186,9 +191,6 @@ def render(state):
         targets = sorted(release["targets"].items(), key=lambda item: (item[1].get("released_at", ""), item[0]), reverse=True)
         stable = [(v, t) for v, t in targets if t["channel"] == "stable"]
         preview = [(v, t) for v, t in targets if t["channel"] == "preview"]
-        def table(rows):
-            return ["| Minecraft | Fabric | NeoForge | Forge |", "| --- | :---: | :---: | :---: |"] + [
-                f"| {cell(v)} | " + " | ".join(mark(t, loader) for loader in LOADERS) + " |" for v, t in rows]
         lines += ["### Stable", ""] + (table(stable) if stable else ["No stable results yet."])
         if stable:
             lines += ["", "<details>", "<summary>Test details</summary>", ""] + detail_rows(stable) + ["", "</details>"]
@@ -211,6 +213,25 @@ def save_report(state, state_path, report_path):
     write(state_path, state)
 
 
+def update_readme(state, version, path):
+    start, end = "<!-- compatibility:stable:start -->", "<!-- compatibility:stable:end -->"
+    content = path.read_text()
+    release = state["releases"].get(version, {})
+    rows = sorted(((v, t) for v, t in release.get("targets", {}).items() if t["channel"] == "stable"),
+                  key=lambda item: (item[1].get("released_at", ""), item[0]), reverse=True)
+    lines = [start, f"### Stable compatibility · v{version}", ""]
+    lines += table(rows) if rows else ["No stable results yet."]
+    lines += ["", "✅ All applicable checks pass · ⚠️ Core passes; optional dependencies unverified · ❌ Core failed · — Untested or unavailable",
+              "", f"See [test details and preview results](./COMPABILITY.md#v{version.replace('.', '')}) for this release.", end]
+    if content.count(start) != 1 or content.count(end) != 1:
+        raise ValueError("README must contain one stable compatibility marker pair")
+    before, rest = content.split(start, 1)
+    _, after = rest.split(end, 1)
+    updated = before + "\n".join(lines) + after
+    if updated != content:
+        path.write_text(updated)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("command", choices=("plan", "record", "render"))
@@ -224,6 +245,7 @@ def main():
     parser.add_argument("--output", type=Path)
     parser.add_argument("--results", type=Path)
     parser.add_argument("--state", type=Path, default=ROOT / "data/compatibility-results.json")
+    parser.add_argument("--readme", type=Path, default=ROOT / "README.md")
     parser.add_argument("--report", type=Path, default=ROOT / "COMPABILITY.md")
     args = parser.parse_args()
     publication = read(args.data)["publication"]
@@ -244,6 +266,7 @@ def main():
         if args.results:
             state = merge(state, [read(path) for path in sorted(args.results.rglob("result.json"))], publication)
         save_report(state, args.state, args.report)
+        update_readme(state, publication["release_version"], args.readme)
 
 
 if __name__ == "__main__":

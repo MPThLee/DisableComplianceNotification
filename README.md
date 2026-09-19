@@ -35,7 +35,18 @@ Older changelog is available on [CHANGELOG.md](./CHANGELOG.md).
 
 Version 1.6.0 supports Minecraft 26.2. It may also work on later Minecraft versions, but this compatibility is experimental and not guaranteed.
 
-See [COMPABILITY.md](./COMPABILITY.md) for automated compatibility test result for mod version.
+<!-- compatibility:stable:start -->
+### Stable compatibility · v1.6.0
+
+| Minecraft | Fabric | NeoForge | Forge |
+| --- | :---: | :---: | :---: |
+| 26.3 | ✅ | ⚠️ | ✅ |
+| 26.2 | ✅ | ✅ | ✅ |
+
+✅ All applicable checks pass · ⚠️ Core passes; optional dependencies unverified · ❌ Core failed · — Untested or unavailable
+
+See [test details and preview results](./COMPABILITY.md#v160) for this release.
+<!-- compatibility:stable:end -->
 
 ## Download
 
