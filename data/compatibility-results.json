@@ -304,10 +304,10 @@
                 "released_at": "2026-09-15T11:23:02+00:00",
                 "runtime": {
                   "minecraft_version": "26.3",
-                  "neoforge_version": "26.3.0.6-beta"
+                  "neoforge_version": "26.3.0.7-beta"
                 },
                 "reason": "No compatible yacl release",
-                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35368151098"
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35468019424"
               }
             }
           }
