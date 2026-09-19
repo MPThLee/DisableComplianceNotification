@@ -261,11 +261,15 @@
                 "loader": "forge",
                 "mode": "core",
                 "dependencies": {},
-                "status": "unavailable",
+                "status": "failed",
                 "channel": "stable",
                 "released_at": "2026-09-15T11:23:02+00:00",
-                "reason": "No forge loader for this Minecraft version",
-                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35029454696"
+                "runtime": {
+                  "minecraft_version": "26.3",
+                  "forge_version": "66.0.0"
+                },
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35453146009",
+                "reason": "Runtime check failed"
               }
             },
             "neoforge": {
