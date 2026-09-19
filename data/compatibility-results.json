@@ -261,15 +261,15 @@
                 "loader": "forge",
                 "mode": "core",
                 "dependencies": {},
-                "status": "failed",
+                "status": "passed",
                 "channel": "stable",
                 "released_at": "2026-09-15T11:23:02+00:00",
                 "runtime": {
                   "minecraft_version": "26.3",
                   "forge_version": "66.0.0"
                 },
-                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35453146009",
-                "reason": "Runtime check failed"
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35456893790",
+                "observed_seconds": 150.8
               }
             },
             "neoforge": {
