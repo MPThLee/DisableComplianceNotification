@@ -229,6 +229,18 @@ class ClientGateTest(unittest.TestCase):
                 (game_dir / "resourcepacks" / gate.GATE_PACK_FILENAME).exists()
             )
 
+    def test_forge_warning_screen_is_disabled_only_during_gate(self):
+        for original in (None, b"[client]\nshowLoadWarnings = true\n"):
+            with self.subTest(original=original), tempfile.TemporaryDirectory() as directory:
+                loader = Path(directory) / "forge"
+                config = loader / "run/config/forge-client.toml"
+                if original is not None:
+                    config.parent.mkdir(parents=True)
+                    config.write_bytes(original)
+                with gate.prepared_gate_workspace(PROJECT_ROOT, loader, "gate-test"):
+                    self.assertEqual("[client]\nshowLoadWarnings = false\n", config.read_text())
+                self.assertEqual(original, config.read_bytes() if config.exists() else None)
+
     def test_world_cleanup_removes_a_late_shutdown_save(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
             world_path = Path(temporary_directory) / "late_save"

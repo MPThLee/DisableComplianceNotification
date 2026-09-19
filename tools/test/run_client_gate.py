@@ -179,9 +179,9 @@ def prepared_gate_workspace(
         game_dir / "config/disable_compliance_notification.json5",
         game_dir / "config/disable_compliance_notification-client.toml",
     )
-    neoforge_config = game_dir / "config/neoforge-client.toml"
-    if loader_dir.name == "neoforge":
-        config_paths += (neoforge_config,)
+    loader_config = game_dir / "config" / f"{loader_dir.name}-client.toml"
+    if loader_dir.name in ("forge", "neoforge"):
+        config_paths += (loader_config,)
     original_configs = {
         path: path.read_bytes() if path.exists() else None for path in config_paths
     }
@@ -199,9 +199,10 @@ def prepared_gate_workspace(
         config_path.unlink(missing_ok=True)
 
     try:
-        if loader_dir.name == "neoforge":
-            neoforge_config.parent.mkdir(parents=True, exist_ok=True)
-            neoforge_config.write_text("showLoadWarnings = false\n", encoding="utf-8")
+        if loader_dir.name in ("forge", "neoforge"):
+            loader_config.parent.mkdir(parents=True, exist_ok=True)
+            prefix = "[client]\n" if loader_dir.name == "forge" else ""
+            loader_config.write_text(prefix + "showLoadWarnings = false\n", encoding="utf-8")
         yield
     finally:
         if original_options is None:
