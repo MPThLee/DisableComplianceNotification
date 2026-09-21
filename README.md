@@ -40,7 +40,7 @@ Version 1.6.0 supports Minecraft 26.2. It may also work on later Minecraft versi
 
 | Minecraft | Fabric | NeoForge | Forge |
 | --- | :---: | :---: | :---: |
-| 26.3 | ✅ | ⚠️ | ✅ |
+| 26.3 | ✅ | ✅ | ✅ |
 | 26.2 | ✅ | ✅ | ✅ |
 
 ✅ All applicable checks pass · ⚠️ Core passes; optional dependencies unverified · ❌ Core failed · — Untested or unavailable

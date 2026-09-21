@@ -298,16 +298,23 @@
                 "minecraft_version": "26.3",
                 "loader": "neoforge",
                 "mode": "deps",
-                "dependencies": {},
-                "status": "unavailable",
+                "dependencies": {
+                  "yacl": {
+                    "version": "3.9.7+26.3-neoforge",
+                    "id": "GL24RgOP",
+                    "sha512": "4f94b08706825c0e5f8413a68783355d60bd3da7b6526c817caad997147db6eae42f187c7f14a0242941a7ceec9d69396978e154342f6c9d55862258b0afbfa8"
+                  }
+                },
+                "status": "passed",
                 "channel": "stable",
                 "released_at": "2026-09-15T11:23:02+00:00",
                 "runtime": {
                   "minecraft_version": "26.3",
                   "neoforge_version": "26.3.0.7-beta"
                 },
-                "reason": "No compatible yacl release",
-                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35468019424"
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35560664316",
+                "observed_seconds": 150.7,
+                "config_interaction": "passed"
               }
             }
           }
