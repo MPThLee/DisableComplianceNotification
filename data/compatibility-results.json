@@ -1217,11 +1217,16 @@
                 "loader": "fabric",
                 "mode": "core",
                 "dependencies": {},
-                "status": "unavailable",
+                "status": "passed",
                 "channel": "preview",
                 "released_at": "2026-09-22T13:38:53+00:00",
-                "reason": "No compatible fabric-api release",
-                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35757404143"
+                "runtime": {
+                  "minecraft_version": "26.4-snapshot-1",
+                  "fabric_api_version": "0.161.1+26.4",
+                  "fabric_loader_version": "0.19.5"
+                },
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35785710811",
+                "observed_seconds": 150.7
               }
             },
             "forge": {
