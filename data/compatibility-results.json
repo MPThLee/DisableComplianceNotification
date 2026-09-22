@@ -1203,6 +1203,60 @@
               }
             }
           }
+        },
+        "26.4-snapshot-1": {
+          "channel": "preview",
+          "released_at": "2026-09-22T13:38:53+00:00",
+          "loaders": {
+            "fabric": {
+              "core": {
+                "publication": "1.6.0",
+                "build_minecraft_version": "26.2",
+                "artifact_sha256": "6af75d89c831c3fdd12927bcc592271845c2f1dc8e84daf13770866a3a1d1959",
+                "minecraft_version": "26.4-snapshot-1",
+                "loader": "fabric",
+                "mode": "core",
+                "dependencies": {},
+                "status": "unavailable",
+                "channel": "preview",
+                "released_at": "2026-09-22T13:38:53+00:00",
+                "reason": "No compatible fabric-api release",
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35757404143"
+              }
+            },
+            "forge": {
+              "core": {
+                "publication": "1.6.0",
+                "build_minecraft_version": "26.2",
+                "artifact_sha256": "f81737ce8cf5581f872ca2c265bbccba55fdbfe2503662b1a98b022964904064",
+                "minecraft_version": "26.4-snapshot-1",
+                "loader": "forge",
+                "mode": "core",
+                "dependencies": {},
+                "status": "unavailable",
+                "channel": "preview",
+                "released_at": "2026-09-22T13:38:53+00:00",
+                "reason": "No forge loader for this Minecraft version",
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35757404143"
+              }
+            },
+            "neoforge": {
+              "core": {
+                "publication": "1.6.0",
+                "build_minecraft_version": "26.2",
+                "artifact_sha256": "d81e67efa7cac1858b1451660cd10513990a4c078d6cf0ba3fc8f6f020483501",
+                "minecraft_version": "26.4-snapshot-1",
+                "loader": "neoforge",
+                "mode": "core",
+                "dependencies": {},
+                "status": "unavailable",
+                "channel": "preview",
+                "released_at": "2026-09-22T13:38:53+00:00",
+                "reason": "No neoforge loader for this Minecraft version",
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/35757404143"
+              }
+            }
+          }
         }
       }
     }
