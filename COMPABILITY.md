@@ -2,7 +2,7 @@
 
 Automated checks of unchanged published jars. Mod **1.6.0+** only.
 
-Last updated: 2026-09-29 22:18:55 UTC
+Last updated: 2026-10-06 18:25:32 UTC
 
 | Mark | Meaning |
 | :---: | --- |
@@ -43,6 +43,7 @@ Core only. Optional config is not tested.
 
 | Minecraft | Fabric | NeoForge | Forge |
 | --- | :---: | :---: | :---: |
+| 26.4-snapshot-3 | ✅ | — | — |
 | 26.4-snapshot-2 | ✅ | — | — |
 | 26.4-snapshot-1 | ✅ | — | — |
 | 26.3-rc-3 | ✅ | — | — |
@@ -67,6 +68,9 @@ Core only. Optional config is not tested.
 
 | Minecraft | Loader | Core | Optional | Versions |
 | --- | --- | :---: | :---: | --- |
+| 26.4-snapshot-3 | Fabric | Pass | — | Loader 0.19.5 |
+| 26.4-snapshot-3 | NeoForge | Unavailable | — | — |
+| 26.4-snapshot-3 | Forge | Unavailable | — | — |
 | 26.4-snapshot-2 | Fabric | Pass | — | Loader 0.19.5 |
 | 26.4-snapshot-2 | NeoForge | Unavailable | — | — |
 | 26.4-snapshot-2 | Forge | Unavailable | — | — |
