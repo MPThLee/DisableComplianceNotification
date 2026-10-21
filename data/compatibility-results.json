@@ -1453,16 +1453,16 @@
                 "loader": "fabric",
                 "mode": "core",
                 "dependencies": {},
-                "status": "failed",
+                "status": "passed",
                 "channel": "preview",
                 "released_at": "2026-10-20T12:15:06+00:00",
                 "runtime": {
                   "minecraft_version": "26.4-snapshot-5",
                   "fabric_api_version": "0.164.1+26.4",
-                  "fabric_loader_version": "0.19.5"
+                  "fabric_loader_version": "0.20.1"
                 },
-                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/39501679045",
-                "reason": "Runtime check failed"
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/39689046717",
+                "observed_seconds": 150.7
               }
             },
             "forge": {
