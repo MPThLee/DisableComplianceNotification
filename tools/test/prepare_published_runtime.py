@@ -78,11 +78,7 @@ def prepare(project_root, data, loader, target=None, mode="core", result=None):
         if loader == "fabric":
             api = latest_mod("fabric-api", target, loader)
             updates["fabric_api_version"] = api["version_number"]
-            loaders = UPDATE.url_json(UPDATE.FABRIC_LOADER_URL, timeout=30)
-            candidates = [v for v in loaders if v.get("stable")] or loaders
-            if not candidates:
-                raise Unavailable("No Fabric loader available")
-            updates["fabric_loader_version"] = candidates[0]["version"]
+            updates["fabric_loader_version"] = UPDATE.fabric_loader(timeout=30)
         else:
             try:
                 updates[f"{loader}_version"] = getattr(UPDATE, loader)(target, 30, False)

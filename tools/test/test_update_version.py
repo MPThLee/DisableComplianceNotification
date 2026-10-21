@@ -20,6 +20,29 @@ def maven_metadata(*versions: str) -> ET.Element:
     )
 
 
+class FabricVersionSelectionTest(unittest.TestCase):
+    def select(self, target, oldest=False):
+        loaders = [
+            {"version": "0.20.1", "stable": False},
+            {"version": "0.19.5", "stable": True},
+        ]
+        metadata = maven_metadata("0.150.0+26.2", "0.151.0+26.2", "0.152.0+26.2.1")
+        with patch.object(UPDATE_VERSION, "url_json", return_value=loaders), \
+            patch.object(UPDATE_VERSION, "url_xml", return_value=metadata):
+            return UPDATE_VERSION.fabric(target, timeout=1, select_oldest=oldest)
+
+    def test_latest_loader_is_not_limited_to_stable_flag(self):
+        self.assertEqual("0.20.1", self.select("26.2.1")[1])
+
+    def test_api_matches_exact_minecraft_version(self):
+        self.assertEqual("0.151.0+26.2", self.select("26.2")[0])
+        self.assertEqual("0.150.0+26.2", self.select("26.2", oldest=True)[0])
+
+    def test_missing_exact_api_is_rejected(self):
+        with self.assertRaises(UPDATE_VERSION.VersionUpdateError):
+            self.select("26")
+
+
 class NeoForgeVersionSelectionTest(unittest.TestCase):
     VERSIONS = (
         "20.2.93",

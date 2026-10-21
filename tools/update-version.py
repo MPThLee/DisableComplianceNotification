@@ -211,13 +211,11 @@ def load_versions(mcv: str, timeout: float, select_oldest: bool) -> Versions:
     )
 
 
-def fabric(mcv: str, timeout: float, select_oldest: bool) -> tuple[str, str]:
+def fabric_loader(timeout: float, select_oldest: bool = False) -> str:
     loader_resp = url_json(FABRIC_LOADER_URL, timeout=timeout)
-    loader_versions = [entry for entry in loader_resp if isinstance(entry, dict)]
-    stable_versions = [
-        entry for entry in loader_versions if entry.get("stable") is True
-    ]
-    loader_candidates = stable_versions or loader_versions
+    # Fabric lists loaders newest first. The stable flag can lag behind API
+    # requirements (0.19.5 remained stable when API required 0.20.0+).
+    loader_candidates = [entry for entry in loader_resp if isinstance(entry, dict)]
     if not loader_candidates:
         raise VersionUpdateError("fabric loader versions not found")
 
@@ -225,10 +223,14 @@ def fabric(mcv: str, timeout: float, select_oldest: bool) -> tuple[str, str]:
     loader_version = loader_entry.get("version")
     if not loader_version:
         raise VersionUpdateError("fabric loader version missing in response")
+    return loader_version
 
+
+def fabric(mcv: str, timeout: float, select_oldest: bool) -> tuple[str, str]:
+    loader_version = fabric_loader(timeout, select_oldest)
     maven_resp = url_xml(FABRIC_API_METADATA_URL, timeout=timeout)
     api_versions = parse_maven_versions(maven_resp)
-    api_candidates = [version for version in api_versions if f"+{mcv}" in version]
+    api_candidates = [version for version in api_versions if version.endswith(f"+{mcv}")]
     if not api_candidates:
         raise VersionUpdateError(f"fabric api version not found for {mcv}")
 
