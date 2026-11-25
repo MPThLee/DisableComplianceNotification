@@ -1802,7 +1802,7 @@
                 "loader": "fabric",
                 "mode": "core",
                 "dependencies": {},
-                "status": "error",
+                "status": "passed",
                 "channel": "preview",
                 "released_at": "2026-11-24T12:48:31+00:00",
                 "runtime": {
@@ -1810,8 +1810,8 @@
                   "fabric_api_version": "0.167.1+26.4",
                   "fabric_loader_version": "0.20.1"
                 },
-                "reason": "request failed for https://mpthlee.github.io/minecraft-version-json/26.4-pre-1/version.json: HTTP Error 404: Not Found",
-                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/45500644999"
+                "run_url": "https://github.com/MPThLee/DisableComplianceNotification/actions/runs/45576829606",
+                "observed_seconds": 150.9
               }
             },
             "forge": {
